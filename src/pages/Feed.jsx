@@ -60,10 +60,17 @@ function CountdownTimer({ dateFin }) {
   );
 }
 
-function OffreCard({ offre, favs, onToggleFav, userPos }) {
+function OffreCard({ offre, favs, onToggleFav, userPos, onFavChange }) {
   const isFav = favs.includes(offre.id);
   const stockPct = offre.stock_initial ? (offre.stock_restant / offre.stock_initial) * 100 : 100;
   const dist = userPos && offre.latitude ? haversine(userPos.lat, userPos.lng, offre.latitude, offre.longitude) : null;
+
+  const handleToggleFav = (e) => {
+    e.preventDefault();
+    onToggleFav(offre.id);
+    if (navigator.vibrate) navigator.vibrate(10);
+    onFavChange(!isFav, offre.titre);
+  };
 
   return (
     <Link to={`/OffreDetail?id=${offre.id}`} style={{ textDecoration: "none" }}>
@@ -72,8 +79,9 @@ function OffreCard({ offre, favs, onToggleFav, userPos }) {
         boxShadow: "0 2px 12px rgba(0,0,0,0.08)", marginBottom: 16
       }}>
         <div style={{ position: "relative", height: 175 }}>
-          <img src={offre.image_url} alt={offre.titre}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img src={offre.image_url} alt={offre.titre} loading="lazy"
+            style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+            onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&q=80"; }} />
           <div style={{
             position: "absolute", top: 12, left: 12,
             background: "#FF3B30", color: "white",
@@ -82,17 +90,14 @@ function OffreCard({ offre, favs, onToggleFav, userPos }) {
           }}>
             -{offre.valeur_reduction}{offre.type_reduction === "pourcentage" ? "%" : "€"}
           </div>
-          <button
-            onClick={(e) => { e.preventDefault(); onToggleFav(offre.id); }}
-            style={{
-              position: "absolute", top: 10, right: 12,
-              background: "rgba(255,255,255,0.92)", border: "none",
-              borderRadius: "50%", width: 36, height: 36,
-              fontSize: 18, cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.15)"
-            }}
-          >
+          <button onClick={handleToggleFav} style={{
+            position: "absolute", top: 10, right: 12,
+            background: "rgba(255,255,255,0.92)", border: "none",
+            borderRadius: "50%", width: 36, height: 36,
+            fontSize: 18, cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.15)", transition: "transform 0.2s"
+          }}>
             {isFav ? "❤️" : "🤍"}
           </button>
           {offre.est_urgente && (
@@ -115,9 +120,9 @@ function OffreCard({ offre, favs, onToggleFav, userPos }) {
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
             <span style={{ fontSize: 13 }}>{CAT_ICONS[offre.categorie] || "🏷️"}</span>
             <span style={{ fontSize: 12, color: "#888", fontWeight: 500 }}>{offre.categorie}</span>
-            {!dist && offre.ville && (
-              <span style={{ fontSize: 12, color: "#aaa", marginLeft: "auto" }}>📍 {offre.ville}</span>
-            )}
+            <span style={{ fontSize: 12, color: "#aaa", marginLeft: "auto" }}>
+              {dist !== null ? `📍 ${formatDist(dist)}` : `📍 ${offre.ville}`}
+            </span>
           </div>
           <div style={{ fontWeight: 700, fontSize: 16, color: "#1a1a1a", marginBottom: 3, lineHeight: 1.3 }}>
             {offre.titre}
@@ -128,11 +133,11 @@ function OffreCard({ offre, favs, onToggleFav, userPos }) {
               {offre.prix_promo > 0 && (
                 <span style={{ fontSize: 20, fontWeight: 800, color: "#FF3B30" }}>{offre.prix_promo}€</span>
               )}
-              {offre.prix_original > 0 && (
+              {offre.prix_original > 0 && offre.prix_original !== offre.prix_promo && (
                 <span style={{ fontSize: 14, color: "#aaa", textDecoration: "line-through" }}>{offre.prix_original}€</span>
               )}
             </div>
-            {offre.stock_restant !== undefined && (
+            {offre.stock_restant !== undefined && offre.stock_restant !== null && (
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontSize: 11, color: stockPct < 30 ? "#FF3B30" : "#888", fontWeight: 600 }}>
                   {offre.stock_restant} restant{offre.stock_restant > 1 ? "s" : ""}
@@ -156,6 +161,7 @@ function OffreCard({ offre, favs, onToggleFav, userPos }) {
 export default function Feed() {
   const [offres, setOffres] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [categorie, setCategorie] = useState("Tout");
   const [favs, setFavs] = useState(() => {
     try { return JSON.parse(localStorage.getItem("cp_favs") || "[]"); } catch { return []; }
@@ -163,12 +169,11 @@ export default function Feed() {
   const [recherche, setRecherche] = useState("");
   const [tri, setTri] = useState("proximite");
   const [userPos, setUserPos] = useState(null);
-  const [refreshing, setRefreshing] = useState(false);
   const [geoStatus, setGeoStatus] = useState("idle");
-  const scrollRef = useRef(null);
+  const [toast, setToast] = useState(null);
   const touchStartY = useRef(0);
+  const scrollContainer = useRef(null);
 
-  // Géolocalisation
   useEffect(() => {
     if (!navigator.geolocation) return;
     setGeoStatus("loading");
@@ -182,34 +187,35 @@ export default function Feed() {
     );
   }, []);
 
-  useEffect(() => {
-    Offre.list().then(data => {
+  const loadOffres = async () => {
+    try {
+      const data = await Offre.list();
       setOffres(data.filter(o => o.est_active));
-      setLoading(false);
-    });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    loadOffres();
+    setLoading(false);
   }, []);
 
   // Pull-to-refresh
   const handleTouchStart = (e) => {
-    if (scrollRef.current?.scrollTop === 0) {
-      touchStartY.current = e.touches[0].clientY;
-    }
+    touchStartY.current = e.touches[0].clientY;
   };
 
   const handleTouchMove = (e) => {
-    if (scrollRef.current?.scrollTop === 0 && e.touches[0].clientY > touchStartY.current + 60) {
-      handleRefresh();
-    }
-  };
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    try {
-      const data = await Offre.list();
-      setOffres(data.filter(o => o.est_active));
-      setTimeout(() => setRefreshing(false), 500);
-    } catch {
-      setRefreshing(false);
+    const scrollTop = scrollContainer.current?.scrollTop || 0;
+    if (scrollTop === 0) {
+      const diff = e.touches[0].clientY - touchStartY.current;
+      if (diff > 60 && !refreshing) {
+        setRefreshing(true);
+        loadOffres().then(() => {
+          setTimeout(() => setRefreshing(false), 800);
+        });
+      }
     }
   };
 
@@ -217,17 +223,13 @@ export default function Feed() {
     const newFavs = favs.includes(id) ? favs.filter(f => f !== id) : [...favs, id];
     setFavs(newFavs);
     localStorage.setItem("cp_favs", JSON.stringify(newFavs));
-    
-    // Historique des vues
-    const historique = JSON.parse(localStorage.getItem("cp_historique") || "[]");
-    const offre = offres.find(o => o.id === id);
-    if (offre && !historique.some(h => h.id === id)) {
-      historique.push({ id, titre: offre.titre, commerce: offre.commercant_nom, date: new Date().toLocaleDateString() });
-      localStorage.setItem("cp_historique", JSON.stringify(historique.slice(-50)));
-    }
   };
 
-  // Enrichir offres avec distance
+  const showToast = (added, title) => {
+    setToast({ added, title });
+    setTimeout(() => setToast(null), 2500);
+  };
+
   const offresAvecDist = offres.map(o => ({
     ...o,
     dist: userPos && o.latitude ? haversine(userPos.lat, userPos.lng, o.latitude, o.longitude) : null
@@ -240,23 +242,40 @@ export default function Feed() {
     return true;
   });
 
-  // Tri
   if (tri === "proximite" && userPos) filtered = [...filtered].sort((a, b) => (a.dist || 99) - (b.dist || 99));
   else if (tri === "reduction") filtered = [...filtered].sort((a, b) => b.valeur_reduction - a.valeur_reduction);
   else if (tri === "urgence") filtered = [...filtered].sort((a, b) => (b.est_urgente ? 1 : 0) - (a.est_urgente ? 1 : 0));
-
-  // Grouper par commerce
-  const parCommerce = {};
-  filtered.forEach(o => {
-    if (!parCommerce[o.commercant_nom]) parCommerce[o.commercant_nom] = [];
-    parCommerce[o.commercant_nom].push(o);
-  });
+  else if (tri === "stock") filtered = [...filtered].sort((a, b) => (a.stock_restant || 99) - (b.stock_restant || 99));
 
   const offresUrgentes = filtered.filter(o => o.est_urgente);
   const offresNormales = filtered.filter(o => !o.est_urgente);
 
   return (
-    <div style={{ background: "#F8F8F8", minHeight: "100vh", fontFamily: "'SF Pro Display', -apple-system, sans-serif", maxWidth: 430, margin: "0 auto" }}>
+    <div 
+      ref={scrollContainer}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      style={{ background: "#F8F8F8", minHeight: "100vh", fontFamily: "'SF Pro Display', -apple-system, sans-serif", maxWidth: 430, margin: "0 auto", overflowY: "auto" }}>
+      
+      {/* Pull-to-refresh indicator */}
+      {refreshing && (
+        <div style={{ textAlign: "center", padding: "20px", color: "#FF6B00", fontWeight: 700 }}>
+          ⟳ Actualisation...
+        </div>
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: "fixed", top: 60, left: "50%", transform: "translateX(-50%)",
+          background: toast.added ? "#34C759" : "#FF3B30", color: "white",
+          borderRadius: 10, padding: "10px 16px", fontSize: 13, fontWeight: 600,
+          zIndex: 999, boxShadow: "0 4px 12px rgba(0,0,0,0.2)"
+        }}>
+          {toast.added ? `❤️ ${toast.title} ajouté aux favoris` : `💔 ${toast.title} retiré des favoris`}
+        </div>
+      )}
+
       {/* Header sticky */}
       <div style={{
         background: "linear-gradient(135deg, #FF6B00, #FF3B30)",
@@ -265,14 +284,8 @@ export default function Feed() {
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
           <div>
-            <div style={{ color: "rgba(255,255,255,0.8)", fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>
-              {geoStatus === "ok" && userPos ? (
-                <span>📍 Près de vous</span>
-              ) : geoStatus === "loading" ? (
-                <span>⏳ Localisation...</span>
-              ) : (
-                <span>📍 Paris, France</span>
-              )}
+            <div style={{ color: "rgba(255,255,255,0.8)", fontSize: 13 }}>
+              {geoStatus === "ok" ? "📍 Près de vous" : geoStatus === "loading" ? "⏳ Localisation..." : "📍 Paris"}
             </div>
             <div style={{ color: "white", fontSize: 22, fontWeight: 800 }}>Click & Promo</div>
           </div>
@@ -285,7 +298,6 @@ export default function Feed() {
           </Link>
         </div>
 
-        {/* Recherche */}
         <div style={{
           background: "rgba(255,255,255,0.95)", borderRadius: 14,
           display: "flex", alignItems: "center", padding: "10px 14px", gap: 8
@@ -294,26 +306,15 @@ export default function Feed() {
           <input
             value={recherche}
             onChange={e => setRecherche(e.target.value)}
-            placeholder="Chercher une offre ou un commerce..."
+            placeholder="Rechercher une offre..."
             style={{ border: "none", outline: "none", flex: 1, fontSize: 14, background: "transparent", color: "#333" }}
           />
-          {recherche && (
-            <button onClick={() => setRecherche("")} style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 16 }}>✕</button>
-          )}
         </div>
       </div>
 
-      <div ref={scrollRef} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} style={{ padding: "0 16px 100px", overflow: "auto" }}>
-
-        {/* Pull-to-refresh indicator */}
-        {refreshing && (
-          <div style={{ textAlign: "center", padding: "20px 0", color: "#FF6B00" }}>
-            <span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}>🔄</span> Actualisé
-          </div>
-        )}
-
+      <div style={{ padding: "0 16px 100px" }}>
         {/* Catégories */}
-        <div style={{ overflowX: "auto", display: "flex", gap: 8, padding: "14px 0 10px", scrollbarWidth: "none" }}>
+        <div style={{ overflowX: "auto", display: "flex", gap: 8, padding: "14px 0", scrollbarWidth: "none" }}>
           {CATEGORIES.map(cat => (
             <button
               key={cat}
@@ -324,8 +325,7 @@ export default function Feed() {
                 color: categorie === cat ? "white" : "#444",
                 border: categorie === cat ? "none" : "1px solid #e0e0e0",
                 borderRadius: 20, padding: "7px 14px", fontSize: 13, fontWeight: 600,
-                cursor: "pointer", whiteSpace: "nowrap",
-                boxShadow: categorie === cat ? "0 2px 8px rgba(255,107,0,0.35)" : "none"
+                cursor: "pointer", whiteSpace: "nowrap"
               }}
             >
               {CAT_ICONS[cat]} {cat}
@@ -333,7 +333,7 @@ export default function Feed() {
           ))}
         </div>
 
-        {/* Tri + compteur */}
+        {/* Tri */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
           <span style={{ fontSize: 13, color: "#666", fontWeight: 600 }}>
             {filtered.length} offre{filtered.length > 1 ? "s" : ""}
@@ -350,71 +350,52 @@ export default function Feed() {
             <option value="proximite">📍 Plus proches</option>
             <option value="reduction">🔥 Meilleures réductions</option>
             <option value="urgence">⏱ Plus urgentes</option>
+            <option value="stock">⚡ Stock limité</option>
           </select>
         </div>
 
-        {loading && (
-          <div style={{ textAlign: "center", padding: 40, color: "#999" }}>Chargement...</div>
-        )}
-
-        {!loading && filtered.length === 0 && (
-          <div style={{ textAlign: "center", padding: "50px 20px" }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>🏷️</div>
-            <div style={{ color: "#666", fontSize: 15 }}>Aucune offre dans cette catégorie</div>
-          </div>
-        )}
-
         {/* Offres urgentes */}
         {offresUrgentes.length > 0 && (
-          <div style={{ marginBottom: 8 }}>
+          <div style={{ marginBottom: 6 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
               <span style={{ fontSize: 16 }}>🔥</span>
-              <span style={{ fontWeight: 700, fontSize: 15, color: "#1a1a1a" }}>Offres urgentes</span>
+              <span style={{ fontWeight: 700, fontSize: 15 }}>Offres urgentes</span>
+              <span style={{ background: "#FF3B30", color: "white", borderRadius: 10, padding: "1px 8px", fontSize: 11, fontWeight: 700 }}>
+                {offresUrgentes.length}
+              </span>
             </div>
             {offresUrgentes.map(o => (
-              <OffreCard key={o.id} offre={o} favs={favs} onToggleFav={toggleFav} userPos={userPos} />
+              <OffreCard key={o.id} offre={o} favs={favs} onToggleFav={toggleFav} userPos={userPos} onFavChange={showToast} />
             ))}
           </div>
         )}
 
-        {/* Toutes les offres groupées par commerce */}
+        {/* Autres offres */}
         {offresNormales.length > 0 && (
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
               <span style={{ fontSize: 16 }}>✨</span>
-              <span style={{ fontWeight: 700, fontSize: 15, color: "#1a1a1a" }}>Toutes les offres</span>
+              <span style={{ fontWeight: 700, fontSize: 15 }}>
+                {userPos ? "Près de vous" : "Toutes les offres"}
+              </span>
             </div>
+            {offresNormales.map(o => (
+              <OffreCard key={o.id} offre={o} favs={favs} onToggleFav={toggleFav} userPos={userPos} onFavChange={showToast} />
+            ))}
+          </div>
+        )}
 
-            {Object.entries(parCommerce).map(([commerce, offresComm]) => {
-              const offresCommNormales = offresComm.filter(o => !o.est_urgente);
-              if (offresCommNormales.length === 0) return null;
+        {loading && <div style={{ textAlign: "center", padding: 40, color: "#aaa" }}>Chargement...</div>}
 
-              return (
-                <div key={commerce} style={{ marginBottom: 20 }}>
-                  {offresComm.length > 1 && (
-                    <div style={{
-                      fontSize: 12, fontWeight: 700, color: "#FF6B00",
-                      padding: "8px 0", textTransform: "uppercase", letterSpacing: 0.5
-                    }}>
-                      {commerce} ({offresCommNormales.length})
-                    </div>
-                  )}
-                  {offresCommNormales.map(o => (
-                    <OffreCard key={o.id} offre={o} favs={favs} onToggleFav={toggleFav} userPos={userPos} />
-                  ))}
-                </div>
-              );
-            })}
+        {!loading && filtered.length === 0 && (
+          <div style={{ textAlign: "center", padding: "50px 20px" }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>🏷️</div>
+            <div style={{ color: "#666", fontSize: 15, fontWeight: 600 }}>Aucune offre</div>
           </div>
         )}
       </div>
 
       <NavBar active="feed" />
-
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes criticalPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-      `}</style>
     </div>
   );
 }
@@ -438,9 +419,7 @@ export function NavBar({ active }) {
     }}>
       {tabs.map(t => (
         <Link key={t.key} to={t.to} style={{ textDecoration: "none", flex: 1 }}>
-          <div style={{
-            display: "flex", flexDirection: "column", alignItems: "center", gap: 3
-          }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
             <span style={{ fontSize: 22 }}>{t.icon}</span>
             <span style={{
               fontSize: 11, fontWeight: active === t.key ? 700 : 500,
