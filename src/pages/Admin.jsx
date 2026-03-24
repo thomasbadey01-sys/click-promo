@@ -1,215 +1,197 @@
 import { useState, useEffect } from "react";
-import { Abonnement } from "../api/entities";
-import { Link } from "react-router-dom";
-
-const PLAN_PRIX = { starter: 29, pro: 79, business: 149, premium: 9.99 };
-const PLAN_LABEL = { starter: "Starter", pro: "Pro", business: "Business", premium: "Premium User" };
-const PLAN_COLOR = { starter: "#34C759", pro: "#FF6B00", business: "#AF52DE", premium: "#FFD700" };
-
-function MRRChart({ abonnements }) {
-  // Grouper par mois
-  const byMonth = {};
-  abonnements.filter(a => a.statut === "actif").forEach(a => {
-    const d = new Date(a.date_debut);
-    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
-    byMonth[key] = (byMonth[key] || 0) + (PLAN_PRIX[a.plan] || 0);
-  });
-  const months = Object.keys(byMonth).sort().slice(-6);
-  if (!months.length) return null;
-  const max = Math.max(...months.map(m => byMonth[m]), 1);
-  return (
-    <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 60, marginTop: 10 }}>
-      {months.map(m => (
-        <div key={m} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-          <div style={{ width: "100%", background: "#FF6B00", borderRadius: "4px 4px 0 0", height: `${(byMonth[m]/max)*52}px`, minHeight: 4 }} />
-          <div style={{ fontSize: 9, color: "#aaa" }}>{m.slice(5)}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
+import { Offre, Commercant, Abonnement } from "@/api/entities";
+import { DS, CPLogo } from "./Home";
 
 export default function Admin() {
-  const [abonnements, setAbonnements] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("overview");
 
   useEffect(() => {
-    Abonnement.list().then(data => { setAbonnements(data); setLoading(false); });
+    const load = async () => {
+      const [offres, commercants, abonnements] = await Promise.all([
+        Offre.list(),
+        Commercant.list().catch(() => []),
+        Abonnement.list().catch(() => [])
+      ]);
+
+      const abosActifs = abonnements.filter(a => a.statut === "active");
+      const mrr = abosActifs.reduce((s, a) => s + (a.montant_mensuel || 0), 0);
+      const arr = mrr * 12;
+
+      const parPlan = {};
+      abosActifs.forEach(a => {
+        parPlan[a.plan] = (parPlan[a.plan] || 0) + 1;
+      });
+
+      setStats({
+        offres, commercants, abonnements, abosActifs,
+        mrr, arr,
+        nbOffresActives: offres.filter(o => o.est_active).length,
+        totalVues: offres.reduce((s, o) => s + (o.nb_vues || 0), 0),
+        totalConv: offres.reduce((s, o) => s + (o.nb_conversions || 0), 0),
+        parPlan,
+      });
+      setLoading(false);
+    };
+    load();
   }, []);
 
-  const actifs = abonnements.filter(a => a.statut === "actif");
-  const mrr = actifs.reduce((s, a) => s + (PLAN_PRIX[a.plan] || 0), 0);
-  const arr = mrr * 12;
-  const commercants = actifs.filter(a => a.type_abonne === "commercant").length;
-  const users = actifs.filter(a => a.type_abonne === "user").length;
-  const churn = abonnements.filter(a => a.statut === "annulé").length;
-  const churnRate = abonnements.length > 0 ? ((churn / abonnements.length) * 100).toFixed(1) : "0.0";
+  if (loading) return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100vh", background: "#0d0d0d", gap: 16 }}>
+      <CPLogo size={52} white />
+      <div style={{ width: 32, height: 32, borderRadius: "50%", border: "3px solid #333", borderTop: `3px solid ${DS.primary}`, animation: "spin 0.8s linear infinite" }} />
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
 
-  // Distribution des plans
-  const planDist = {};
-  actifs.forEach(a => { planDist[a.plan] = (planDist[a.plan]||0)+1; });
+  const { mrr, arr, nbOffresActives, totalVues, totalConv, abosActifs, parPlan, offres } = stats;
+  const OBJECTIF_MRR = 5000;
+  const pctMrr = Math.min((mrr / OBJECTIF_MRR) * 100, 100);
+
+  const projections = [
+    { label: "50 commerçants Pro", mrr: 50 * 79, color: DS.primary },
+    { label: "100 commerçants Pro", mrr: 100 * 79, color: "#AF52DE" },
+    { label: "Mix optimal", mrr: 40 * 29 + 50 * 79 + 10 * 149, color: DS.success },
+  ];
 
   return (
-    <div style={{ background: "#F2F2F7", minHeight: "100vh", fontFamily: "'SF Pro Display', -apple-system, sans-serif", maxWidth: 430, margin: "0 auto" }}>
+    <div style={{ background: "#0d0d0d", minHeight: "100vh", fontFamily: DS.font, maxWidth: 430, margin: "0 auto" }}>
+
       {/* Header */}
-      <div style={{ background: "linear-gradient(135deg, #0f3460, #1a1a2e)", padding: "52px 20px 20px", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: -30, right: -30, width: 130, height: 130, borderRadius: "50%", background: "rgba(255,107,0,0.15)" }} />
-        <Link to="/Feed"><div style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginBottom: 10 }}>← App</div></Link>
-        <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 12 }}>Administration</div>
-        <div style={{ color: "white", fontSize: 20, fontWeight: 800, marginBottom: 16 }}>💰 Revenus & Abonnés</div>
-        <div style={{ display: "flex", gap: 6 }}>
-          {[{key:"overview",label:"Vue globale"},{key:"abonnes",label:"Abonnés"},{key:"plans",label:"Plans"}].map(t => (
-            <button key={t.key} onClick={() => setTab(t.key)} style={{ flex:1, background: tab===t.key?"#FF6B00":"rgba(255,255,255,0.1)", color:"white", border:"none", borderRadius:10, padding:"8px 4px", fontSize:11, fontWeight:600, cursor:"pointer" }}>
-              {t.label}
-            </button>
+      <div style={{ background: "linear-gradient(135deg, #0d0d0d, #1a0800)", padding: "52px 16px 18px", borderBottom: "1px solid #222", position: "sticky", top: 0, zIndex: 100 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+          <CPLogo size={32} white />
+          <div>
+            <div style={{ color: "white", fontSize: 17, fontWeight: 900 }}>Admin — Click & Promo</div>
+            <div style={{ color: "#666", fontSize: 11 }}>Dashboard interne</div>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 4, background: "#1a1a1a", borderRadius: DS.radius.md, padding: 4 }}>
+          {[{ key: "overview", label: "📊 Vue d'ensemble" }, { key: "revenue", label: "💰 Revenue" }, { key: "offres", label: "🏷️ Offres" }].map(t => (
+            <button key={t.key} onClick={() => setTab(t.key)} style={{
+              flex: 1, background: tab === t.key ? DS.primary : "transparent",
+              color: "white", border: "none", borderRadius: DS.radius.sm,
+              padding: "9px 4px", fontSize: 11, fontWeight: tab === t.key ? 700 : 400, cursor: "pointer",
+              transition: "all 0.2s"
+            }}>{t.label}</button>
           ))}
         </div>
       </div>
 
-      <div style={{ padding: "16px 16px 80px" }}>
-        {loading && <div style={{ textAlign:"center", padding:40, color:"#aaa" }}>Chargement...</div>}
+      <div style={{ padding: "16px 16px 60px" }}>
 
-        {/* OVERVIEW */}
-        {!loading && tab === "overview" && (
+        {/* ======= OVERVIEW ======= */}
+        {tab === "overview" && (
           <>
             {/* KPIs */}
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
               {[
-                { icon:"💶", val:`${mrr.toFixed(0)}€`, label:"MRR", sub:"Revenu mensuel récurrent", color:"#34C759" },
-                { icon:"📈", val:`${arr.toFixed(0)}€`, label:"ARR", sub:"Revenu annuel projeté", color:"#007AFF" },
-                { icon:"🏪", val:commercants, label:"Commerçants", sub:"abonnements actifs", color:"#FF6B00" },
-                { icon:"👤", val:users, label:"Users Premium", sub:"abonnements actifs", color:"#AF52DE" },
-              ].map((s,i) => (
-                <div key={i} style={{ background:"white", borderRadius:14, padding:14, boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
-                  <div style={{ fontSize:22, marginBottom:4 }}>{s.icon}</div>
-                  <div style={{ fontSize:22, fontWeight:800, color:s.color }}>{s.val}</div>
-                  <div style={{ fontSize:11, fontWeight:700, color:"#333" }}>{s.label}</div>
-                  <div style={{ fontSize:10, color:"#aaa" }}>{s.sub}</div>
+                { label: "MRR", val: `${mrr.toFixed(0)}€`, sub: "Revenus mensuels récurrents", color: DS.primary },
+                { label: "ARR", val: `${arr.toFixed(0)}€`, sub: "Revenus annuels projetés", color: "#AF52DE" },
+                { label: "Abonnés actifs", val: abosActifs.length, sub: "Commerçants payants", color: DS.success },
+                { label: "Offres actives", val: nbOffresActives, sub: `${offres.length} total`, color: "#007AFF" },
+              ].map((s, i) => (
+                <div key={i} style={{ background: "#1a1a1a", borderRadius: DS.radius.lg, padding: 14, border: "1px solid #2a2a2a" }}>
+                  <div style={{ fontSize: 24, fontWeight: 900, color: s.color, letterSpacing: -0.5 }}>{s.val}</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#ccc", marginTop: 2 }}>{s.label}</div>
+                  <div style={{ fontSize: 10, color: "#555", marginTop: 2 }}>{s.sub}</div>
                 </div>
               ))}
             </div>
 
-            {/* MRR Chart */}
-            <div style={{ background:"white", borderRadius:14, padding:16, marginBottom:14, boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
-              <div style={{ fontWeight:700, fontSize:14, marginBottom:4 }}>📊 Évolution MRR</div>
-              <MRRChart abonnements={abonnements} />
-              {!abonnements.length && <div style={{ textAlign:"center", color:"#ccc", fontSize:13, padding:20 }}>Aucun abonnement pour l'instant</div>}
+            {/* Objectif MRR */}
+            <div style={{ background: "#1a1a1a", borderRadius: DS.radius.lg, padding: 16, marginBottom: 14, border: "1px solid #2a2a2a" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+                <span style={{ color: "#ccc", fontWeight: 700, fontSize: 13 }}>🎯 Objectif MRR</span>
+                <span style={{ color: DS.primary, fontWeight: 900, fontSize: 13 }}>{mrr.toFixed(0)}€ / {OBJECTIF_MRR}€</span>
+              </div>
+              <div style={{ background: "#2a2a2a", borderRadius: DS.radius.full, height: 10, overflow: "hidden", marginBottom: 8 }}>
+                <div style={{ background: DS.gradient, height: "100%", borderRadius: DS.radius.full, width: `${pctMrr}%`, transition: "width 1.5s", boxShadow: `0 0 12px ${DS.primary}88` }} />
+              </div>
+              <div style={{ fontSize: 11, color: "#555" }}>{pctMrr.toFixed(1)}% de l'objectif mensuel atteint</div>
             </div>
 
-            {/* Churn */}
-            <div style={{ background:"white", borderRadius:14, padding:16, marginBottom:14, boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                <div>
-                  <div style={{ fontWeight:700, fontSize:14 }}>📉 Taux de churn</div>
-                  <div style={{ fontSize:12, color:"#aaa", marginTop:2 }}>{churn} résiliation{churn>1?"s":""} au total</div>
+            {/* Stats globales */}
+            <div style={{ background: "#1a1a1a", borderRadius: DS.radius.lg, padding: 16, border: "1px solid #2a2a2a", marginBottom: 14 }}>
+              <div style={{ color: "#ccc", fontWeight: 700, fontSize: 13, marginBottom: 12 }}>📈 Engagement</div>
+              {[
+                { label: "Total vues", val: totalVues.toLocaleString(), icon: "👁️" },
+                { label: "Total conversions", val: totalConv, icon: "🎁" },
+                { label: "Taux conv.", val: totalVues > 0 ? `${((totalConv / totalVues) * 100).toFixed(2)}%` : "0%", icon: "📊" },
+              ].map((r, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < 2 ? "1px solid #222" : "none" }}>
+                  <span style={{ color: "#888", fontSize: 13 }}>{r.icon} {r.label}</span>
+                  <span style={{ color: "white", fontWeight: 700, fontSize: 14 }}>{r.val}</span>
                 </div>
-                <div style={{ fontSize:28, fontWeight:900, color:parseFloat(churnRate)>10?"#FF3B30":"#34C759" }}>
-                  {churnRate}%
-                </div>
-              </div>
+              ))}
             </div>
 
-            {/* Lien vers page abonnement */}
-            <Link to="/Abonnement" style={{ textDecoration:"none" }}>
-              <div style={{ background:"linear-gradient(135deg, #FF6B00, #FF3B30)", borderRadius:14, padding:16, textAlign:"center" }}>
-                <div style={{ color:"white", fontWeight:700, fontSize:14 }}>🔗 Voir la page d'abonnement</div>
-                <div style={{ color:"rgba(255,255,255,0.7)", fontSize:12, marginTop:2 }}>Partager avec vos clients</div>
+            {/* Plans */}
+            {Object.keys(parPlan).length > 0 && (
+              <div style={{ background: "#1a1a1a", borderRadius: DS.radius.lg, padding: 16, border: "1px solid #2a2a2a" }}>
+                <div style={{ color: "#ccc", fontWeight: 700, fontSize: 13, marginBottom: 12 }}>💳 Répartition des plans</div>
+                {Object.entries(parPlan).map(([plan, count]) => (
+                  <div key={plan} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #222" }}>
+                    <span style={{ color: "#888", fontSize: 13, textTransform: "capitalize" }}>Plan {plan}</span>
+                    <span style={{ color: DS.primary, fontWeight: 700 }}>{count} abonné{count > 1 ? "s" : ""}</span>
+                  </div>
+                ))}
               </div>
-            </Link>
+            )}
           </>
         )}
 
-        {/* ABONNÉS */}
-        {!loading && tab === "abonnes" && (
+        {/* ======= REVENUE ======= */}
+        {tab === "revenue" && (
           <>
-            <div style={{ fontWeight:700, fontSize:15, marginBottom:12 }}>
-              {actifs.length} abonné{actifs.length>1?"s":""} actif{actifs.length>1?"s":""}
+            <div style={{ color: "#888", fontSize: 13, marginBottom: 14 }}>
+              Projections de revenus selon différents scénarios de croissance.
             </div>
-
-            {abonnements.length === 0 && (
-              <div style={{ textAlign:"center", padding:"40px 20px", background:"white", borderRadius:14 }}>
-                <div style={{ fontSize:48, marginBottom:10 }}>💳</div>
-                <div style={{ color:"#666", fontWeight:600 }}>Aucun abonnement</div>
-                <div style={{ color:"#aaa", fontSize:13, marginTop:4 }}>Les abonnés apparaîtront ici après paiement</div>
-              </div>
-            )}
-
-            {abonnements.map(a => (
-              <div key={a.id} style={{ background:"white", borderRadius:14, padding:14, marginBottom:10, boxShadow:"0 2px 6px rgba(0,0,0,0.05)" }}>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:6 }}>
-                  <div>
-                    <div style={{ fontWeight:600, fontSize:14 }}>{a.email || "—"}</div>
-                    <div style={{ fontSize:12, color:"#aaa", marginTop:1 }}>
-                      {a.type_abonne === "commercant" ? "🏪 Commerçant" : "👤 Utilisateur"}
-                      {a.nom_commerce ? ` · ${a.nom_commerce}` : ""}
-                    </div>
-                  </div>
-                  <div style={{ textAlign:"right" }}>
-                    <div style={{ fontSize:15, fontWeight:800, color:PLAN_COLOR[a.plan]||"#FF6B00" }}>
-                      {PLAN_PRIX[a.plan]||0}€/mois
-                    </div>
-                    <div style={{ fontSize:11, fontWeight:700, color:PLAN_COLOR[a.plan]||"#FF6B00", background:`${PLAN_COLOR[a.plan]||"#FF6B00"}18`, borderRadius:8, padding:"2px 6px", marginTop:2 }}>
-                      {PLAN_LABEL[a.plan]||a.plan}
-                    </div>
-                  </div>
+            {projections.map((p, i) => (
+              <div key={i} style={{ background: "#1a1a1a", borderRadius: DS.radius.lg, padding: 16, marginBottom: 10, border: "1px solid #2a2a2a" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <span style={{ color: "#ccc", fontSize: 13, fontWeight: 600 }}>{p.label}</span>
+                  <span style={{ color: p.color, fontWeight: 900, fontSize: 18 }}>{p.mrr.toLocaleString()}€/m</span>
                 </div>
-                <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-                  <span style={{ fontSize:11, background: a.statut==="actif"?"#34C75918":"#FF3B3018", color: a.statut==="actif"?"#34C759":"#FF3B30", borderRadius:8, padding:"2px 8px", fontWeight:600 }}>
-                    {a.statut==="actif"?"✅ Actif":"❌ Annulé"}
-                  </span>
-                  <span style={{ fontSize:11, color:"#aaa" }}>
-                    Depuis {a.date_debut ? new Date(a.date_debut).toLocaleDateString("fr-FR") : "—"}
-                  </span>
+                <div style={{ background: "#2a2a2a", borderRadius: DS.radius.full, height: 6 }}>
+                  <div style={{ background: `linear-gradient(90deg, ${p.color}99, ${p.color})`, height: "100%", borderRadius: DS.radius.full, width: `${Math.min((p.mrr / 15000) * 100, 100)}%` }} />
+                </div>
+                <div style={{ fontSize: 11, color: "#555", marginTop: 5 }}>ARR estimé : {(p.mrr * 12).toLocaleString()}€</div>
+              </div>
+            ))}
+
+            <div style={{ background: `linear-gradient(135deg, ${DS.primary}22, ${DS.secondary}11)`, borderRadius: DS.radius.lg, padding: 16, marginTop: 14, border: `1px solid ${DS.primary}33` }}>
+              <div style={{ color: DS.primary, fontWeight: 700, fontSize: 13, marginBottom: 8 }}>💡 Breakeven estimé</div>
+              <div style={{ color: "#ccc", fontSize: 13, lineHeight: 1.7 }}>
+                Avec 15 commerçants Pro (79€) = 1 185€/mois<br />
+                Infrastructure Base44 = ~50€/mois<br />
+                <strong style={{ color: "white" }}>→ Rentable dès le 1er mois avec 20 commerçants</strong>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ======= OFFRES ======= */}
+        {tab === "offres" && (
+          <>
+            <div style={{ color: "#888", fontSize: 13, marginBottom: 14 }}>
+              {offres.filter(o => o.est_active).length} actives · {offres.filter(o => !o.est_active).length} inactives
+            </div>
+            {offres.sort((a, b) => (b.nb_vues || 0) - (a.nb_vues || 0)).slice(0, 20).map(o => (
+              <div key={o.id} style={{ background: "#1a1a1a", borderRadius: DS.radius.md, padding: 12, marginBottom: 8, border: "1px solid #222", display: "flex", gap: 10, alignItems: "center" }}>
+                <img src={o.image_url} alt="" style={{ width: 44, height: 44, borderRadius: DS.radius.sm, objectFit: "cover", flexShrink: 0 }}
+                  onError={e => e.target.style.display = "none"} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ color: "white", fontSize: 12, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{o.titre}</div>
+                  <div style={{ color: "#555", fontSize: 10, marginTop: 2 }}>{o.ville} · {o.nb_vues || 0} vues · {o.nb_conversions || 0} conv.</div>
+                </div>
+                <div style={{ flexShrink: 0, textAlign: "right" }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: DS.primary }}>-{o.valeur_reduction}%</div>
+                  <div style={{ fontSize: 10, color: o.est_active ? DS.success : "#555" }}>{o.est_active ? "● actif" : "○ inactif"}</div>
                 </div>
               </div>
             ))}
-          </>
-        )}
-
-        {/* PLANS */}
-        {!loading && tab === "plans" && (
-          <>
-            <div style={{ fontWeight:700, fontSize:15, marginBottom:12 }}>Distribution des plans</div>
-            {Object.keys(PLAN_LABEL).map(planId => {
-              const count = planDist[planId] || 0;
-              const rev = count * (PLAN_PRIX[planId]||0);
-              const pct = actifs.length > 0 ? (count/actifs.length)*100 : 0;
-              return (
-                <div key={planId} style={{ background:"white", borderRadius:14, padding:14, marginBottom:10, boxShadow:"0 2px 6px rgba(0,0,0,0.05)" }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-                    <div style={{ fontWeight:700, fontSize:14, color:PLAN_COLOR[planId] }}>{PLAN_LABEL[planId]}</div>
-                    <div style={{ textAlign:"right" }}>
-                      <div style={{ fontWeight:800, fontSize:15, color:"#1a1a1a" }}>{count} abonné{count>1?"s":""}</div>
-                      <div style={{ fontSize:12, color:"#34C759", fontWeight:600 }}>{rev.toFixed(0)}€/mois</div>
-                    </div>
-                  </div>
-                  <div style={{ background:"#f2f2f7", borderRadius:6, height:8 }}>
-                    <div style={{ background:PLAN_COLOR[planId], height:"100%", borderRadius:6, width:`${Math.min(pct,100)}%`, transition:"width 0.8s" }} />
-                  </div>
-                  <div style={{ fontSize:11, color:"#aaa", marginTop:4 }}>{pct.toFixed(0)}% des abonnés</div>
-                </div>
-              );
-            })}
-
-            {/* Projection */}
-            <div style={{ background:"linear-gradient(135deg,#1a1a2e,#0f3460)", borderRadius:14, padding:16, marginTop:6 }}>
-              <div style={{ color:"rgba(255,255,255,0.7)", fontSize:12, marginBottom:6 }}>🎯 Objectif 100 commerçants</div>
-              {[
-                { plan:"starter", target:60, rev:60*29 },
-                { plan:"pro", target:30, rev:30*79 },
-                { plan:"business", target:10, rev:10*149 },
-              ].map((o,i) => (
-                <div key={i} style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
-                  <span style={{ color:"rgba(255,255,255,0.7)", fontSize:12 }}>{PLAN_LABEL[o.plan]} × {o.target}</span>
-                  <span style={{ color:"white", fontWeight:700, fontSize:12 }}>{o.rev}€/mois</span>
-                </div>
-              ))}
-              <div style={{ borderTop:"1px solid rgba(255,255,255,0.1)", marginTop:8, paddingTop:8, display:"flex", justifyContent:"space-between" }}>
-                <span style={{ color:"rgba(255,255,255,0.8)", fontSize:13, fontWeight:600 }}>Total projeté</span>
-                <span style={{ color:"#FF6B00", fontWeight:900, fontSize:16 }}>6 110€/mois</span>
-              </div>
-            </div>
           </>
         )}
       </div>
