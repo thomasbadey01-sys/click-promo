@@ -26,6 +26,23 @@ function formatDist(km) {
   return `${km.toFixed(1)}km`;
 }
 
+function SkeletonCard() {
+  return (
+    <div style={{
+      background: "#f0f0f0", borderRadius: 16, overflow: "hidden",
+      boxShadow: "0 2px 12px rgba(0,0,0,0.08)", marginBottom: 16,
+      animation: "pulse 2s infinite"
+    }}>
+      <div style={{ height: 175, background: "#e0e0e0" }} />
+      <div style={{ padding: "12px 14px" }}>
+        <div style={{ height: 12, background: "#e0e0e0", borderRadius: 4, marginBottom: 8, width: "60%" }} />
+        <div style={{ height: 16, background: "#e0e0e0", borderRadius: 4, marginBottom: 8, width: "90%" }} />
+        <div style={{ height: 12, background: "#e0e0e0", borderRadius: 4, width: "40%" }} />
+      </div>
+    </div>
+  );
+}
+
 function CountdownTimer({ dateFin }) {
   const [timeLeft, setTimeLeft] = useState("");
   const [isUrgent, setIsUrgent] = useState(false);
@@ -60,10 +77,19 @@ function CountdownTimer({ dateFin }) {
   );
 }
 
-function OffreCard({ offre, favs, onToggleFav, userPos }) {
+function OffreCard({ offre, favs, onToggleFav, userPos, onFavChange }) {
   const isFav = favs.includes(offre.id);
   const stockPct = offre.stock_initial ? (offre.stock_restant / offre.stock_initial) * 100 : 100;
   const dist = userPos && offre.latitude ? haversine(userPos.lat, userPos.lng, offre.latitude, offre.longitude) : null;
+
+  const handleToggleFav = (e) => {
+    e.preventDefault();
+    onToggleFav(offre.id);
+    // Haptic feedback
+    if (navigator.vibrate) navigator.vibrate(10);
+    // Toast
+    onFavChange(!isFav, offre.titre);
+  };
 
   return (
     <Link to={`/OffreDetail?id=${offre.id}`} style={{ textDecoration: "none" }}>
@@ -72,7 +98,7 @@ function OffreCard({ offre, favs, onToggleFav, userPos }) {
         boxShadow: "0 2px 12px rgba(0,0,0,0.08)", marginBottom: 16
       }}>
         <div style={{ position: "relative", height: 175 }}>
-          <img src={offre.image_url} alt={offre.titre}
+          <img src={offre.image_url} alt={offre.titre} loading="lazy"
             style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           <div style={{
             position: "absolute", top: 12, left: 12,
@@ -83,14 +109,14 @@ function OffreCard({ offre, favs, onToggleFav, userPos }) {
             -{offre.valeur_reduction}{offre.type_reduction === "pourcentage" ? "%" : "€"}
           </div>
           <button
-            onClick={(e) => { e.preventDefault(); onToggleFav(offre.id); }}
+            onClick={handleToggleFav}
             style={{
               position: "absolute", top: 10, right: 12,
               background: "rgba(255,255,255,0.92)", border: "none",
               borderRadius: "50%", width: 36, height: 36,
               fontSize: 18, cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.15)"
+              boxShadow: "0 1px 4px rgba(0,0,0,0.15)", transition: "transform 0.2s"
             }}
           >
             {isFav ? "❤️" : "🤍"}
@@ -128,11 +154,11 @@ function OffreCard({ offre, favs, onToggleFav, userPos }) {
               {offre.prix_promo > 0 && (
                 <span style={{ fontSize: 20, fontWeight: 800, color: "#FF3B30" }}>{offre.prix_promo}€</span>
               )}
-              {offre.prix_original > 0 && (
+              {offre.prix_original > 0 && offre.prix_original !== offre.prix_promo && (
                 <span style={{ fontSize: 14, color: "#aaa", textDecoration: "line-through" }}>{offre.prix_original}€</span>
               )}
             </div>
-            {offre.stock_restant !== undefined && (
+            {offre.stock_restant !== undefined && offre.stock_restant !== null && (
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontSize: 11, color: stockPct < 30 ? "#FF3B30" : "#888", fontWeight: 600 }}>
                   {offre.stock_restant} restant{offre.stock_restant > 1 ? "s" : ""}
@@ -163,9 +189,9 @@ export default function Feed() {
   const [recherche, setRecherche] = useState("");
   const [tri, setTri] = useState("proximite");
   const [userPos, setUserPos] = useState(null);
-  const [geoStatus, setGeoStatus] = useState("idle"); // idle | loading | ok | error
+  const [geoStatus, setGeoStatus] = useState("idle");
+  const [toast, setToast] = useState(null);
 
-  // Géolocalisation au chargement
   useEffect(() => {
     if (!navigator.geolocation) return;
     setGeoStatus("loading");
@@ -192,7 +218,11 @@ export default function Feed() {
     localStorage.setItem("cp_favs", JSON.stringify(newFavs));
   };
 
-  // Enrichir avec distance
+  const showToast = (added, title) => {
+    setToast({ added, title });
+    setTimeout(() => setToast(null), 2500);
+  };
+
   const offresAvecDist = offres.map(o => ({
     ...o,
     dist: userPos && o.latitude ? haversine(userPos.lat, userPos.lng, o.latitude, o.longitude) : null
@@ -215,11 +245,27 @@ export default function Feed() {
 
   return (
     <div style={{ background: "#F8F8F8", minHeight: "100vh", fontFamily: "'SF Pro Display', -apple-system, sans-serif", maxWidth: 430, margin: "0 auto" }}>
-      {/* Header sticky */}
+      {/* Toast notification */}
+      {toast && (
+        <div style={{
+          position: "fixed", top: 80, left: 16, right: 16, zIndex: 1000,
+          background: toast.added ? "#34C759" : "#FF3B30",
+          color: "white", borderRadius: 12, padding: "12px 16px",
+          display: "flex", alignItems: "center", gap: 10,
+          boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+          animation: "slideUp 0.3s ease-out",
+          fontWeight: 600, fontSize: 14
+        }}>
+          {toast.added ? "❤️" : "💔"} {toast.added ? "Ajouté aux favoris" : "Retiré des favoris"} — {toast.title}
+        </div>
+      )}
+
+      {/* Header sticky — fix padding-top */}
       <div style={{
         background: "linear-gradient(135deg, #FF6B00, #FF3B30)",
         padding: "50px 20px 16px",
-        position: "sticky", top: 0, zIndex: 100
+        position: "sticky", top: 0, zIndex: 100,
+        paddingTop: "max(50px, env(safe-area-inset-top))"
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
           <div>
@@ -235,15 +281,17 @@ export default function Feed() {
             <div style={{ color: "white", fontSize: 22, fontWeight: 800 }}>Click & Promo</div>
           </div>
           <Link to="/Profil" style={{ textDecoration: "none" }}>
-            <div style={{
-              background: "rgba(255,255,255,0.25)", borderRadius: "50%",
-              width: 40, height: 40, display: "flex", alignItems: "center",
-              justifyContent: "center", color: "white", fontSize: 20
-            }}>👤</div>
+            <button style={{
+              background: "rgba(255,255,255,0.25)", border: "none",
+              borderRadius: "50%", width: 40, height: 40,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "white", fontSize: 20, cursor: "pointer"
+            }} onClick={() => navigator.vibrate && navigator.vibrate(10)}>
+              👤
+            </button>
           </Link>
         </div>
 
-        {/* Recherche */}
         <div style={{
           background: "rgba(255,255,255,0.95)", borderRadius: 14,
           display: "flex", alignItems: "center", padding: "10px 14px", gap: 8
@@ -252,7 +300,7 @@ export default function Feed() {
           <input
             value={recherche}
             onChange={e => setRecherche(e.target.value)}
-            placeholder="Rechercher une offre ou un commerce..."
+            placeholder="Rechercher une offre..."
             style={{ border: "none", outline: "none", flex: 1, fontSize: 14, background: "transparent", color: "#333" }}
           />
           {recherche && (
@@ -304,8 +352,15 @@ export default function Feed() {
           </select>
         </div>
 
+        {/* Skeleton loading */}
+        {loading && (
+          <>
+            {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
+          </>
+        )}
+
         {/* Offres urgentes */}
-        {offresUrgentes.length > 0 && (
+        {!loading && offresUrgentes.length > 0 && (
           <div style={{ marginBottom: 6 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
               <span style={{ fontSize: 16 }}>🔥</span>
@@ -315,13 +370,13 @@ export default function Feed() {
               </span>
             </div>
             {offresUrgentes.map(o => (
-              <OffreCard key={o.id} offre={o} favs={favs} onToggleFav={toggleFav} userPos={userPos} />
+              <OffreCard key={o.id} offre={o} favs={favs} onToggleFav={toggleFav} userPos={userPos} onFavChange={showToast} />
             ))}
           </div>
         )}
 
         {/* Autres offres */}
-        {offresNormales.length > 0 && (
+        {!loading && offresNormales.length > 0 && (
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
               <span style={{ fontSize: 16 }}>✨</span>
@@ -330,12 +385,10 @@ export default function Feed() {
               </span>
             </div>
             {offresNormales.map(o => (
-              <OffreCard key={o.id} offre={o} favs={favs} onToggleFav={toggleFav} userPos={userPos} />
+              <OffreCard key={o.id} offre={o} favs={favs} onToggleFav={toggleFav} userPos={userPos} onFavChange={showToast} />
             ))}
           </div>
         )}
-
-        {loading && <div style={{ textAlign: "center", padding: 40, color: "#999" }}>Chargement...</div>}
 
         {!loading && filtered.length === 0 && (
           <div style={{ textAlign: "center", padding: "50px 20px" }}>
@@ -345,12 +398,22 @@ export default function Feed() {
               marginTop: 14, background: "#FF6B00", color: "white",
               border: "none", borderRadius: 12, padding: "10px 20px",
               fontSize: 14, fontWeight: 600, cursor: "pointer"
-            }}>
-              Voir toutes les offres
-            </button>
+            }}>Voir toutes les offres</button>
           </div>
         )}
       </div>
+
+      {/* Style global pour animations */}
+      <style>{`
+        @keyframes slideUp {
+          from { transform: translateY(-20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
+        }
+      `}</style>
 
       <NavBar active="feed" />
     </div>
@@ -372,7 +435,8 @@ export function NavBar({ active }) {
       background: "white", borderTop: "1px solid #f0f0f0",
       display: "flex", justifyContent: "space-around",
       padding: "10px 0 20px",
-      boxShadow: "0 -2px 16px rgba(0,0,0,0.06)", zIndex: 200
+      boxShadow: "0 -2px 16px rgba(0,0,0,0.06)", zIndex: 200,
+      paddingBottom: "max(20px, env(safe-area-inset-bottom))"
     }}>
       {tabs.map(t => (
         <Link key={t.key} to={t.to} style={{ textDecoration: "none", flex: 1 }}>
