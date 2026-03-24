@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Offre } from "../api/entities";
 import { Link } from "react-router-dom";
 
@@ -24,6 +24,23 @@ function haversine(lat1, lon1, lat2, lon2) {
 function formatDist(km) {
   if (km < 1) return `${Math.round(km * 1000)}m`;
   return `${km.toFixed(1)}km`;
+}
+
+function SkeletonCard() {
+  return (
+    <div style={{
+      background: "#f0f0f0", borderRadius: 16, overflow: "hidden",
+      boxShadow: "0 2px 12px rgba(0,0,0,0.08)", marginBottom: 16,
+      animation: "pulse 2s infinite"
+    }}>
+      <div style={{ height: 175, background: "#e0e0e0" }} />
+      <div style={{ padding: "12px 14px" }}>
+        <div style={{ height: 12, background: "#e0e0e0", borderRadius: 4, marginBottom: 8, width: "60%" }} />
+        <div style={{ height: 16, background: "#e0e0e0", borderRadius: 4, marginBottom: 8, width: "90%" }} />
+        <div style={{ height: 12, background: "#e0e0e0", borderRadius: 4, width: "40%" }} />
+      </div>
+    </div>
+  );
 }
 
 function CountdownTimer({ dateFin }) {
@@ -68,7 +85,9 @@ function OffreCard({ offre, favs, onToggleFav, userPos, onFavChange }) {
   const handleToggleFav = (e) => {
     e.preventDefault();
     onToggleFav(offre.id);
+    // Haptic feedback
     if (navigator.vibrate) navigator.vibrate(10);
+    // Toast
     onFavChange(!isFav, offre.titre);
   };
 
@@ -80,8 +99,7 @@ function OffreCard({ offre, favs, onToggleFav, userPos, onFavChange }) {
       }}>
         <div style={{ position: "relative", height: 175 }}>
           <img src={offre.image_url} alt={offre.titre} loading="lazy"
-            style={{ width: "100%", height: "100%", objectFit: "cover" }} 
-            onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&q=80"; }} />
+            style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           <div style={{
             position: "absolute", top: 12, left: 12,
             background: "#FF3B30", color: "white",
@@ -90,14 +108,17 @@ function OffreCard({ offre, favs, onToggleFav, userPos, onFavChange }) {
           }}>
             -{offre.valeur_reduction}{offre.type_reduction === "pourcentage" ? "%" : "€"}
           </div>
-          <button onClick={handleToggleFav} style={{
-            position: "absolute", top: 10, right: 12,
-            background: "rgba(255,255,255,0.92)", border: "none",
-            borderRadius: "50%", width: 36, height: 36,
-            fontSize: 18, cursor: "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.15)", transition: "transform 0.2s"
-          }}>
+          <button
+            onClick={handleToggleFav}
+            style={{
+              position: "absolute", top: 10, right: 12,
+              background: "rgba(255,255,255,0.92)", border: "none",
+              borderRadius: "50%", width: 36, height: 36,
+              fontSize: 18, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.15)", transition: "transform 0.2s"
+            }}
+          >
             {isFav ? "❤️" : "🤍"}
           </button>
           {offre.est_urgente && (
@@ -161,7 +182,6 @@ function OffreCard({ offre, favs, onToggleFav, userPos, onFavChange }) {
 export default function Feed() {
   const [offres, setOffres] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [categorie, setCategorie] = useState("Tout");
   const [favs, setFavs] = useState(() => {
     try { return JSON.parse(localStorage.getItem("cp_favs") || "[]"); } catch { return []; }
@@ -171,8 +191,6 @@ export default function Feed() {
   const [userPos, setUserPos] = useState(null);
   const [geoStatus, setGeoStatus] = useState("idle");
   const [toast, setToast] = useState(null);
-  const touchStartY = useRef(0);
-  const scrollContainer = useRef(null);
 
   useEffect(() => {
     if (!navigator.geolocation) return;
@@ -187,37 +205,12 @@ export default function Feed() {
     );
   }, []);
 
-  const loadOffres = async () => {
-    try {
-      const data = await Offre.list();
-      setOffres(data.filter(o => o.est_active));
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   useEffect(() => {
-    loadOffres();
-    setLoading(false);
+    Offre.list().then(data => {
+      setOffres(data.filter(o => o.est_active));
+      setLoading(false);
+    });
   }, []);
-
-  // Pull-to-refresh
-  const handleTouchStart = (e) => {
-    touchStartY.current = e.touches[0].clientY;
-  };
-
-  const handleTouchMove = (e) => {
-    const scrollTop = scrollContainer.current?.scrollTop || 0;
-    if (scrollTop === 0) {
-      const diff = e.touches[0].clientY - touchStartY.current;
-      if (diff > 60 && !refreshing) {
-        setRefreshing(true);
-        loadOffres().then(() => {
-          setTimeout(() => setRefreshing(false), 800);
-        });
-      }
-    }
-  };
 
   const toggleFav = (id) => {
     const newFavs = favs.includes(id) ? favs.filter(f => f !== id) : [...favs, id];
@@ -251,50 +244,51 @@ export default function Feed() {
   const offresNormales = filtered.filter(o => !o.est_urgente);
 
   return (
-    <div 
-      ref={scrollContainer}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      style={{ background: "#F8F8F8", minHeight: "100vh", fontFamily: "'SF Pro Display', -apple-system, sans-serif", maxWidth: 430, margin: "0 auto", overflowY: "auto" }}>
-      
-      {/* Pull-to-refresh indicator */}
-      {refreshing && (
-        <div style={{ textAlign: "center", padding: "20px", color: "#FF6B00", fontWeight: 700 }}>
-          ⟳ Actualisation...
-        </div>
-      )}
-
-      {/* Toast */}
+    <div style={{ background: "#F8F8F8", minHeight: "100vh", fontFamily: "'SF Pro Display', -apple-system, sans-serif", maxWidth: 430, margin: "0 auto" }}>
+      {/* Toast notification */}
       {toast && (
         <div style={{
-          position: "fixed", top: 60, left: "50%", transform: "translateX(-50%)",
-          background: toast.added ? "#34C759" : "#FF3B30", color: "white",
-          borderRadius: 10, padding: "10px 16px", fontSize: 13, fontWeight: 600,
-          zIndex: 999, boxShadow: "0 4px 12px rgba(0,0,0,0.2)"
+          position: "fixed", top: 80, left: 16, right: 16, zIndex: 1000,
+          background: toast.added ? "#34C759" : "#FF3B30",
+          color: "white", borderRadius: 12, padding: "12px 16px",
+          display: "flex", alignItems: "center", gap: 10,
+          boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+          animation: "slideUp 0.3s ease-out",
+          fontWeight: 600, fontSize: 14
         }}>
-          {toast.added ? `❤️ ${toast.title} ajouté aux favoris` : `💔 ${toast.title} retiré des favoris`}
+          {toast.added ? "❤️" : "💔"} {toast.added ? "Ajouté aux favoris" : "Retiré des favoris"} — {toast.title}
         </div>
       )}
 
-      {/* Header sticky */}
+      {/* Header sticky — fix padding-top */}
       <div style={{
         background: "linear-gradient(135deg, #FF6B00, #FF3B30)",
         padding: "50px 20px 16px",
-        position: "sticky", top: 0, zIndex: 100
+        position: "sticky", top: 0, zIndex: 100,
+        paddingTop: "max(50px, env(safe-area-inset-top))"
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
           <div>
-            <div style={{ color: "rgba(255,255,255,0.8)", fontSize: 13 }}>
-              {geoStatus === "ok" ? "📍 Près de vous" : geoStatus === "loading" ? "⏳ Localisation..." : "📍 Paris"}
+            <div style={{ color: "rgba(255,255,255,0.8)", fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>
+              {geoStatus === "ok" && userPos ? (
+                <span>📍 Près de vous</span>
+              ) : geoStatus === "loading" ? (
+                <span>⏳ Localisation...</span>
+              ) : (
+                <span>📍 Paris, France</span>
+              )}
             </div>
             <div style={{ color: "white", fontSize: 22, fontWeight: 800 }}>Click & Promo</div>
           </div>
           <Link to="/Profil" style={{ textDecoration: "none" }}>
-            <div style={{
-              background: "rgba(255,255,255,0.25)", borderRadius: "50%",
-              width: 40, height: 40, display: "flex", alignItems: "center",
-              justifyContent: "center", color: "white", fontSize: 20
-            }}>👤</div>
+            <button style={{
+              background: "rgba(255,255,255,0.25)", border: "none",
+              borderRadius: "50%", width: 40, height: 40,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "white", fontSize: 20, cursor: "pointer"
+            }} onClick={() => navigator.vibrate && navigator.vibrate(10)}>
+              👤
+            </button>
           </Link>
         </div>
 
@@ -309,12 +303,15 @@ export default function Feed() {
             placeholder="Rechercher une offre..."
             style={{ border: "none", outline: "none", flex: 1, fontSize: 14, background: "transparent", color: "#333" }}
           />
+          {recherche && (
+            <button onClick={() => setRecherche("")} style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 16 }}>✕</button>
+          )}
         </div>
       </div>
 
       <div style={{ padding: "0 16px 100px" }}>
         {/* Catégories */}
-        <div style={{ overflowX: "auto", display: "flex", gap: 8, padding: "14px 0", scrollbarWidth: "none" }}>
+        <div style={{ overflowX: "auto", display: "flex", gap: 8, padding: "14px 0 10px", scrollbarWidth: "none" }}>
           {CATEGORIES.map(cat => (
             <button
               key={cat}
@@ -325,7 +322,8 @@ export default function Feed() {
                 color: categorie === cat ? "white" : "#444",
                 border: categorie === cat ? "none" : "1px solid #e0e0e0",
                 borderRadius: 20, padding: "7px 14px", fontSize: 13, fontWeight: 600,
-                cursor: "pointer", whiteSpace: "nowrap"
+                cursor: "pointer", whiteSpace: "nowrap",
+                boxShadow: categorie === cat ? "0 2px 8px rgba(255,107,0,0.35)" : "none"
               }}
             >
               {CAT_ICONS[cat]} {cat}
@@ -354,12 +352,19 @@ export default function Feed() {
           </select>
         </div>
 
+        {/* Skeleton loading */}
+        {loading && (
+          <>
+            {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
+          </>
+        )}
+
         {/* Offres urgentes */}
-        {offresUrgentes.length > 0 && (
+        {!loading && offresUrgentes.length > 0 && (
           <div style={{ marginBottom: 6 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
               <span style={{ fontSize: 16 }}>🔥</span>
-              <span style={{ fontWeight: 700, fontSize: 15 }}>Offres urgentes</span>
+              <span style={{ fontWeight: 700, fontSize: 15, color: "#1a1a1a" }}>Offres urgentes</span>
               <span style={{ background: "#FF3B30", color: "white", borderRadius: 10, padding: "1px 8px", fontSize: 11, fontWeight: 700 }}>
                 {offresUrgentes.length}
               </span>
@@ -371,11 +376,11 @@ export default function Feed() {
         )}
 
         {/* Autres offres */}
-        {offresNormales.length > 0 && (
+        {!loading && offresNormales.length > 0 && (
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
               <span style={{ fontSize: 16 }}>✨</span>
-              <span style={{ fontWeight: 700, fontSize: 15 }}>
+              <span style={{ fontWeight: 700, fontSize: 15, color: "#1a1a1a" }}>
                 {userPos ? "Près de vous" : "Toutes les offres"}
               </span>
             </div>
@@ -385,15 +390,30 @@ export default function Feed() {
           </div>
         )}
 
-        {loading && <div style={{ textAlign: "center", padding: 40, color: "#aaa" }}>Chargement...</div>}
-
         {!loading && filtered.length === 0 && (
           <div style={{ textAlign: "center", padding: "50px 20px" }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>🏷️</div>
-            <div style={{ color: "#666", fontSize: 15, fontWeight: 600 }}>Aucune offre</div>
+            <div style={{ color: "#666", fontSize: 15, fontWeight: 600 }}>Aucune offre dans cette catégorie</div>
+            <button onClick={() => setCategorie("Tout")} style={{
+              marginTop: 14, background: "#FF6B00", color: "white",
+              border: "none", borderRadius: 12, padding: "10px 20px",
+              fontSize: 14, fontWeight: 600, cursor: "pointer"
+            }}>Voir toutes les offres</button>
           </div>
         )}
       </div>
+
+      {/* Style global pour animations */}
+      <style>{`
+        @keyframes slideUp {
+          from { transform: translateY(-20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
+        }
+      `}</style>
 
       <NavBar active="feed" />
     </div>
@@ -415,7 +435,8 @@ export function NavBar({ active }) {
       background: "white", borderTop: "1px solid #f0f0f0",
       display: "flex", justifyContent: "space-around",
       padding: "10px 0 20px",
-      boxShadow: "0 -2px 16px rgba(0,0,0,0.06)", zIndex: 200
+      boxShadow: "0 -2px 16px rgba(0,0,0,0.06)", zIndex: 200,
+      paddingBottom: "max(20px, env(safe-area-inset-bottom))"
     }}>
       {tabs.map(t => (
         <Link key={t.key} to={t.to} style={{ textDecoration: "none", flex: 1 }}>
