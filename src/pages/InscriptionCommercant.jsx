@@ -16,16 +16,16 @@ const STEPS = [
   { id: 5, title: "Validation", icon: "✅", desc: "Récapitulatif & envoi" },
 ];
 
-const IcCheck = (c=DS.success,s=16) => <svg width={s} height={s} fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>;
-const IcAlert = (c=DS.danger,s=16) => <svg width={s} height={s} fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>;
-const IcShield = (c=DS.brand,s=20) => <svg width={s} height={s} fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
-const IcStar = (c="#F59E0B",s=14) => <svg width={s} height={s} fill={c} viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>;
+function IcCheck({ c, s=16 }) { const col = c || "#22C55E"; return <svg width={s} height={s} fill="none" stroke={col} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>; }
+function IcAlert({ c, s=16 }) { const col = c || "#E53E3E"; return <svg width={s} height={s} fill="none" stroke={col} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>; }
+function IcShield({ c, s=20 }) { const col = c || "#FF6B35"; return <svg width={s} height={s} fill="none" stroke={col} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>; }
+function IcStar({ c="#F59E0B", s=14 }) { return <svg width={s} height={s} fill={c} viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>; }
 
 function FieldOk({ ok, msg }) {
   if (!ok && !msg) return null;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 4, fontSize: 11 }}>
-      {ok ? IcCheck(DS.success, 12) : IcAlert(DS.danger, 12)}
+      {ok ? <IcCheck c={DS.success} s={12} /> : <IcAlert c={DS.danger} s={12} />}
       <span style={{ color: ok ? DS.success : DS.danger }}>{msg}</span>
     </div>
   );
@@ -181,7 +181,7 @@ export default function InscriptionCommercant() {
           { label: "Acceptation de la charte", ok: true },
         ].map((c, i) => (
           <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: i < 4 ? `1px solid ${DS.ink10}` : "none" }}>
-            {IcCheck(DS.success, 14)}
+            {<IcCheck c={DS.success} s={14} />}
             <span style={{ fontSize: 13, color: DS.ink }}>{c.label}</span>
           </div>
         ))}
@@ -222,7 +222,7 @@ export default function InscriptionCommercant() {
           {STEPS.map(s => (
             <div key={s.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
               <div style={{ width: 28, height: 28, borderRadius: "50%", background: s.id < step ? DS.success : s.id === step ? DS.brand : "rgba(255,255,255,.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, border: s.id === step ? `2px solid ${DS.brand}` : "none", transition: "all .3s" }}>
-                {s.id < step ? IcCheck(DS.white, 12) : <span style={{ fontSize: 10 }}>{s.icon}</span>}
+                {s.id < step ? <IcCheck c={DS.white} s={12} /> : <span style={{ fontSize: 10 }}>{s.icon}</span>}
               </div>
             </div>
           ))}
@@ -304,7 +304,7 @@ export default function InscriptionCommercant() {
         {step === 2 && (
           <div>
             <div style={{ background: `${DS.brand}08`, borderRadius: DS.lg, padding: 14, marginBottom: 12, display: "flex", gap: 10, alignItems: "flex-start" }}>
-              {IcShield(DS.brand, 20)}
+              {<IcShield c={DS.brand} s={20} />}
               <div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: DS.ink, marginBottom: 2 }}>Vérification légale</div>
                 <div style={{ fontSize: 12, color: DS.ink60, lineHeight: 1.5 }}>Ces informations sont confidentielles et servent uniquement à vérifier l'authenticité de votre établissement. Elles ne sont jamais affichées publiquement.</div>
@@ -394,7 +394,7 @@ export default function InscriptionCommercant() {
               <div style={{ fontSize: 12, fontWeight: 700, color: DS.brand, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.7 }}>💡 Conseils</div>
               {["Soyez précis sur vos spécialités et votre zone", "Mentionnez ce qui vous différencie de la concurrence", "Les commerçants avec une bonne description reçoivent 3x plus de clics"].map((tip, i) => (
                 <div key={i} style={{ display: "flex", gap: 7, marginBottom: 6, fontSize: 12, color: DS.ink60, alignItems: "flex-start" }}>
-                  {IcStar()}
+                  <IcStar />
                   <span>{tip}</span>
                 </div>
               ))}
@@ -411,7 +411,7 @@ export default function InscriptionCommercant() {
 
               {errs.horaires && (
                 <div style={{ background: `${DS.danger}10`, border: `1px solid ${DS.danger}`, borderRadius: DS.md, padding: "10px 12px", marginBottom: 12, display: "flex", gap: 7, alignItems: "center" }}>
-                  {IcAlert(DS.danger, 14)}
+                  {<IcAlert c={DS.danger} s={14} />}
                   <span style={{ fontSize: 12, color: DS.danger }}>{errs.horaires}</span>
                 </div>
               )}
@@ -480,7 +480,7 @@ export default function InscriptionCommercant() {
               ].map((c, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 0", borderBottom: i < 6 ? `1px solid ${DS.ink05}` : "none" }}>
                   <div style={{ width: 20, height: 20, borderRadius: "50%", background: c.ok ? `${DS.success}15` : `${DS.danger}12`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    {c.ok ? IcCheck(DS.success, 11) : IcAlert(DS.danger, 11)}
+                    {c.ok ? <IcCheck c={DS.success} s={11} /> : <IcAlert c={DS.danger} s={11} />}
                   </div>
                   <span style={{ fontSize: 12, color: c.ok ? DS.ink : DS.ink40, fontWeight: c.ok ? 600 : 400 }}>{c.label}</span>
                 </div>
