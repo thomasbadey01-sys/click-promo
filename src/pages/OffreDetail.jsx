@@ -5,31 +5,52 @@ import { DS, Ic, CPLogo } from "./Home";
 import { haversine, formatDist } from "./Feed";
 import { UserAuth } from "@/api/auth";
 
-// ── Icône achat ────────────────────────────────────────────────────────────
-const IcBag = (c=DS.white,s=18) => (
-  <svg width={s} height={s} fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-    <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/>
-    <path d="M16 10a4 4 0 01-8 0"/>
-  </svg>
-);
-const IcCard = (c=DS.white,s=18) => (
-  <svg width={s} height={s} fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-    <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
-  </svg>
-);
+// ─────────────────────────────────────────────────────────────
+// LOGIQUE MÉTIER : achat en ligne autorisé ?
+// Doit être IDENTIQUE à celle du Dashboard pour cohérence
+// ─────────────────────────────────────────────────────────────
+const ONLINE_NEVER_CATS = ["Restaurant", "Beauté & Coiffure", "Services"];
+const PRODUCT_KEYWORDS  = ["équipement","kit","pack","coffret","matériel","accessoire","sac","vêtement","chaussure","complément","supplément","protéine"];
+
+function canBuyOnline(offre) {
+  if (!offre) return false;
+  // 1. Le commerçant doit avoir explicitement activé l'option
+  if (!offre.achat_en_ligne) return false;
+  // 2. La catégorie ne doit pas être une prestation physique
+  if (ONLINE_NEVER_CATS.includes(offre.categorie)) return false;
+  // 3. Fitness & Sport : uniquement si le titre contient un mot-clé produit
+  if (offre.categorie === "Fitness & Sport") {
+    const t = (offre.titre || "").toLowerCase();
+    if (!PRODUCT_KEYWORDS.some(k => t.includes(k))) return false;
+  }
+  // 4. Prix doit être > 0
+  if (!offre.prix_promo || offre.prix_promo <= 0) return false;
+  return true;
+}
+
+// Explication humaine pour les catégories non-éligibles
+function whyNoOnline(offre) {
+  if (!offre) return null;
+  const c = offre.categorie;
+  if (c === "Restaurant") return "Ce repas se consomme sur place — présentez le code promo au restaurant.";
+  if (c === "Beauté & Coiffure") return "Cette prestation nécessite un rendez-vous physique — montrez le code à votre arrivée.";
+  if (c === "Services") return "Cette prestation se réalise en personne — utilisez le code promo sur place.";
+  if (c === "Fitness & Sport") return "Ce cours ou coaching se pratique en salle — présentez le code à l'accueil.";
+  return null;
+}
+
+const IcCard = (c=DS.white,s=18) => <svg width={s} height={s} fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>;
+const IcBag  = (c=DS.white,s=18) => <svg width={s} height={s} fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>;
+const IcStore = (c=DS.ink40,s=14) => <svg width={s} height={s} fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
 
 function Countdown({ dateFin }) {
-  const [t, setT] = useState({ h:0,m:0,s:0,exp:false });
-  useEffect(() => {
-    const u = () => {
-      const d = new Date(dateFin) - new Date();
-      if (d <= 0) { setT(x=>({...x,exp:true})); return; }
-      setT({ h:Math.floor(d/3600000), m:Math.floor((d%3600000)/60000), s:Math.floor((d%60000)/1000), exp:false });
-    };
-    u(); const id = setInterval(u,1000); return ()=>clearInterval(id);
+  const [t,setT]=useState({h:0,m:0,s:0,exp:false});
+  useEffect(()=>{
+    const u=()=>{const d=new Date(dateFin)-new Date();if(d<=0){setT(x=>({...x,exp:true}));return;}setT({h:Math.floor(d/3600000),m:Math.floor((d%3600000)/60000),s:Math.floor((d%60000)/1000),exp:false});};
+    u();const id=setInterval(u,1000);return()=>clearInterval(id);
   },[dateFin]);
-  if (t.exp) return <div style={{textAlign:"center",padding:14,background:DS.ink05,borderRadius:DS.md,color:DS.ink40,fontSize:13,fontWeight:600}}>Offre expirée</div>;
-  return (
+  if(t.exp)return<div style={{textAlign:"center",padding:14,background:DS.ink05,borderRadius:DS.md,color:DS.ink40,fontSize:13,fontWeight:600}}>Offre expirée</div>;
+  return(
     <div>
       <div style={{fontSize:11,fontWeight:700,color:DS.ink40,textAlign:"center",textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Expire dans</div>
       <div style={{display:"flex",gap:8,justifyContent:"center"}}>
@@ -44,10 +65,10 @@ function Countdown({ dateFin }) {
   );
 }
 
-function Stars({ onRate }) {
-  const [hov,setHov]=useState(0); const [done,setDone]=useState(false);
-  if (done) return <div style={{textAlign:"center",padding:14,background:"#F0FFF9",borderRadius:DS.md,color:DS.success,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>{Ic.check(DS.success,15)} Merci pour votre avis</div>;
-  return (
+function Stars({onRate}){
+  const[hov,setHov]=useState(0);const[done,setDone]=useState(false);
+  if(done)return<div style={{textAlign:"center",padding:14,background:"#F0FFF9",borderRadius:DS.md,color:DS.success,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>{Ic.check(DS.success,15)} Merci pour votre avis</div>;
+  return(
     <div style={{background:DS.white,borderRadius:DS.lg,padding:18,boxShadow:DS.e1,textAlign:"center"}}>
       <div style={{fontWeight:700,fontSize:14,color:DS.ink,marginBottom:14}}>Comment était cette offre ?</div>
       <div style={{display:"flex",justifyContent:"center",gap:6,marginBottom:8}}>
@@ -58,11 +79,11 @@ function Stars({ onRate }) {
   );
 }
 
-function Similar({ offreId, categorie }) {
-  const [items,setItems]=useState([]); const navigate=useNavigate();
+function Similar({offreId,categorie}){
+  const[items,setItems]=useState([]);const navigate=useNavigate();
   useEffect(()=>{Offre.list().then(all=>setItems(all.filter(o=>o.id!==offreId&&o.categorie===categorie&&o.est_active).slice(0,3)));},[offreId,categorie]);
-  if (!items.length) return null;
-  return (
+  if(!items.length)return null;
+  return(
     <div style={{background:DS.white,borderRadius:DS.xl,padding:18,boxShadow:DS.e1}}>
       <div style={{fontWeight:700,fontSize:14,color:DS.ink,marginBottom:14}}>Offres similaires</div>
       {items.map((o,i)=>(
@@ -81,14 +102,14 @@ function Similar({ offreId, categorie }) {
   );
 }
 
-export default function OffreDetail() {
-  const [params]=useSearchParams(); const navigate=useNavigate(); const id=params.get("id");
-  const [offre,setOffre]=useState(null); const [loading,setLoading]=useState(true);
-  const [codeVis,setCodeVis]=useState(false); const [isFav,setIsFav]=useState(false);
-  const [used,setUsed]=useState(false); const [userPos,setUserPos]=useState(null);
-  const [copied,setCopied]=useState(false);
-  const [buying,setBuying]=useState(false); const [buyErr,setBuyErr]=useState(null);
-  const [userEmail,setUserEmail]=useState("");
+export default function OffreDetail(){
+  const[params]=useSearchParams();const navigate=useNavigate();const id=params.get("id");
+  const[offre,setOffre]=useState(null);const[loading,setLoading]=useState(true);
+  const[codeVis,setCodeVis]=useState(false);const[isFav,setIsFav]=useState(false);
+  const[used,setUsed]=useState(false);const[userPos,setUserPos]=useState(null);
+  const[copied,setCopied]=useState(false);
+  const[buying,setBuying]=useState(false);const[buyErr,setBuyErr]=useState(null);
+  const[userEmail,setUserEmail]=useState("");
 
   useEffect(()=>{
     if(!id)return;
@@ -102,36 +123,26 @@ export default function OffreDetail() {
   const copyCode=()=>{navigator.clipboard?.writeText(offre.code_promo||"CLICKPROMO");setCopied(true);setTimeout(()=>setCopied(false),2000);};
   const share=async()=>{if(navigator.share){try{await navigator.share({title:offre.titre,url:window.location.href});}catch{}}else{navigator.clipboard?.writeText(window.location.href);}};
 
-  // ── Achat en ligne avec commission ─────────────────────────────────────
-  const buyOnline = async () => {
-    setBuying(true); setBuyErr(null);
-    try {
-      const res = await fetch("/functions/buyOffer", {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({
-          offreId: id,
-          successUrl: window.location.origin + `/OffreDetail?id=${id}&paid=1`,
-          cancelUrl: window.location.href,
-          userEmail,
-        })
-      });
-      const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else setBuyErr(data.error || "Erreur inattendue");
-    } catch { setBuyErr("Impossible de contacter le serveur."); }
+  const buyOnline=async()=>{
+    setBuying(true);setBuyErr(null);
+    try{
+      const res=await fetch("/functions/buyOffer",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({offreId:id,successUrl:window.location.origin+`/OffreDetail?id=${id}&paid=1`,cancelUrl:window.location.href,userEmail})});
+      const data=await res.json();
+      if(data.url)window.location.href=data.url;
+      else setBuyErr(data.error||"Erreur inattendue");
+    }catch{setBuyErr("Impossible de contacter le serveur.");}
     setBuying(false);
   };
 
-  // Succès paiement
-  const paymentSuccess = params.get("paid") === "1";
+  const paymentSuccess=params.get("paid")==="1";
 
-  if (loading) return (
+  if(loading)return(
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100vh",background:DS.ink05,gap:16}}>
       <CPLogo size={44}/><div style={{width:28,height:28,borderRadius:"50%",border:`2.5px solid ${DS.ink10}`,borderTop:`2.5px solid ${DS.brand}`,animation:"spin .8s linear infinite"}}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
-  if (!offre) return (
+  if(!offre)return(
     <div style={{textAlign:"center",padding:60,fontFamily:DS.font}}>
       <div style={{fontWeight:700,color:DS.ink,marginBottom:16}}>Offre introuvable</div>
       <button onClick={()=>navigate("/Feed")} style={{background:DS.brand,color:DS.white,border:"none",borderRadius:DS.lg,padding:"12px 24px",fontWeight:700,cursor:"pointer"}}>Retour</button>
@@ -143,22 +154,28 @@ export default function OffreDetail() {
   const expired=offre.date_fin&&new Date(offre.date_fin)<new Date();
   const commissionPct=offre.commission_pct??8;
 
-  return (
+  // Vérification double côté client
+  const achatEnLigneOk = canBuyOnline(offre);
+  const whyNot = whyNoOnline(offre);
+
+  return(
     <div style={{background:DS.ink05,minHeight:"100vh",fontFamily:DS.font,maxWidth:430,margin:"0 auto"}}>
 
       {/* Hero */}
       <div style={{position:"relative",height:340}}>
         <img src={offre.image_url} alt={offre.titre} style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800"}/>
         <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,.2) 0%,transparent 40%,rgba(0,0,0,.7) 100%)"}}/>
+
         <button onClick={()=>navigate(-1)} style={{position:"absolute",top:52,left:14,width:40,height:40,borderRadius:DS.pill,background:"rgba(255,255,255,.9)",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(10px)"}}>{Ic.back(DS.ink,18)}</button>
         <button onClick={share} style={{position:"absolute",top:52,right:58,width:40,height:40,borderRadius:DS.pill,background:"rgba(255,255,255,.9)",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(10px)"}}>{Ic.share(DS.ink,17)}</button>
         <button onClick={toggleFav} style={{position:"absolute",top:52,right:14,width:40,height:40,borderRadius:DS.pill,background:"rgba(255,255,255,.9)",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(10px)",transform:isFav?"scale(1.12)":"scale(1)",transition:"transform .2s cubic-bezier(.34,1.56,.64,1)"}}>{Ic.heart(isFav?DS.danger:DS.ink60,18,isFav)}</button>
+
         <div style={{position:"absolute",bottom:18,left:16,right:16,display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
           <div style={{display:"inline-block",background:expired?"rgba(0,0,0,.6)":offre.valeur_reduction>=40?DS.danger:DS.ink,color:DS.white,borderRadius:DS.sm,padding:"6px 14px",fontWeight:800,fontSize:16,letterSpacing:-.3}}>
             {expired?"Expirée":`-${offre.valeur_reduction}${offre.type_reduction==="pourcentage"?"%":"€"}`}
           </div>
-          <div style={{display:"flex",gap:6}}>
-            {offre.achat_en_ligne && <span style={{background:"rgba(0,0,0,.55)",backdropFilter:"blur(8px)",color:DS.white,borderRadius:DS.pill,padding:"4px 10px",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",gap:4}}>{IcCard(DS.white,11)} Achat en ligne</span>}
+          <div style={{display:"flex",gap:5,flexDirection:"column",alignItems:"flex-end"}}>
+            {achatEnLigneOk&&<span style={{background:"rgba(0,0,0,.55)",backdropFilter:"blur(8px)",color:DS.white,borderRadius:DS.pill,padding:"4px 10px",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",gap:4}}>{IcCard(DS.white,10)} Achat en ligne</span>}
             {dist!==null&&<span style={{background:"rgba(0,0,0,.55)",backdropFilter:"blur(8px)",color:DS.white,borderRadius:DS.pill,padding:"4px 10px",fontSize:11,fontWeight:600,display:"flex",alignItems:"center",gap:4}}>{Ic.pin(DS.white,11)} {formatDist(dist)}</span>}
           </div>
         </div>
@@ -167,11 +184,11 @@ export default function OffreDetail() {
       <div style={{padding:"16px 14px 60px",display:"flex",flexDirection:"column",gap:10}}>
 
         {/* Succès paiement */}
-        {paymentSuccess && (
+        {paymentSuccess&&(
           <div style={{background:"#F0FFF9",border:`1.5px solid ${DS.success}`,borderRadius:DS.lg,padding:20,textAlign:"center"}}>
             <div style={{display:"flex",justifyContent:"center",marginBottom:10}}>{Ic.check(DS.success,32)}</div>
             <div style={{fontWeight:800,fontSize:17,color:DS.ink,marginBottom:4}}>Paiement confirmé !</div>
-            <div style={{fontSize:13,color:DS.ink40,lineHeight:1.7}}>Votre commande est enregistrée. Le commerçant va vous contacter pour la livraison ou le retrait.</div>
+            <div style={{fontSize:13,color:DS.ink40,lineHeight:1.7}}>Votre commande est enregistrée. Le commerçant vous contactera pour la livraison ou le retrait.</div>
           </div>
         )}
 
@@ -179,7 +196,7 @@ export default function OffreDetail() {
         <div style={{background:DS.white,borderRadius:DS.xl,padding:20,boxShadow:DS.e1}}>
           <div style={{fontSize:11,fontWeight:700,color:DS.brand,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>{offre.categorie}</div>
           <div style={{fontSize:22,fontWeight:800,color:DS.ink,lineHeight:1.2,letterSpacing:-.5,marginBottom:6}}>{offre.titre}</div>
-          <div style={{display:"flex",alignItems:"center",gap:5,color:DS.ink40,fontSize:13,marginBottom:18}}>{Ic.store(DS.ink20,13)} {offre.commercant_nom}</div>
+          <div style={{display:"flex",alignItems:"center",gap:5,color:DS.ink40,fontSize:13,marginBottom:18}}>{IcStore(DS.ink20,13)} {offre.commercant_nom}</div>
           <div style={{display:"flex",alignItems:"baseline",gap:10,marginBottom:offre.stock_restant!=null?16:0}}>
             {offre.prix_promo>0?<span style={{fontSize:38,fontWeight:900,color:DS.brand,letterSpacing:-1.5,lineHeight:1}}>{offre.prix_promo}€</span>:<span style={{fontSize:28,fontWeight:800,color:DS.success}}>Gratuit</span>}
             {offre.prix_original>0&&offre.prix_original!==offre.prix_promo&&<span style={{fontSize:17,color:DS.ink20,textDecoration:"line-through"}}>{offre.prix_original}€</span>}
@@ -202,39 +219,67 @@ export default function OffreDetail() {
         {/* Countdown */}
         {offre.est_urgente&&offre.date_fin&&!expired&&<div style={{background:DS.white,borderRadius:DS.lg,padding:18,boxShadow:DS.e1}}><Countdown dateFin={offre.date_fin}/></div>}
 
-        {/* ── BOUTONS CTA ─────────────────────────────────────── */}
-        {!expired && !paymentSuccess && (
+        {/* ── BOUTONS CTA ── */}
+        {!expired&&!paymentSuccess&&(
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
 
-            {/* Achat en ligne (avec commission) */}
-            {offre.achat_en_ligne && offre.prix_promo > 0 && (
-              <div>
-                <button onClick={buyOnline} disabled={buying} style={{width:"100%",background:buying?DS.ink10:DS.brand,color:buying?DS.ink40:DS.white,border:"none",borderRadius:DS.xl,padding:"18px",fontSize:16,fontWeight:800,cursor:buying?"not-allowed":"pointer",boxShadow:buying?"none":DS.eBrand,display:"flex",alignItems:"center",justifyContent:"center",gap:10,transition:"all .2s"}}
+            {/* CAS 1 : Achat en ligne disponible (produit livrable) */}
+            {achatEnLigneOk&&(
+              <div style={{background:DS.white,borderRadius:DS.xl,padding:16,boxShadow:DS.e1,border:`1px solid ${DS.ink10}`}}>
+                <div style={{fontSize:11,fontWeight:700,color:DS.ink40,textTransform:"uppercase",letterSpacing:.8,marginBottom:12}}>Acheter maintenant</div>
+                <button onClick={buyOnline} disabled={buying} style={{width:"100%",background:buying?DS.ink10:DS.brand,color:buying?DS.ink40:DS.white,border:"none",borderRadius:DS.lg,padding:"16px",fontSize:15,fontWeight:800,cursor:buying?"not-allowed":"pointer",boxShadow:buying?"none":DS.eBrand,display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:8}}
                   onMouseDown={e=>e.currentTarget.style.transform="scale(.97)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"}>
-                  {buying ? "Redirection…" : <>{IcCard(DS.white,18)} Acheter en ligne — {offre.prix_promo}€</>}
+                  {buying?"Redirection vers le paiement…":<>{IcCard(DS.white,17)} Payer en ligne — {offre.prix_promo}€</>}
                 </button>
-                <div style={{textAlign:"center",marginTop:6,fontSize:11,color:DS.ink20,display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
-                  <svg width="12" height="12" fill="none" stroke={DS.ink20} strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:5,fontSize:10,color:DS.ink20}}>
+                  <svg width="10" height="10" fill="none" stroke={DS.ink20} strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
                   Paiement sécurisé Stripe · {commissionPct}% de commission Click & Promo
                 </div>
-                {buyErr && <div style={{marginTop:8,background:"#FEF2F2",border:`1px solid ${DS.danger}22`,borderRadius:DS.md,padding:"10px 12px",color:DS.danger,fontSize:13}}>{buyErr}</div>}
+                {buyErr&&<div style={{marginTop:8,background:"#FEF2F2",border:`1px solid ${DS.danger}22`,borderRadius:DS.md,padding:"10px 12px",color:DS.danger,fontSize:13}}>{buyErr}</div>}
+
+                {/* Séparateur + option code */}
+                <div style={{display:"flex",alignItems:"center",gap:10,margin:"12px 0"}}>
+                  <div style={{flex:1,height:1,background:DS.ink10}}/><span style={{color:DS.ink20,fontSize:11}}>ou</span><div style={{flex:1,height:1,background:DS.ink10}}/>
+                </div>
+                {!codeVis?(
+                  <button onClick={useOffer} style={{width:"100%",background:DS.white,color:DS.ink60,border:`1px solid ${DS.ink10}`,borderRadius:DS.md,padding:"11px",fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:7}}>
+                    {IcBag(DS.ink60,14)} Utiliser un code promo en boutique
+                  </button>
+                ):(
+                  <div style={{background:DS.ink05,borderRadius:DS.md,padding:14,textAlign:"center"}}>
+                    <div style={{fontSize:10,fontWeight:700,color:DS.ink40,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Code boutique</div>
+                    <div style={{fontSize:22,fontWeight:900,color:DS.ink,letterSpacing:6,fontFamily:"monospace",marginBottom:10}}>{offre.code_promo||"CLICKPROMO"}</div>
+                    <button onClick={copyCode} style={{display:"inline-flex",alignItems:"center",gap:6,background:copied?DS.success:DS.ink,color:DS.white,border:"none",borderRadius:DS.sm,padding:"8px 14px",fontSize:12,fontWeight:700,cursor:"pointer"}}>{copied?Ic.check(DS.white,13):Ic.copy(DS.white,13)} {copied?"Copié !":"Copier"}</button>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Utiliser avec code promo (mode classique) */}
-            {!codeVis ? (
-              <button onClick={useOffer} style={{width:"100%",background:offre.achat_en_ligne?DS.white:DS.brand,color:offre.achat_en_ligne?DS.brand:DS.white,border:offre.achat_en_ligne?`1.5px solid ${DS.brand}`:"none",borderRadius:DS.xl,padding:offre.achat_en_ligne?"15px":"18px",fontSize:offre.achat_en_ligne?14:16,fontWeight:700,cursor:"pointer",boxShadow:offre.achat_en_ligne?"none":DS.eBrand,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}
-                onMouseDown={e=>e.currentTarget.style.transform="scale(.97)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"}>
-                {IcBag(offre.achat_en_ligne?DS.brand:DS.white,16)} {offre.achat_en_ligne?"Utiliser le code promo en boutique":"Utiliser cette offre"}
-              </button>
-            ) : (
-              <div style={{background:DS.white,borderRadius:DS.xl,padding:22,textAlign:"center",boxShadow:DS.e2,border:`1.5px solid ${DS.brand}`}}>
-                <div style={{fontSize:11,fontWeight:700,color:DS.ink40,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Code promo</div>
-                <div style={{background:DS.ink05,borderRadius:DS.md,padding:"18px",fontSize:28,fontWeight:900,color:DS.ink,letterSpacing:8,fontFamily:"monospace",marginBottom:14,border:`2px dashed ${DS.ink10}`}}>{offre.code_promo||"CLICKPROMO"}</div>
-                <button onClick={copyCode} style={{display:"inline-flex",alignItems:"center",gap:8,background:copied?DS.success:DS.ink,color:DS.white,border:"none",borderRadius:DS.md,padding:"10px 20px",fontSize:13,fontWeight:700,cursor:"pointer",transition:"background .3s"}}>
-                  {copied?Ic.check(DS.white,14):Ic.copy(DS.white,14)} {copied?"Copié !":"Copier le code"}
-                </button>
-                <div style={{fontSize:11,color:DS.ink20,marginTop:12}}>Montrez ce code au commerçant</div>
+            {/* CAS 2 : Prestation physique — code promo uniquement */}
+            {!achatEnLigneOk&&(
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                {/* Info explicative si c'est une prestation physique */}
+                {whyNot&&(
+                  <div style={{background:"#F8F8F8",borderRadius:DS.md,padding:12,border:`1px solid ${DS.ink10}`,display:"flex",gap:10,alignItems:"flex-start"}}>
+                    {IcStore(DS.ink20,14)}
+                    <div style={{fontSize:12,color:DS.ink40,lineHeight:1.7}}>{whyNot}</div>
+                  </div>
+                )}
+                {!codeVis?(
+                  <button onClick={useOffer} style={{width:"100%",background:DS.brand,color:DS.white,border:"none",borderRadius:DS.xl,padding:"18px",fontSize:16,fontWeight:800,cursor:"pointer",boxShadow:DS.eBrand,display:"flex",alignItems:"center",justifyContent:"center",gap:10}}
+                    onMouseDown={e=>e.currentTarget.style.transform="scale(.97)"} onMouseUp={e=>e.currentTarget.style.transform="scale(1)"}>
+                    {IcBag(DS.white,18)} Obtenir le code promo
+                  </button>
+                ):(
+                  <div style={{background:DS.white,borderRadius:DS.xl,padding:22,textAlign:"center",boxShadow:DS.e2,border:`1.5px solid ${DS.brand}`}}>
+                    <div style={{fontSize:11,fontWeight:700,color:DS.ink40,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Code promo</div>
+                    <div style={{background:DS.ink05,borderRadius:DS.md,padding:"18px",fontSize:28,fontWeight:900,color:DS.ink,letterSpacing:8,fontFamily:"monospace",marginBottom:14,border:`2px dashed ${DS.ink10}`}}>{offre.code_promo||"CLICKPROMO"}</div>
+                    <button onClick={copyCode} style={{display:"inline-flex",alignItems:"center",gap:8,background:copied?DS.success:DS.ink,color:DS.white,border:"none",borderRadius:DS.md,padding:"10px 20px",fontSize:13,fontWeight:700,cursor:"pointer",transition:"background .3s"}}>
+                      {copied?Ic.check(DS.white,14):Ic.copy(DS.white,14)} {copied?"Copié !":"Copier le code"}
+                    </button>
+                    <div style={{fontSize:11,color:DS.ink20,marginTop:12}}>Montrez ce code au commerçant lors de votre visite</div>
+                  </div>
+                )}
               </div>
             )}
           </div>
