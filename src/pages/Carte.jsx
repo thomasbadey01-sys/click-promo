@@ -1,48 +1,18 @@
 import { useState, useEffect, useRef } from "react";
-import { Offre } from "../api/entities";
-import { Link } from "react-router-dom";
+import { Offre } from "@/api/entities";
+import { useNavigate } from "react-router-dom";
 import { NavBar } from "./Feed";
+import { DS, Icon, CPLogo } from "./Home";
+import { haversine, formatDist } from "./Feed";
 
 const CAT_COLORS = {
-  "Restaurant": "#FF6B00",
-  "Boutique": "#AF52DE",
-  "Beauté & Coiffure": "#FF2D55",
-  "Fitness & Sport": "#34C759",
-  "Services": "#007AFF",
-  "Épicerie": "#FF9500",
-  "Pharmacie": "#30B0C7",
-  "Autre": "#8E8E93"
+  "Restaurant": DS.red, "Boutique": DS.purple, "Beauté & Coiffure": "#EC4899",
+  "Fitness & Sport": DS.green, "Services": DS.blue, "Épicerie": "#F59E0B",
+  "Pharmacie": "#06B6D4", "Autre": DS.gray500
 };
-
-const CAT_ICONS = {
-  "Restaurant": "🍽️",
-  "Boutique": "🛍️",
-  "Beauté & Coiffure": "💇",
-  "Fitness & Sport": "💪",
-  "Services": "🔧",
-  "Épicerie": "🥖",
-  "Pharmacie": "💊",
-  "Autre": "📦"
-};
-
-function haversine(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-    Math.cos((lat2 * Math.PI) / 180) *
-    Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-function formatDist(km) {
-  if (km < 1) return `${Math.round(km * 1000)}m`;
-  return `${km.toFixed(1)}km`;
-}
 
 export default function Carte() {
+  const navigate = useNavigate();
   const mapRef = useRef(null);
   const leafletMap = useRef(null);
   const markersRef = useRef([]);
@@ -52,12 +22,11 @@ export default function Carte() {
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userPos, setUserPos] = useState(null);
-  const [geoError, setGeoError] = useState(null);
   const [geoLoading, setGeoLoading] = useState(false);
   const [mapReady, setMapReady] = useState(false);
   const [rayon, setRayon] = useState(5);
+  const [catFilter, setCatFilter] = useState("Tout");
 
-  // Charger les offres
   useEffect(() => {
     Offre.list().then(data => {
       setOffres(data.filter(o => o.est_active && o.latitude && o.longitude));
@@ -65,263 +34,256 @@ export default function Carte() {
     });
   }, []);
 
-  // Charger Leaflet dynamiquement
   useEffect(() => {
     if (mapReady) return;
-
-    const cssLink = document.createElement("link");
-    cssLink.rel = "stylesheet";
-    cssLink.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-    document.head.appendChild(cssLink);
-
+    const css = document.createElement("link");
+    css.rel = "stylesheet";
+    css.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+    document.head.appendChild(css);
     const script = document.createElement("script");
     script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
     script.onload = () => setMapReady(true);
     document.head.appendChild(script);
   }, []);
 
-  // Initialiser la carte une fois Leaflet + DOM prêts
   useEffect(() => {
     if (!mapReady || !mapRef.current || leafletMap.current) return;
     const L = window.L;
-    const map = L.map(mapRef.current, {
-      center: [48.8566, 2.3522],
-      zoom: 14,
-      zoomControl: true,
-    });
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap",
-      maxZoom: 19,
+    const map = L.map(mapRef.current, { center: [48.8566, 2.3522], zoom: 13, zoomControl: false });
+    L.control.zoom({ position: "bottomright" }).addTo(map);
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+      attribution: "© OSM © CARTO", maxZoom: 19
     }).addTo(map);
     leafletMap.current = map;
   }, [mapReady]);
 
-  // Mettre à jour les marqueurs quand offres ou userPos change
   useEffect(() => {
     if (!mapReady || !leafletMap.current) return;
     const L = window.L;
     const map = leafletMap.current;
-
-    // Supprimer anciens marqueurs
     markersRef.current.forEach(m => map.removeLayer(m));
     markersRef.current = [];
 
-    // Filtrer par rayon si on a la position
-    const offresFiltered = userPos
-      ? offres.filter(o => haversine(userPos.lat, userPos.lng, o.latitude, o.longitude) <= rayon)
-      : offres;
+    const filtered = offres.filter(o => {
+      if (catFilter !== "Tout" && o.categorie !== catFilter) return false;
+      if (userPos) return haversine(userPos.lat, userPos.lng, o.latitude, o.longitude) <= rayon;
+      return true;
+    });
 
-    offresFiltered.forEach(offre => {
-      const color = CAT_COLORS[offre.categorie] || "#FF6B00";
-      const icon = CAT_ICONS[offre.categorie] || "🏷️";
-      const dist = userPos
-        ? formatDist(haversine(userPos.lat, userPos.lng, offre.latitude, offre.longitude))
-        : "";
-
+    filtered.forEach(offre => {
+      const color = CAT_COLORS[offre.categorie] || DS.orange;
+      const dist = userPos ? formatDist(haversine(userPos.lat, userPos.lng, offre.latitude, offre.longitude)) : "";
       const customIcon = L.divIcon({
         html: `<div style="
           background:${color};color:white;border-radius:20px;
-          padding:5px 10px;font-size:12px;font-weight:700;
-          white-space:nowrap;box-shadow:0 3px 10px ${color}80;
-          border:2px solid white;cursor:pointer;
-        ">${icon} -${offre.valeur_reduction}${offre.type_reduction === "pourcentage" ? "%" : "€"}${dist ? ` · ${dist}` : ""}</div>
-        <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid ${color};margin:0 auto;"></div>`,
-        className: "",
-        iconAnchor: [40, 36],
-        popupAnchor: [0, -40],
+          padding:5px 11px;font-size:11px;font-weight:800;
+          white-space:nowrap;box-shadow:0 4px 14px ${color}66;
+          border:2px solid white;cursor:pointer;font-family:Inter,-apple-system,sans-serif;
+          ${offre.est_urgente ? "animation:mapPulse 1.5s infinite;" : ""}
+        ">-${offre.valeur_reduction}${offre.type_reduction === "pourcentage" ? "%" : "€"}${dist ? " · " + dist : ""}${offre.est_urgente ? " ⚡" : ""}</div>
+        <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid ${color};margin:0 auto;"></div>`,
+        className: "", iconAnchor: [36, 34]
       });
-
       const marker = L.marker([offre.latitude, offre.longitude], { icon: customIcon })
         .addTo(map)
-        .on("click", () => setSelected(offre));
-
+        .on("click", () => { setSelected(offre); map.panTo([offre.latitude, offre.longitude]); });
       markersRef.current.push(marker);
     });
 
-    // Marqueur utilisateur
     if (userPos) {
       if (userMarkerRef.current) map.removeLayer(userMarkerRef.current);
       const userIcon = L.divIcon({
-        html: `<div style="
-          width:16px;height:16px;background:#007AFF;border-radius:50%;
-          border:3px solid white;box-shadow:0 0 0 8px rgba(0,122,255,0.2);
-        "></div>`,
-        className: "",
-        iconAnchor: [8, 8],
+        html: `<div style="width:16px;height:16px;background:${DS.blue};border-radius:50%;border:3px solid white;box-shadow:0 0 0 10px rgba(59,130,246,0.18);"></div>`,
+        className: "", iconAnchor: [8, 8]
       });
       userMarkerRef.current = L.marker([userPos.lat, userPos.lng], { icon: userIcon }).addTo(map);
       map.setView([userPos.lat, userPos.lng], 14);
     }
-  }, [offres, userPos, mapReady, rayon]);
+  }, [offres, userPos, mapReady, rayon, catFilter]);
 
   const getLocation = () => {
     setGeoLoading(true);
-    setGeoError(null);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setUserPos({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setGeoLoading(false);
-      },
-      (err) => {
-        setGeoError("Localisation refusée. Activez le GPS pour voir les offres proches.");
-        setGeoLoading(false);
-      },
+      p => { setUserPos({ lat: p.coords.latitude, lng: p.coords.longitude }); setGeoLoading(false); },
+      () => setGeoLoading(false),
       { enableHighAccuracy: true, timeout: 10000 }
     );
   };
 
-  const offresProches = userPos
-    ? [...offres]
-        .map(o => ({ ...o, dist: haversine(userPos.lat, userPos.lng, o.latitude, o.longitude) }))
-        .filter(o => o.dist <= rayon)
-        .sort((a, b) => a.dist - b.dist)
-    : offres;
+  const offresProches = offres.filter(o => {
+    if (catFilter !== "Tout" && o.categorie !== catFilter) return false;
+    if (userPos) return haversine(userPos.lat, userPos.lng, o.latitude, o.longitude) <= rayon;
+    return true;
+  }).sort((a, b) => {
+    if (!userPos) return 0;
+    return haversine(userPos.lat, userPos.lng, a.latitude, a.longitude) - haversine(userPos.lat, userPos.lng, b.latitude, b.longitude);
+  });
+
+  const cats = ["Tout", "Restaurant", "Boutique", "Beauté & Coiffure", "Fitness & Sport", "Épicerie", "Pharmacie", "Services"];
 
   return (
-    <div style={{ background: "#F8F8F8", minHeight: "100vh", fontFamily: "'SF Pro Display', -apple-system, sans-serif", maxWidth: 430, margin: "0 auto" }}>
+    <div style={{ background: DS.gray50, minHeight: "100vh", fontFamily: DS.font, maxWidth: 430, margin: "0 auto" }}>
+
       {/* Header */}
-      <div style={{ background: "linear-gradient(135deg, #FF6B00, #FF3B30)", padding: "50px 20px 16px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div>
-            <div style={{ color: "white", fontSize: 20, fontWeight: 800 }}>🗺️ Carte des offres</div>
-            <div style={{ color: "rgba(255,255,255,0.8)", fontSize: 13, marginTop: 2 }}>
-              {offresProches.length} offre{offresProches.length > 1 ? "s" : ""} {userPos ? `dans un rayon de ${rayon}km` : "disponibles"}
+      <div style={{ background: "white", padding: "50px 16px 0", position: "sticky", top: 0, zIndex: 100, borderBottom: `1px solid ${DS.gray100}` }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <CPLogo size={32} />
+            <div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: DS.black, letterSpacing: -0.4 }}>Carte des offres</div>
+              <div style={{ fontSize: 11, color: DS.gray500, display: "flex", alignItems: "center", gap: 3 }}>
+                {Icon.pin(10, userPos ? DS.green : DS.gray400)}
+                {offresProches.length} offre{offresProches.length !== 1 ? "s" : ""} {userPos ? `dans ${rayon}km` : "disponibles"}
+              </div>
             </div>
           </div>
-          <button
-            onClick={getLocation}
-            disabled={geoLoading}
-            style={{
-              background: userPos ? "rgba(52,199,89,0.3)" : "rgba(255,255,255,0.2)",
-              border: "none", borderRadius: 12, padding: "8px 14px",
-              color: "white", fontSize: 13, fontWeight: 600, cursor: "pointer",
-              display: "flex", alignItems: "center", gap: 6
-            }}
-          >
-            {geoLoading ? "⏳" : userPos ? "✅" : "📍"} {geoLoading ? "..." : userPos ? "Localisé" : "Me localiser"}
+          <button onClick={getLocation} disabled={geoLoading} style={{
+            display: "flex", alignItems: "center", gap: 6,
+            background: userPos ? `${DS.green}15` : DS.gray100,
+            color: userPos ? DS.green : DS.gray700,
+            border: `1.5px solid ${userPos ? `${DS.green}44` : DS.gray200}`,
+            borderRadius: DS.r99, padding: "8px 13px",
+            fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.2s"
+          }}>
+            <span style={{ display: "flex" }}>{Icon.pin(13, userPos ? DS.green : DS.gray500)}</span>
+            {geoLoading ? "..." : userPos ? "Localisé" : "Me localiser"}
           </button>
         </div>
 
-        {/* Slider rayon */}
+        {/* Rayon */}
         {userPos && (
-          <div style={{ marginTop: 12 }}>
-            <div style={{ color: "rgba(255,255,255,0.8)", fontSize: 12, marginBottom: 4 }}>
-              Rayon : <strong style={{ color: "white" }}>{rayon} km</strong>
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+              <span style={{ fontSize: 11, color: DS.gray500 }}>Rayon de recherche</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: DS.orange }}>{rayon} km</span>
             </div>
-            <input
-              type="range" min={1} max={20} value={rayon}
-              onChange={e => setRayon(parseInt(e.target.value))}
-              style={{ width: "100%", accentColor: "white" }}
-            />
+            <input type="range" min={1} max={25} value={rayon} onChange={e => setRayon(parseInt(e.target.value))}
+              style={{ width: "100%", accentColor: DS.orange, height: 3 }} />
           </div>
         )}
+
+        {/* Filtres catégories */}
+        <div style={{ display: "flex", gap: 7, overflowX: "auto", paddingBottom: 12, scrollbarWidth: "none" }}>
+          {cats.map(cat => {
+            const on = catFilter === cat;
+            const col = CAT_COLORS[cat] || DS.orange;
+            return (
+              <button key={cat} onClick={() => setCatFilter(cat)} style={{
+                flexShrink: 0, border: `1.5px solid ${on ? col : DS.gray200}`,
+                borderRadius: DS.r99, padding: "6px 12px", fontFamily: DS.font,
+                background: on ? col : "white",
+                color: on ? "white" : DS.gray700,
+                fontSize: 11, fontWeight: on ? 700 : 500, cursor: "pointer",
+                boxShadow: on ? `0 4px 10px ${col}44` : "none",
+                transition: "all 0.2s"
+              }}>{cat}</button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Erreur géo */}
-      {geoError && (
-        <div style={{ background: "#FFF3F0", padding: "10px 16px", borderBottom: "1px solid #FFE5CC" }}>
-          <div style={{ fontSize: 13, color: "#FF3B30" }}>⚠️ {geoError}</div>
-        </div>
-      )}
-
-      {/* Carte Leaflet */}
-      <div ref={mapRef} style={{ height: selected ? "40vh" : "55vh", width: "100%" }}>
+      {/* Carte */}
+      <div ref={mapRef} style={{ height: selected ? "36vh" : "50vh", width: "100%", position: "relative" }}>
         {!mapReady && (
-          <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#e8f0e8" }}>
-            <div style={{ textAlign: "center", color: "#666" }}>
-              <div style={{ fontSize: 32, marginBottom: 8 }}>🗺️</div>
-              <div>Chargement de la carte...</div>
-            </div>
+          <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#F0F4F0", gap: 12 }}>
+            <CPLogo size={40} />
+            <div style={{ color: DS.gray400, fontSize: 13 }}>Chargement de la carte...</div>
           </div>
         )}
       </div>
 
       {/* Offre sélectionnée */}
       {selected && (
-        <div style={{ padding: "12px 16px 0" }}>
-          <Link to={`/OffreDetail?id=${selected.id}`} style={{ textDecoration: "none" }}>
-            <div style={{
-              background: "white", borderRadius: 16, padding: 14,
-              display: "flex", gap: 12,
-              boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
-              border: "2px solid #FF6B00"
-            }}>
-              <img src={selected.image_url} alt={selected.titre}
-                style={{ width: 70, height: 70, borderRadius: 10, objectFit: "cover", flexShrink: 0 }} />
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 700, fontSize: 15, color: "#1a1a1a", marginBottom: 2 }}>{selected.titre}</div>
-                <div style={{ fontSize: 12, color: "#666", marginBottom: 6 }}>
-                  {selected.commercant_nom}
-                  {userPos && ` · ${formatDist(haversine(userPos.lat, userPos.lng, selected.latitude, selected.longitude))}`}
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ background: "#FF3B30", color: "white", borderRadius: 10, padding: "3px 10px", fontSize: 13, fontWeight: 700 }}>
-                    -{selected.valeur_reduction}{selected.type_reduction === "pourcentage" ? "%" : "€"}
-                  </span>
-                  {selected.est_urgente && <span style={{ fontSize: 12, color: "#FF3B30", fontWeight: 600 }}>🔥</span>}
-                  <span style={{ fontSize: 12, color: "#007AFF", marginLeft: "auto" }}>Voir l'offre →</span>
-                </div>
+        <div style={{ padding: "10px 14px 0" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 7 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: DS.gray400, textTransform: "uppercase", letterSpacing: 0.8 }}>Offre sélectionnée</span>
+            <button onClick={() => setSelected(null)} style={{ background: "none", border: "none", cursor: "pointer", color: DS.gray400, display: "flex", padding: 4 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div onClick={() => navigate(`/OffreDetail?id=${selected.id}`)} style={{
+            background: "white", borderRadius: DS.r16, padding: 13,
+            display: "flex", gap: 12, boxShadow: DS.s2,
+            border: `2px solid ${DS.orange}`, cursor: "pointer"
+          }}>
+            <img src={selected.image_url} alt={selected.titre}
+              style={{ width: 68, height: 68, borderRadius: DS.r12, objectFit: "cover", flexShrink: 0 }}
+              onError={e => e.target.src = "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=200"}
+            />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: DS.black, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 3 }}>{selected.titre}</div>
+              <div style={{ fontSize: 12, color: DS.gray500, marginBottom: 7, display: "flex", alignItems: "center", gap: 4 }}>
+                {Icon.store(11, DS.gray400)}{selected.commercant_nom}
+                {userPos && ` · ${formatDist(haversine(userPos.lat, userPos.lng, selected.latitude, selected.longitude))}`}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ background: selected.valeur_reduction >= 40 ? DS.red : DS.orange, color: "white", borderRadius: DS.r8, padding: "3px 9px", fontSize: 12, fontWeight: 800 }}>
+                  -{selected.valeur_reduction}{selected.type_reduction === "pourcentage" ? "%" : "€"}
+                </span>
+                {selected.prix_promo > 0 && <span style={{ fontSize: 14, fontWeight: 900, color: DS.orange }}>{selected.prix_promo}€</span>}
+                {selected.est_urgente && <span style={{ fontSize: 11, color: DS.red, fontWeight: 700, display: "flex", alignItems: "center", gap: 3 }}>{Icon.flash(11, DS.red)}Flash</span>}
               </div>
             </div>
-          </Link>
-          <button onClick={() => setSelected(null)} style={{
-            display: "block", margin: "8px auto 0", background: "none",
-            border: "none", color: "#aaa", fontSize: 13, cursor: "pointer"
-          }}>✕ Fermer</button>
+            <div style={{ alignSelf: "center", color: DS.gray300 }}>{Icon.chevronR(16, DS.gray300)}</div>
+          </div>
         </div>
       )}
 
-      {/* Liste proximité */}
-      <div style={{ padding: "14px 16px 100px" }}>
-        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 12, color: "#1a1a1a" }}>
-          📍 {userPos ? "Offres à proximité" : "Toutes les offres"}
+      {/* Liste */}
+      <div style={{ padding: "12px 14px 100px" }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: DS.gray400, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 10 }}>
+          {offresProches.length} offre{offresProches.length !== 1 ? "s" : ""} {userPos ? `à moins de ${rayon}km` : "disponibles"}
         </div>
 
-        {loading && <div style={{ textAlign: "center", padding: 30, color: "#999" }}>Chargement...</div>}
-
-        {!loading && offresProches.length === 0 && (
-          <div style={{ textAlign: "center", padding: "30px 20px" }}>
-            <div style={{ fontSize: 40, marginBottom: 10 }}>🔍</div>
-            <div style={{ color: "#666", fontSize: 14 }}>Aucune offre dans ce rayon.</div>
-            <div style={{ color: "#aaa", fontSize: 13, marginTop: 4 }}>Augmentez le rayon de recherche.</div>
+        {loading && [1, 2, 3].map(i => (
+          <div key={i} style={{ background: "white", borderRadius: DS.r12, height: 68, marginBottom: 8, boxShadow: DS.s1, overflow: "hidden" }}>
+            <div style={{ height: "100%", background: "linear-gradient(90deg,#f3f4f6 25%,#fafafa 50%,#f3f4f6 75%)", backgroundSize: "400% 100%", animation: "shimmer 1.4s infinite" }} />
           </div>
-        )}
+        ))}
 
-        {offresProches.map(offre => (
-          <Link key={offre.id} to={`/OffreDetail?id=${offre.id}`} style={{ textDecoration: "none" }}>
-            <div style={{
-              background: "white", borderRadius: 12, padding: "12px 14px",
-              display: "flex", alignItems: "center", gap: 12, marginBottom: 10,
-              boxShadow: "0 1px 6px rgba(0,0,0,0.06)"
-            }}>
-              <div style={{
-                width: 44, height: 44, borderRadius: 10,
-                background: `${CAT_COLORS[offre.categorie] || "#FF6B00"}20`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 22, flexShrink: 0
-              }}>
-                {CAT_ICONS[offre.categorie]}
-              </div>
+        {offresProches.slice(0, 20).map(o => {
+          const d = userPos && o.latitude ? haversine(userPos.lat, userPos.lng, o.latitude, o.longitude) : null;
+          const col = CAT_COLORS[o.categorie] || DS.orange;
+          const isSelected = selected?.id === o.id;
+          return (
+            <div key={o.id}
+              onClick={() => { setSelected(o); leafletMap.current?.panTo([o.latitude, o.longitude]); }}
+              style={{
+                background: "white", borderRadius: DS.r12, padding: "11px 13px", marginBottom: 7,
+                display: "flex", alignItems: "center", gap: 11, cursor: "pointer",
+                boxShadow: isSelected ? DS.s2 : DS.s1,
+                border: `1.5px solid ${isSelected ? DS.orange : "transparent"}`,
+                transition: "all 0.2s"
+              }}
+            >
+              <img src={o.image_url} alt={o.titre} loading="lazy"
+                style={{ width: 50, height: 50, borderRadius: DS.r8, objectFit: "cover", flexShrink: 0 }}
+                onError={e => e.target.src = "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=200"}
+              />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: 14, color: "#1a1a1a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {offre.titre}
+                <div style={{ fontWeight: 600, fontSize: 13, color: DS.black, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{o.titre}</div>
+                <div style={{ fontSize: 11, color: DS.gray500, marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
+                  {Icon.store(10, DS.gray400)}{o.commercant_nom}{d ? ` · ${formatDist(d)}` : ""}
                 </div>
-                <div style={{ fontSize: 12, color: "#888" }}>{offre.commercant_nom}</div>
               </div>
-              <div style={{ textAlign: "right", flexShrink: 0 }}>
-                <div style={{ fontWeight: 800, fontSize: 16, color: "#FF3B30" }}>
-                  -{offre.valeur_reduction}{offre.type_reduction === "pourcentage" ? "%" : "€"}
-                </div>
-                <div style={{ fontSize: 11, color: userPos ? "#007AFF" : "#aaa", fontWeight: userPos ? 600 : 400 }}>
-                  {offre.dist ? formatDist(offre.dist) : offre.ville}
-                </div>
+              <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
+                <span style={{ background: `${col}15`, color: col, borderRadius: DS.r8, padding: "3px 8px", fontSize: 11, fontWeight: 800 }}>
+                  -{o.valeur_reduction}{o.type_reduction === "pourcentage" ? "%" : "€"}
+                </span>
+                {o.prix_promo > 0 && <span style={{ fontSize: 12, fontWeight: 800, color: DS.orange }}>{o.prix_promo}€</span>}
               </div>
             </div>
-          </Link>
-        ))}
+          );
+        })}
       </div>
 
       <NavBar active="carte" />
+
+      <style>{`
+        @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+        @keyframes mapPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+        ::-webkit-scrollbar{display:none}
+      `}</style>
     </div>
   );
 }
