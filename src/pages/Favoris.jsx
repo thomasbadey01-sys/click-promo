@@ -1,185 +1,117 @@
 import { useState, useEffect } from "react";
-import { Offre } from "../api/entities";
-import { Link } from "react-router-dom";
+import { Offre } from "@/api/entities";
+import { useNavigate } from "react-router-dom";
 import { NavBar } from "./Feed";
+import { DS, Icon, CPLogo } from "./Home";
 
-function CountdownBadge({ dateFin }) {
-  const [label, setLabel] = useState("");
-  useEffect(() => {
-    const update = () => {
-      const diff = new Date(dateFin) - new Date();
-      if (diff <= 0) { setLabel("Expirée"); return; }
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      if (h > 24) setLabel(`${Math.floor(h/24)}j restants`);
-      else if (h > 0) setLabel(`${h}h ${m}m`);
-      else setLabel(`${m}m`);
-    };
-    update();
-    const t = setInterval(update, 10000);
-    return () => clearInterval(t);
-  }, [dateFin]);
-
-  if (!label) return null;
-  const isExpired = label === "Expirée";
-  const isUrgent = label.includes("m") && !label.includes("h") && !label.includes("j");
-  return (
-    <span style={{
-      background: isExpired ? "#f0f0f0" : isUrgent ? "#FF3B30" : "#FF6B00",
-      color: isExpired ? "#aaa" : "white",
-      borderRadius: 8, padding: "2px 7px",
-      fontSize: 11, fontWeight: 700
-    }}>
-      {isExpired ? "Expirée" : `⏱ ${label}`}
-    </span>
-  );
+function TimerBadge({ dateFin }) {
+  const [txt, setTxt] = useState(""); const [crit, setCrit] = useState(false);
+  useEffect(()=>{
+    const u=()=>{ const d=new Date(dateFin)-new Date(); if(d<=0){setTxt("Expirée");return;} const h=Math.floor(d/3600000),m=Math.floor((d%3600000)/60000); setCrit(d<3600000); setTxt(h>24?`${Math.floor(h/24)}j`:h>0?`${h}h ${m}m`:`${m}m`); };
+    u(); const t=setInterval(u,15000); return()=>clearInterval(t);
+  },[dateFin]);
+  if(!txt) return null;
+  const exp=txt==="Expirée";
+  return <span style={{display:"inline-flex",alignItems:"center",gap:4,background:exp?DS.gray100:crit?`${DS.red}15`:`${DS.orange}15`,color:exp?DS.gray400:crit?DS.red:DS.orange,borderRadius:DS.r99,padding:"3px 9px",fontSize:11,fontWeight:700,border:`1px solid ${exp?DS.gray200:crit?`${DS.red}44`:`${DS.orange}44`}`}}>{!exp&&<span style={{display:"flex"}}>{Icon.clock(10,crit?DS.red:DS.orange)}</span>}{exp?"Expirée":txt}</span>;
 }
 
 export default function Favoris() {
-  const [offres, setOffres] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [favIds, setFavIds] = useState([]);
-  const [tri, setTri] = useState("all"); // all | actives | urgentes
+  const navigate = useNavigate();
+  const [offres, setOffres] = useState([]); const [loading, setLoading] = useState(true);
+  const [favIds, setFavIds] = useState([]); const [tri, setTri] = useState("all");
+  const [removing, setRemoving] = useState(null);
 
-  useEffect(() => {
-    const ids = JSON.parse(localStorage.getItem("cp_favs") || "[]");
-    setFavIds(ids);
-    if (ids.length === 0) { setLoading(false); return; }
-    Offre.list().then(all => {
-      setOffres(all.filter(o => ids.includes(o.id)));
-      setLoading(false);
-    });
-  }, []);
+  useEffect(()=>{
+    const ids=JSON.parse(localStorage.getItem("cp_favs")||"[]"); setFavIds(ids);
+    if(!ids.length){setLoading(false);return;}
+    Offre.list().then(all=>{setOffres(all.filter(o=>ids.includes(o.id)));setLoading(false);});
+  },[]);
 
-  const removeFav = (id) => {
-    const newFavs = favIds.filter(f => f !== id);
-    setFavIds(newFavs);
-    setOffres(prev => prev.filter(o => o.id !== id));
-    localStorage.setItem("cp_favs", JSON.stringify(newFavs));
+  const remove = id => {
+    setRemoving(id);
+    setTimeout(()=>{ const nf=favIds.filter(f=>f!==id); setFavIds(nf); setOffres(p=>p.filter(o=>o.id!==id)); localStorage.setItem("cp_favs",JSON.stringify(nf)); setRemoving(null); if(navigator.vibrate)navigator.vibrate(20); },250);
   };
 
-  const filtered = offres.filter(o => {
-    if (tri === "actives") return o.est_active;
-    if (tri === "urgentes") return o.est_urgente && o.est_active;
+  const nbA=offres.filter(o=>o.est_active&&!(o.date_fin&&new Date(o.date_fin)<new Date())).length;
+  const nbU=offres.filter(o=>o.est_urgente&&o.est_active).length;
+  const filtered=offres.filter(o=>{
+    if(tri==="actives")return o.est_active&&!(o.date_fin&&new Date(o.date_fin)<new Date());
+    if(tri==="urgentes")return o.est_urgente&&o.est_active;
+    if(tri==="expirees")return !o.est_active||(o.date_fin&&new Date(o.date_fin)<new Date());
     return true;
   });
 
   return (
-    <div style={{ background: "#F2F2F7", minHeight: "100vh", fontFamily: "'SF Pro Display', -apple-system, sans-serif", maxWidth: 430, margin: "0 auto" }}>
+    <div style={{background:DS.gray50,minHeight:"100vh",fontFamily:DS.font,maxWidth:430,margin:"0 auto"}}>
       {/* Header */}
-      <div style={{ background: "linear-gradient(135deg, #FF6B00, #FF3B30)", padding: "52px 20px 20px" }}>
-        <div style={{ color: "white", fontSize: 20, fontWeight: 800 }}>❤️ Mes Favoris</div>
-        <div style={{ color: "rgba(255,255,255,0.8)", fontSize: 13, marginTop: 2 }}>
-          {offres.length} offre{offres.length > 1 ? "s" : ""} sauvegardée{offres.length > 1 ? "s" : ""}
+      <div style={{background:"white",padding:"50px 16px 0",position:"sticky",top:0,zIndex:100,borderBottom:`1px solid ${DS.gray100}`}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <CPLogo size={32}/>
+            <div>
+              <div style={{fontSize:17,fontWeight:800,color:DS.black,letterSpacing:-0.4}}>Mes Favoris</div>
+              <div style={{fontSize:11,color:DS.gray500}}>{offres.length} offre{offres.length!==1?"s":""} sauvegardée{offres.length!==1?"s":""}</div>
+            </div>
+          </div>
+          {nbU>0&&<div style={{display:"flex",alignItems:"center",gap:5,background:`${DS.red}15`,borderRadius:DS.r99,padding:"5px 11px",border:`1px solid ${DS.red}33`}}>{Icon.flash(12,DS.red)}<span style={{fontSize:11,fontWeight:700,color:DS.red}}>{nbU} flash</span></div>}
         </div>
+        {offres.length>0&&(
+          <div style={{display:"flex",gap:7,overflowX:"auto",paddingBottom:12,scrollbarWidth:"none"}}>
+            {[{k:"all",l:`Tout (${offres.length})`},{k:"actives",l:`Actives (${nbA})`},{k:"urgentes",l:`Flash (${nbU})`},{k:"expirees",l:"Expirées"}].map(t=>(
+              <button key={t.k} onClick={()=>setTri(t.k)} style={{flexShrink:0,border:`1.5px solid ${tri===t.k?DS.orange:DS.gray200}`,borderRadius:DS.r99,padding:"6px 13px",background:tri===t.k?DS.orange:"white",color:tri===t.k?"white":DS.gray700,fontSize:12,fontWeight:tri===t.k?700:500,cursor:"pointer",transition:"all 0.2s",fontFamily:DS.font}}>{t.l}</button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Filtres */}
-      {offres.length > 0 && (
-        <div style={{ background: "white", padding: "10px 16px", display: "flex", gap: 8, borderBottom: "1px solid #f0f0f0" }}>
-          {[
-            { key: "all", label: `Tout (${offres.length})` },
-            { key: "actives", label: `Actives (${offres.filter(o => o.est_active).length})` },
-            { key: "urgentes", label: `🔥 Urgentes (${offres.filter(o => o.est_urgente && o.est_active).length})` },
-          ].map(t => (
-            <button key={t.key} onClick={() => setTri(t.key)} style={{
-              background: tri === t.key ? "#FF6B00" : "#f2f2f7",
-              color: tri === t.key ? "white" : "#555",
-              border: "none", borderRadius: 20, padding: "6px 12px",
-              fontSize: 12, fontWeight: 600, cursor: "pointer"
-            }}>{t.label}</button>
-          ))}
-        </div>
-      )}
+      <div style={{padding:"14px 14px 100px"}}>
+        {loading&&[1,2,3].map(i=><div key={i} style={{background:"white",borderRadius:DS.r16,height:100,marginBottom:10,boxShadow:DS.s1,overflow:"hidden"}}><div style={{height:"100%",background:"linear-gradient(90deg,#f3f4f6 25%,#fafafa 50%,#f3f4f6 75%)",backgroundSize:"400% 100%",animation:"shimmer 1.4s infinite"}}/></div>)}
 
-      <div style={{ padding: "14px 16px 100px" }}>
-        {loading && <div style={{ textAlign: "center", padding: 40, color: "#aaa" }}>Chargement...</div>}
-
-        {!loading && offres.length === 0 && (
-          <div style={{ textAlign: "center", padding: "70px 20px" }}>
-            <div style={{ fontSize: 64, marginBottom: 16 }}>🤍</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#1a1a1a", marginBottom: 8 }}>Aucun favori</div>
-            <div style={{ fontSize: 14, color: "#888", marginBottom: 24, lineHeight: 1.6 }}>
-              Appuyez sur le ❤️ d'une offre pour la sauvegarder ici
-            </div>
-            <Link to="/Feed" style={{ textDecoration: "none" }}>
-              <div style={{
-                display: "inline-block",
-                background: "linear-gradient(135deg, #FF6B00, #FF3B30)",
-                color: "white", borderRadius: 14,
-                padding: "13px 28px", fontWeight: 700, fontSize: 15,
-                boxShadow: "0 4px 14px rgba(255,107,0,0.35)"
-              }}>
-                Découvrir les offres
-              </div>
-            </Link>
+        {!loading&&offres.length===0&&(
+          <div style={{textAlign:"center",padding:"72px 24px"}}>
+            <div style={{width:80,height:80,borderRadius:DS.r24,background:DS.gray100,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px",color:DS.gray300}}>{Icon.heart(36,DS.gray300)}</div>
+            <div style={{fontSize:20,fontWeight:800,color:DS.black,marginBottom:8,letterSpacing:-0.3}}>Pas encore de favoris</div>
+            <div style={{fontSize:14,color:DS.gray500,lineHeight:1.7,marginBottom:24}}>Appuyez sur {Icon.heart(14,DS.red,true)} sur une offre pour la retrouver ici.</div>
+            <button onClick={()=>navigate("/Feed")} style={{background:DS.gradMain,color:"white",border:"none",borderRadius:DS.r16,padding:"13px 28px",fontWeight:700,fontSize:14,cursor:"pointer",boxShadow:DS.sOrange}}>Découvrir les offres</button>
           </div>
         )}
 
-        {!loading && offres.length > 0 && filtered.length === 0 && (
-          <div style={{ textAlign: "center", padding: "40px 20px" }}>
-            <div style={{ fontSize: 40, marginBottom: 10 }}>🔍</div>
-            <div style={{ color: "#666" }}>Aucune offre dans ce filtre</div>
+        {!loading&&offres.length>0&&filtered.length===0&&(
+          <div style={{textAlign:"center",padding:"48px 24px"}}>
+            <div style={{fontSize:13,color:DS.gray400,marginBottom:12}}>Aucune offre dans ce filtre</div>
+            <button onClick={()=>setTri("all")} style={{background:"white",border:`1.5px solid ${DS.gray200}`,borderRadius:DS.r16,padding:"9px 20px",fontSize:13,fontWeight:600,color:DS.gray700,cursor:"pointer"}}>Voir tout</button>
           </div>
         )}
 
-        {filtered.map(offre => {
-          const isExpired = offre.date_fin && new Date(offre.date_fin) < new Date();
+        {filtered.map(o=>{
+          const exp=o.date_fin&&new Date(o.date_fin)<new Date();
+          const pct=o.stock_initial?(o.stock_restant/o.stock_initial)*100:100;
           return (
-            <div key={offre.id} style={{
-              background: "white", borderRadius: 16, overflow: "hidden",
-              marginBottom: 14, boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
-              opacity: isExpired ? 0.6 : 1
-            }}>
-              <Link to={`/OffreDetail?id=${offre.id}`} style={{ textDecoration: "none" }}>
-                <div style={{ display: "flex" }}>
-                  <div style={{ position: "relative", width: 110, flexShrink: 0 }}>
-                    <img src={offre.image_url} alt={offre.titre}
-                      style={{ width: "100%", height: 110, objectFit: "cover" }} />
-                    <div style={{
-                      position: "absolute", top: 8, left: 8,
-                      background: "#FF3B30", color: "white",
-                      borderRadius: 10, padding: "2px 8px",
-                      fontSize: 12, fontWeight: 800
-                    }}>
-                      -{offre.valeur_reduction}{offre.type_reduction === "pourcentage" ? "%" : "€"}
-                    </div>
-                  </div>
-                  <div style={{ padding: "12px", flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a", marginBottom: 3, lineHeight: 1.3,
-                      overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical"
-                    }}>
-                      {offre.titre}
-                    </div>
-                    <div style={{ fontSize: 12, color: "#888", marginBottom: 8 }}>{offre.commercant_nom}</div>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
-                      {offre.prix_promo > 0 && (
-                        <span style={{ fontSize: 15, fontWeight: 800, color: "#FF3B30" }}>{offre.prix_promo}€</span>
-                      )}
-                      {offre.prix_original > 0 && (
-                        <span style={{ fontSize: 12, color: "#bbb", textDecoration: "line-through" }}>{offre.prix_original}€</span>
-                      )}
-                      {offre.date_fin && <CountdownBadge dateFin={offre.date_fin} />}
-                    </div>
-                  </div>
+            <div key={o.id} style={{background:"white",borderRadius:DS.r16,overflow:"hidden",marginBottom:10,boxShadow:DS.s1,opacity:removing===o.id?0:exp?0.6:1,transform:removing===o.id?"translateX(50px)":"none",transition:"opacity 0.25s,transform 0.25s",border:o.est_urgente&&!exp?`1.5px solid ${DS.red}22`:`1.5px solid transparent`}}>
+              <div onClick={()=>navigate(`/OffreDetail?id=${o.id}`)} style={{display:"flex",cursor:"pointer"}}>
+                <div style={{position:"relative",width:108,flexShrink:0}}>
+                  <img src={o.image_url} alt={o.titre} style={{width:"100%",height:108,objectFit:"cover"}} onError={e=>e.target.src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=200"}/>
+                  <div style={{position:"absolute",top:8,left:8,background:exp?"rgba(0,0,0,0.5)":o.valeur_reduction>=40?DS.red:DS.orange,color:"white",borderRadius:DS.r8,padding:"3px 8px",fontSize:11,fontWeight:900}}>{exp?"Exp.":`-${o.valeur_reduction}${o.type_reduction==="pourcentage"?"%":"€"}`}</div>
+                  {o.est_urgente&&!exp&&<div style={{position:"absolute",bottom:0,left:0,right:0,background:`${DS.red}CC`,padding:"3px 0",textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>{Icon.flash(10,"white")}<span style={{color:"white",fontSize:10,fontWeight:700}}>FLASH</span></div>}
                 </div>
-              </Link>
-
-              <div style={{
-                borderTop: "1px solid #f5f5f5", padding: "9px 14px",
-                display: "flex", justifyContent: "space-between", alignItems: "center"
-              }}>
-                <div style={{ fontSize: 12, color: isExpired ? "#FF3B30" : offre.est_active ? "#34C759" : "#FF9500", fontWeight: 600 }}>
-                  {isExpired ? "⚠️ Expirée" : offre.est_active ? "✅ Disponible" : "⏸ Inactive"}
+                <div style={{padding:"11px 13px",flex:1,minWidth:0}}>
+                  <div style={{fontWeight:700,fontSize:13,color:DS.black,marginBottom:3,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{o.titre}</div>
+                  <div style={{fontSize:11,color:DS.gray500,marginBottom:6,display:"flex",alignItems:"center",gap:4}}>{Icon.store(11,DS.gray400)}{o.commercant_nom}</div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:6,alignItems:"center"}}>
+                    {o.prix_promo>0&&<span style={{fontSize:15,fontWeight:900,color:DS.orange}}>{o.prix_promo}€</span>}
+                    {o.prix_original>0&&<span style={{fontSize:12,color:DS.gray300,textDecoration:"line-through"}}>{o.prix_original}€</span>}
+                    {o.date_fin&&<TimerBadge dateFin={o.date_fin}/>}
+                  </div>
+                  {o.stock_restant!=null&&!exp&&<div style={{marginTop:7,background:DS.gray100,borderRadius:DS.r99,height:3}}><div style={{background:pct<30?DS.red:DS.green,height:"100%",borderRadius:DS.r99,width:`${Math.min(pct,100)}%`}}/></div>}
                 </div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <Link to={`/OffreDetail?id=${offre.id}`} style={{ textDecoration: "none" }}>
-                    <div style={{ color: "#FF6B00", fontSize: 13, fontWeight: 600 }}>Voir →</div>
-                  </Link>
-                  <button onClick={() => removeFav(offre.id)} style={{
-                    background: "none", border: "none", color: "#ccc",
-                    fontSize: 16, cursor: "pointer", padding: "0 4px"
-                  }}>🗑</button>
+              </div>
+              <div style={{borderTop:`1px solid ${DS.gray100}`,padding:"8px 13px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,fontWeight:700,color:exp?DS.red:o.est_active?DS.green:DS.gray400}}>
+                  {exp?<>{Icon.clock(11,DS.red)} Expirée</>:o.est_active?<>{Icon.check(11,DS.green)} Disponible</>:<span>Inactive</span>}
+                </div>
+                <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                  <button onClick={()=>navigate(`/OffreDetail?id=${o.id}`)} style={{background:`${DS.orange}15`,border:"none",borderRadius:DS.r99,padding:"6px 13px",fontSize:12,fontWeight:700,color:DS.orange,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>Voir {Icon.chevronR(12,DS.orange)}</button>
+                  <button onClick={()=>remove(o.id)} style={{background:"#FEF2F2",border:"none",borderRadius:DS.r99,width:30,height:30,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:DS.red}}>{Icon.trash(14,DS.red)}</button>
                 </div>
               </div>
             </div>
@@ -187,7 +119,8 @@ export default function Favoris() {
         })}
       </div>
 
-      <NavBar active="favoris" />
+      <NavBar active="favoris"/>
+      <style>{`@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}::-webkit-scrollbar{display:none}`}</style>
     </div>
   );
 }
