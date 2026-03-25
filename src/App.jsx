@@ -8,6 +8,7 @@ import OffreDetail from './pages/OffreDetail';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import Profil from './pages/Profil';
 import Login from './pages/Login';
+import Abonnement from './pages/Abonnement';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
         <Route path="/PrivacyPolicy" element={<PrivacyPolicy />} />
         <Route path="/Profil" element={<Profil />} />
         <Route path="/Login" element={<Login />} />
+        <Route path="/Abonnement" element={<Abonnement />} />
       </Routes>
     </BrowserRouter>
   )
