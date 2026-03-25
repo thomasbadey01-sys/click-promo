@@ -1,375 +1,408 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Offre } from "@/api/entities";
 import { Link, useNavigate } from "react-router-dom";
-import { DS, Icon, CPLogo } from "./Home";
+import { DS, Ic, CPLogo } from "./Home";
 
-const CATEGORIES = ["Tout","Restaurant","Boutique","Beauté & Coiffure","Fitness & Sport","Épicerie","Pharmacie","Services"];
-const CAT_COLORS = {
-  "Tout":DS.orange,"Restaurant":"#EF4444","Boutique":"#A855F7","Beauté & Coiffure":"#EC4899",
-  "Fitness & Sport":"#22C55E","Épicerie":"#F59E0B","Pharmacie":"#06B6D4","Services":"#3B82F6","Autre":DS.gray500
-};
-// Icônes SVG custom par catégorie
-const CAT_SVG = {
-  "Tout":     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>,
-  "Restaurant":<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 00-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>,
-  "Boutique":  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>,
-  "Beauté & Coiffure":<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>,
-  "Fitness & Sport":<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M6.5 6.5h11M6.5 17.5h11M2 12h2m16 0h2M4 8v8M20 8v8"/></svg>,
-  "Épicerie":  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 001.95-1.57l1.65-7.43H6"/><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/></svg>,
-  "Pharmacie": <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-  "Services":  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>,
-};
-
+// ── Utils ──────────────────────────────────────────────────────────────────
 export function haversine(la1,lo1,la2,lo2){const R=6371,dL=((la2-la1)*Math.PI)/180,dO=((lo2-lo1)*Math.PI)/180,a=Math.sin(dL/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dO/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
-export function formatDist(km){return km<1?`${Math.round(km*1000)}m`:`${km.toFixed(1)}km`;}
+export function formatDist(km){return km<1?`${Math.round(km*1000)} m`:`${km.toFixed(1)} km`;}
 
-// ── Navbar ─────────────────────────────────────────────────────────────────
+const CATS = ["Tout","Restaurant","Boutique","Beauté & Coiffure","Fitness & Sport","Épicerie","Pharmacie","Services"];
+const CAT_META = {
+  "Tout":            { color:"#0A0A0A", icon:(c,s)=>Ic.cat.tout(c,s) },
+  "Restaurant":      { color:"#E53E3E", icon:(c,s)=>Ic.cat.restaurant(c,s) },
+  "Boutique":        { color:"#7C3AED", icon:(c,s)=>Ic.cat.boutique(c,s) },
+  "Beauté & Coiffure":{ color:"#D53F8C", icon:(c,s)=>Ic.cat.beaute(c,s) },
+  "Fitness & Sport": { color:"#00B37E", icon:(c,s)=>Ic.cat.sport(c,s) },
+  "Épicerie":        { color:"#D97706", icon:(c,s)=>Ic.cat.epicerie(c,s) },
+  "Pharmacie":       { color:"#0369A1", icon:(c,s)=>Ic.cat.pharmacie(c,s) },
+  "Services":        { color:"#2563EB", icon:(c,s)=>Ic.cat.services(c,s) },
+};
+
+// ── NavBar ─────────────────────────────────────────────────────────────────
 export function NavBar({ active }) {
   const navigate = useNavigate();
   const tabs = [
-    { key:"feed",   label:"Offres",   path:"/Feed" },
-    { key:"carte",  label:"Carte",    path:"/Carte" },
-    { key:"favoris",label:"Favoris",  path:"/Favoris" },
-    { key:"profil", label:"Profil",   path:"/Profil" },
+    { key:"feed",    label:"Offres",  path:"/Feed" },
+    { key:"carte",   label:"Carte",   path:"/Carte" },
+    { key:"favoris", label:"Favoris", path:"/Favoris" },
+    { key:"profil",  label:"Profil",  path:"/Profil" },
   ];
   return (
-    <div style={{
+    <nav style={{
       position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)",
-      width:"100%", maxWidth:430, zIndex:1000,
-      background:"rgba(255,255,255,0.96)", backdropFilter:"blur(24px) saturate(180%)",
-      borderTop:`1px solid ${DS.gray100}`,
-      display:"flex", paddingBottom:"env(safe-area-inset-bottom,12px)",
+      width:"100%", maxWidth:430, zIndex:999,
+      background:"rgba(255,255,255,0.94)",
+      backdropFilter:"blur(20px) saturate(160%)",
+      WebkitBackdropFilter:"blur(20px) saturate(160%)",
+      borderTop:`1px solid ${DS.ink10}`,
+      display:"flex",
+      paddingBottom:"max(env(safe-area-inset-bottom),8px)",
     }}>
       {tabs.map(t => {
-        const on = active===t.key;
+        const on = active === t.key;
+        const col = on ? DS.brand : DS.ink20;
         return (
-          <button key={t.key} onClick={()=>navigate(t.path)} style={{ flex:1, background:"none", border:"none", cursor:"pointer", padding:"11px 4px 5px", display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
-            {t.key==="feed"    && Icon.nav.feed(on)}
-            {t.key==="carte"   && Icon.nav.map(on)}
-            {t.key==="favoris" && Icon.nav.favs(on)}
-            {t.key==="profil"  && Icon.nav.profile(on)}
-            <span style={{ fontSize:10, fontWeight:on?700:500, color:on?DS.orange:DS.gray500, fontFamily:DS.font, letterSpacing:0.2 }}>{t.label}</span>
+          <button key={t.key} onClick={() => navigate(t.path)} style={{ flex:1, background:"none", border:"none", cursor:"pointer", padding:"10px 0 4px", display:"flex", flexDirection:"column", alignItems:"center", gap:3 }}>
+            {t.key==="feed"    && Ic.grid(col)}
+            {t.key==="carte"   && Ic.map(col)}
+            {t.key==="favoris" && Ic.heart(col)}
+            {t.key==="profil"  && Ic.user(col)}
+            <span style={{ fontSize:9.5, fontWeight:on?700:400, color:col, fontFamily:DS.font, letterSpacing:0.3, textTransform:"uppercase" }}>{t.label}</span>
           </button>
         );
       })}
-    </div>
+    </nav>
   );
 }
 
-// ── Skeleton ──────────────────────────────────────────────────────────────
+// ── Timer ──────────────────────────────────────────────────────────────────
+function Timer({ dateFin }) {
+  const [txt, setTxt] = useState(""); const [crit, setCrit] = useState(false);
+  useEffect(() => {
+    const u = () => {
+      const d = new Date(dateFin) - new Date();
+      if (d <= 0) { setTxt("Expiré"); return; }
+      const h=Math.floor(d/3600000), m=Math.floor((d%3600000)/60000), s=Math.floor((d%60000)/1000);
+      setCrit(d < 3600000);
+      setTxt(h > 0 ? `${h}h ${m}m` : `${m}m ${s}s`);
+    };
+    u(); const id = setInterval(u, 1000); return () => clearInterval(id);
+  }, [dateFin]);
+  const col = crit ? DS.danger : DS.brand;
+  return (
+    <span style={{ display:"inline-flex", alignItems:"center", gap:4, background:"rgba(0,0,0,0.55)", backdropFilter:"blur(8px)", color:DS.white, borderRadius:DS.pill, padding:"4px 10px", fontSize:11, fontWeight:600, letterSpacing:0.2 }}>
+      {Ic.bolt(DS.white, 11)} {txt}
+    </span>
+  );
+}
+
+// ── Skeleton ───────────────────────────────────────────────────────────────
 function Skeleton() {
   return (
-    <div style={{ background:"white", borderRadius:DS.r20, overflow:"hidden", boxShadow:DS.s1, marginBottom:12 }}>
-      <div style={{ height:200, background:"linear-gradient(90deg,#f3f4f6 25%,#fafafa 50%,#f3f4f6 75%)", backgroundSize:"400% 100%", animation:"shimmer 1.4s ease infinite" }}/>
-      <div style={{ padding:"14px 16px 16px" }}>
-        {[["55%","10px"],["85%","14px"],["40%","10px"]].map(([w,h],i)=>(
-          <div key={i} style={{ height:h, background:"#f3f4f6", borderRadius:6, width:w, marginBottom:i<2?8:0 }}/>
-        ))}
+    <div style={{ background:DS.white, borderRadius:DS.xl, overflow:"hidden", marginBottom:12, boxShadow:DS.e1 }}>
+      <div style={{ height:200, background:`linear-gradient(90deg,${DS.ink05} 25%,${DS.white} 50%,${DS.ink05} 75%)`, backgroundSize:"400% 100%", animation:"sh 1.4s ease infinite" }}/>
+      <div style={{ padding:"14px 16px 18px" }}>
+        <div style={{ height:10, background:DS.ink05, borderRadius:4, width:"45%", marginBottom:10 }}/>
+        <div style={{ height:16, background:DS.ink05, borderRadius:4, width:"80%", marginBottom:8 }}/>
+        <div style={{ height:12, background:DS.ink05, borderRadius:4, width:"55%", marginBottom:14 }}/>
+        <div style={{ height:20, background:DS.ink05, borderRadius:4, width:"30%" }}/>
       </div>
     </div>
   );
 }
 
-// ── Timer ─────────────────────────────────────────────────────────────────
-function Timer({ dateFin }) {
-  const [txt, setTxt] = useState(""); const [crit, setCrit] = useState(false);
-  useEffect(()=>{
-    const u=()=>{ const d=new Date(dateFin)-new Date(); if(d<=0){setTxt("Expiré");return;} const h=Math.floor(d/3600000),m=Math.floor((d%3600000)/60000),s=Math.floor((d%60000)/1000); setCrit(d<3600000); setTxt(h>0?`${h}h ${m}m`:`${m}m ${s}s`); };
-    u(); const id=setInterval(u,1000); return()=>clearInterval(id);
-  },[dateFin]);
-  return (
-    <span style={{ display:"inline-flex", alignItems:"center", gap:4, background:crit?"#FEF2F2":"#FFF7ED", color:crit?DS.red:DS.orange, borderRadius:DS.r99, padding:"3px 9px", fontSize:11, fontWeight:700, border:`1px solid ${crit?"#FECACA":"#FED7AA"}` }}>
-      <span style={{ display:"flex" }}>{Icon.clock(11, crit?DS.red:DS.orange)}</span>
-      {txt}
-    </span>
-  );
-}
-
-// ── Card offre ────────────────────────────────────────────────────────────
-function OffreCard({ offre, favs, onToggle, userPos, onFavChange }) {
+// ── Card ───────────────────────────────────────────────────────────────────
+function OffreCard({ offre, favs, onToggle, onFavChange, userPos }) {
   const isFav = favs.includes(offre.id);
-  const pct = offre.stock_initial?(offre.stock_restant/offre.stock_initial)*100:100;
-  const dist = userPos&&offre.latitude?haversine(userPos.lat,userPos.lng,offre.latitude,offre.longitude):null;
-  const [imgErr, setImgErr] = useState(false);
-  const catColor = CAT_COLORS[offre.categorie]||DS.gray500;
-  const isExpired = offre.date_fin && new Date(offre.date_fin)<new Date();
+  const dist = userPos && offre.latitude ? haversine(userPos.lat, userPos.lng, offre.latitude, offre.longitude) : null;
+  const pct = offre.stock_initial ? (offre.stock_restant / offre.stock_initial) * 100 : 100;
+  const expired = offre.date_fin && new Date(offre.date_fin) < new Date();
+  const meta = CAT_META[offre.categorie] || CAT_META["Tout"];
+  const bigDiscount = offre.valeur_reduction >= 40;
 
-  const togFav = e => {
+  const toggleFav = e => {
     e.preventDefault(); e.stopPropagation();
     onToggle(offre.id);
-    if(navigator.vibrate) navigator.vibrate(12);
     onFavChange(!isFav);
+    if (navigator.vibrate) navigator.vibrate(10);
   };
 
   return (
-    <Link to={`/OffreDetail?id=${offre.id}`} style={{ textDecoration:"none", display:"block" }}>
-      <div style={{ background:"white", borderRadius:DS.r20, overflow:"hidden", boxShadow:DS.s1, marginBottom:12, transition:"box-shadow 0.2s, transform 0.2s" }}
-        onMouseEnter={e=>{e.currentTarget.style.boxShadow=DS.s3;e.currentTarget.style.transform="translateY(-2px)"}}
-        onMouseLeave={e=>{e.currentTarget.style.boxShadow=DS.s1;e.currentTarget.style.transform="none"}}
-      >
-        {/* Image */}
-        <div style={{ position:"relative", height:210, overflow:"hidden" }}>
-          <img src={imgErr?"https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800":offre.image_url}
-            alt={offre.titre} loading="lazy" onError={()=>setImgErr(true)}
-            style={{ width:"100%", height:"100%", objectFit:"cover", transition:"transform 0.5s" }}
+    <Link to={`/OffreDetail?id=${offre.id}`} style={{ textDecoration:"none", display:"block", marginBottom:12 }}>
+      <article style={{ background:DS.white, borderRadius:DS.xl, overflow:"hidden", boxShadow:DS.e1 }}>
+        {/* IMAGE */}
+        <div style={{ position:"relative", height:210 }}>
+          <img src={offre.image_url} alt={offre.titre} loading="lazy"
+            style={{ width:"100%", height:"100%", objectFit:"cover" }}
+            onError={e => e.target.src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800"}
           />
-          <div style={{ position:"absolute", inset:0, background:DS.gradCard }}/>
+          {/* Overlay gradient */}
+          <div style={{ position:"absolute", inset:0, background:"linear-gradient(to bottom, rgba(0,0,0,0) 45%, rgba(0,0,0,0.62) 100%)" }}/>
 
-          {/* Badge réduction */}
+          {/* Badge % — haut gauche */}
           <div style={{
             position:"absolute", top:14, left:14,
-            background:offre.valeur_reduction>=40?DS.red:DS.orange,
-            color:"white", borderRadius:DS.r8, padding:"5px 11px",
-            fontWeight:900, fontSize:13, letterSpacing:0.3,
-            fontFamily:DS.font
+            background: bigDiscount ? DS.danger : DS.ink,
+            color:DS.white, borderRadius:DS.sm, padding:"5px 12px",
+            fontWeight:800, fontSize:14, letterSpacing:-0.3,
           }}>
             -{offre.valeur_reduction}{offre.type_reduction==="pourcentage"?"%":"€"}
           </div>
 
-          {/* Favori */}
-          <button onClick={togFav} style={{
+          {/* Favori — haut droit */}
+          <button onClick={toggleFav} aria-label="Favori" style={{
             position:"absolute", top:12, right:12,
-            width:36, height:36, borderRadius:DS.r99,
-            background:"rgba(255,255,255,0.9)", border:"none", cursor:"pointer",
+            width:36, height:36, borderRadius:DS.pill,
+            background:"rgba(255,255,255,0.88)", border:"none", cursor:"pointer",
             display:"flex", alignItems:"center", justifyContent:"center",
-            backdropFilter:"blur(8px)",
-            boxShadow:"0 2px 8px rgba(0,0,0,0.15)",
-            transform:isFav?"scale(1.1)":"scale(1)",
-            transition:"transform 0.25s cubic-bezier(0.34,1.56,0.64,1)"
+            backdropFilter:"blur(10px)",
+            transition:"transform .2s cubic-bezier(.34,1.56,.64,1)",
+            transform: isFav ? "scale(1.12)" : "scale(1)",
           }}>
-            {Icon.heart(16, isFav?DS.red:DS.gray500, isFav)}
+            {Ic.heart(isFav ? DS.danger : DS.ink40, 17, isFav)}
           </button>
 
-          {/* Bottom info on image */}
-          <div style={{ position:"absolute", bottom:12, left:14, right:14, display:"flex", justifyContent:"space-between", alignItems:"flex-end" }}>
-            {offre.est_urgente && !isExpired && <Timer dateFin={offre.date_fin}/>}
-            {dist!==null && (
-              <span style={{ marginLeft:"auto", display:"inline-flex", alignItems:"center", gap:4, background:"rgba(0,0,0,0.55)", color:"white", borderRadius:DS.r99, padding:"3px 9px", fontSize:11, fontWeight:600, backdropFilter:"blur(8px)" }}>
-                {Icon.pin(11,"white")} {formatDist(dist)}
+          {/* Bas image */}
+          <div style={{ position:"absolute", bottom:12, left:14, right:14, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            {offre.est_urgente && !expired && <Timer dateFin={offre.date_fin}/>}
+            {dist !== null && (
+              <span style={{ marginLeft:"auto", display:"inline-flex", alignItems:"center", gap:5, background:"rgba(0,0,0,0.55)", backdropFilter:"blur(8px)", color:DS.white, borderRadius:DS.pill, padding:"4px 10px", fontSize:11, fontWeight:600 }}>
+                {Ic.pin(DS.white, 12)} {formatDist(dist)}
               </span>
             )}
           </div>
         </div>
 
-        {/* Contenu */}
-        <div style={{ padding:"13px 15px 15px" }}>
-          {/* Catégorie */}
-          <div style={{ display:"inline-flex", alignItems:"center", gap:5, background:`${catColor}14`, color:catColor, borderRadius:DS.r99, padding:"3px 9px", marginBottom:8 }}>
-            <span style={{ display:"flex", color:catColor }}>{CAT_SVG[offre.categorie]||CAT_SVG["Tout"]}</span>
-            <span style={{ fontSize:11, fontWeight:700, letterSpacing:0.3 }}>{offre.categorie}</span>
+        {/* CONTENU */}
+        <div style={{ padding:"14px 16px 16px" }}>
+          {/* Catégorie pill */}
+          <div style={{ display:"inline-flex", alignItems:"center", gap:5, marginBottom:9, background:`${meta.color}12`, borderRadius:DS.pill, padding:"3px 10px" }}>
+            <span style={{ display:"flex", color:meta.color }}>{meta.icon(meta.color, 12)}</span>
+            <span style={{ fontSize:11, fontWeight:700, color:meta.color, letterSpacing:0.4, textTransform:"uppercase" }}>{offre.categorie}</span>
           </div>
 
-          <div style={{ fontWeight:700, fontSize:15, color:DS.black, marginBottom:3, lineHeight:1.3, letterSpacing:-0.2 }}>
+          {/* Titre */}
+          <div style={{ fontSize:15, fontWeight:700, color:DS.ink, lineHeight:1.35, letterSpacing:-0.2, marginBottom:5 }}>
             {offre.titre}
           </div>
-          <div style={{ fontSize:12, color:DS.gray500, marginBottom:10, display:"flex", alignItems:"center", gap:5 }}>
-            {Icon.store(12, DS.gray400)}
-            {offre.commercant_nom}
+
+          {/* Commerce */}
+          <div style={{ display:"flex", alignItems:"center", gap:5, color:DS.ink40, fontSize:12, marginBottom:12 }}>
+            {Ic.store(DS.ink20, 13)}
+            <span>{offre.commercant_nom}</span>
           </div>
 
           {/* Prix + stock */}
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-            <div style={{ display:"flex", alignItems:"baseline", gap:7 }}>
-              {offre.prix_promo>0 && <span style={{ fontSize:20, fontWeight:900, color:DS.orange, letterSpacing:-0.5 }}>{offre.prix_promo}€</span>}
-              {offre.prix_original>0 && offre.prix_original!==offre.prix_promo && (
-                <span style={{ fontSize:13, color:DS.gray300, textDecoration:"line-through" }}>{offre.prix_original}€</span>
+            <div style={{ display:"flex", alignItems:"baseline", gap:8 }}>
+              {offre.prix_promo > 0
+                ? <span style={{ fontSize:22, fontWeight:800, color:DS.brand, letterSpacing:-0.8 }}>{offre.prix_promo}€</span>
+                : <span style={{ fontSize:18, fontWeight:700, color:DS.success }}>Gratuit</span>}
+              {offre.prix_original > 0 && offre.prix_original !== offre.prix_promo && (
+                <span style={{ fontSize:13, color:DS.ink20, textDecoration:"line-through" }}>{offre.prix_original}€</span>
               )}
-              {offre.prix_promo===0 && <span style={{ fontSize:16, fontWeight:800, color:DS.green }}>Gratuit</span>}
             </div>
-            {offre.stock_restant!=null && (
-              <div style={{ textAlign:"right" }}>
-                <div style={{ fontSize:10, color:pct<30?DS.red:DS.gray500, fontWeight:600, marginBottom:3 }}>
-                  {offre.stock_restant} restant{offre.stock_restant>1?"s":""}
-                </div>
-                <div style={{ background:DS.gray100, borderRadius:DS.r99, height:3, width:64 }}>
-                  <div style={{ background:pct<30?DS.red:DS.green, height:"100%", borderRadius:DS.r99, width:`${Math.min(pct,100)}%`, transition:"width 0.8s" }}/>
+            {offre.stock_restant != null && (
+              <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:3 }}>
+                <span style={{ fontSize:11, fontWeight:600, color: pct < 30 ? DS.danger : DS.ink40 }}>
+                  {offre.stock_restant} dispo
+                </span>
+                <div style={{ width:52, height:3, background:DS.ink10, borderRadius:DS.pill }}>
+                  <div style={{ height:"100%", borderRadius:DS.pill, background: pct<30 ? DS.danger : DS.success, width:`${Math.min(pct,100)}%`, transition:"width 1s" }}/>
                 </div>
               </div>
             )}
           </div>
         </div>
-      </div>
+      </article>
     </Link>
   );
 }
 
-// ── Page Feed ─────────────────────────────────────────────────────────────
+// ── Feed ───────────────────────────────────────────────────────────────────
 export default function Feed() {
-  const [offres, setOffres]       = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [spinning, setSpinning]   = useState(false);
-  const [cat, setCat]             = useState("Tout");
-  const [q, setQ]                 = useState("");
-  const [tri, setTri]             = useState("proximite");
-  const [userPos, setUserPos]     = useState(null);
-  const [favs, setFavs]           = useState(()=>{ try{return JSON.parse(localStorage.getItem("cp_favs")||"[]")}catch{return[]} });
-  const [toast, setToast]         = useState(null);
+  const [offres, setOffres]   = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [cat, setCat]         = useState("Tout");
+  const [q, setQ]             = useState("");
+  const [sort, setSort]       = useState("distance");
+  const [userPos, setUserPos] = useState(null);
+  const [spinning, setSpinning] = useState(false);
+  const [favs, setFavs]       = useState(() => { try { return JSON.parse(localStorage.getItem("cp_favs")||"[]"); } catch { return []; } });
+  const [toast, setToast]     = useState(null);
+  const [searchOpen, setSearchOpen] = useState(false);
 
-  useEffect(()=>{
-    navigator.geolocation?.getCurrentPosition(p=>setUserPos({lat:p.coords.latitude,lng:p.coords.longitude}),()=>{},{enableHighAccuracy:true,timeout:8000});
-  },[]);
+  useEffect(() => {
+    navigator.geolocation?.getCurrentPosition(
+      p => setUserPos({ lat: p.coords.latitude, lng: p.coords.longitude }),
+      () => {},
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  }, []);
 
-  const load = async()=>{ const d=await Offre.list(); setOffres(d.filter(o=>o.est_active)); };
-  useEffect(()=>{ load().finally(()=>setLoading(false)); },[]);
+  const load = async () => { const d = await Offre.list(); setOffres(d.filter(o => o.est_active)); };
+  useEffect(() => { load().finally(() => setLoading(false)); }, []);
 
-  const refresh = async()=>{ setSpinning(true); await load(); setTimeout(()=>setSpinning(false),600); if(navigator.vibrate)navigator.vibrate([10,30,10]); };
+  const refresh = async () => {
+    setSpinning(true); await load();
+    setTimeout(() => setSpinning(false), 600);
+    if (navigator.vibrate) navigator.vibrate([8, 20, 8]);
+  };
 
-  const toggle = id=>{ const nf=favs.includes(id)?favs.filter(f=>f!==id):[...favs,id]; setFavs(nf); localStorage.setItem("cp_favs",JSON.stringify(nf)); };
-  const showToast = added=>{ setToast(added); setTimeout(()=>setToast(null),2200); };
+  const toggleFav = id => {
+    const nf = favs.includes(id) ? favs.filter(f => f !== id) : [...favs, id];
+    setFavs(nf); localStorage.setItem("cp_favs", JSON.stringify(nf));
+  };
+  const showToast = added => { setToast(added); setTimeout(() => setToast(null), 2000); };
 
   const list = offres
-    .map(o=>({...o,dist:userPos&&o.latitude?haversine(userPos.lat,userPos.lng,o.latitude,o.longitude):null}))
-    .filter(o=>{ if(cat!=="Tout"&&o.categorie!==cat)return false; if(q&&!o.titre.toLowerCase().includes(q.toLowerCase())&&!o.commercant_nom?.toLowerCase().includes(q.toLowerCase()))return false; return true; })
-    .sort((a,b)=>{
-      if(tri==="proximite"&&userPos)return(a.dist||999)-(b.dist||999);
-      if(tri==="reduction")return b.valeur_reduction-a.valeur_reduction;
-      if(tri==="urgence")return(b.est_urgente?1:0)-(a.est_urgente?1:0);
+    .map(o => ({ ...o, _dist: userPos && o.latitude ? haversine(userPos.lat, userPos.lng, o.latitude, o.longitude) : null }))
+    .filter(o => {
+      if (cat !== "Tout" && o.categorie !== cat) return false;
+      if (q && !o.titre.toLowerCase().includes(q.toLowerCase()) && !o.commercant_nom?.toLowerCase().includes(q.toLowerCase())) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      if (sort === "distance" && userPos) return (a._dist||999) - (b._dist||999);
+      if (sort === "reduction") return b.valeur_reduction - a.valeur_reduction;
       return 0;
     });
 
-  const flash = list.filter(o=>o.est_urgente);
-  const normal = list.filter(o=>!o.est_urgente);
+  const flash  = list.filter(o => o.est_urgente);
+  const normal = list.filter(o => !o.est_urgente);
 
   return (
-    <div style={{ background:DS.gray50, minHeight:"100vh", fontFamily:DS.font, maxWidth:430, margin:"0 auto" }}>
+    <div style={{ background:DS.ink05, minHeight:"100vh", fontFamily:DS.font, maxWidth:430, margin:"0 auto" }}>
 
       {/* Toast */}
-      {toast!==null && (
-        <div style={{ position:"fixed", top:20, left:"50%", transform:"translateX(-50%)", zIndex:9999, background:DS.black, color:"white", borderRadius:DS.r99, padding:"10px 20px", fontSize:13, fontWeight:600, display:"flex", alignItems:"center", gap:8, boxShadow:DS.s3, animation:"toastIn 0.3s cubic-bezier(0.34,1.56,0.64,1)" }}>
-          <span style={{ color:toast?DS.red:DS.gray400, display:"flex" }}>{Icon.heart(14, toast?DS.red:DS.gray400, toast)}</span>
+      {toast !== null && (
+        <div style={{ position:"fixed", top:16, left:"50%", transform:"translateX(-50%)", zIndex:9999, background:DS.ink, color:DS.white, borderRadius:DS.pill, padding:"10px 18px", fontSize:12, fontWeight:600, display:"flex", alignItems:"center", gap:8, boxShadow:DS.e4, whiteSpace:"nowrap", animation:"toastIn .3s cubic-bezier(.34,1.56,.64,1)" }}>
+          {Ic.heart(toast ? DS.danger : DS.ink40, 13, toast)}
           {toast ? "Ajouté aux favoris" : "Retiré des favoris"}
         </div>
       )}
 
-      {/* Header */}
-      <div style={{ background:"white", padding:"52px 16px 0", position:"sticky", top:0, zIndex:100, borderBottom:`1px solid ${DS.gray100}` }}>
-        {/* Top */}
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <CPLogo size={32} />
-            <div>
-              <div style={{ fontSize:17, fontWeight:800, color:DS.black, letterSpacing:-0.4 }}>Click & Promo</div>
-              <div style={{ fontSize:11, color:DS.gray500, display:"flex", alignItems:"center", gap:3 }}>
-                {Icon.pin(10, userPos?DS.green:DS.gray400)}
-                {userPos?"Offres près de vous":"Toute la France"}
-              </div>
+      {/* ── HEADER ─────────────────────────────────────────────── */}
+      <header style={{ background:DS.white, position:"sticky", top:0, zIndex:100, borderBottom:`1px solid ${DS.ink10}` }}>
+        {/* Top row */}
+        <div style={{ padding:"52px 16px 12px", display:"flex", alignItems:"center", gap:10 }}>
+          <CPLogo size={34}/>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:18, fontWeight:800, color:DS.ink, letterSpacing:-0.5 }}>Click & Promo</div>
+            <div style={{ fontSize:11, color:DS.ink40, display:"flex", alignItems:"center", gap:4 }}>
+              {Ic.pin(userPos ? DS.success : DS.ink20, 11)}
+              {userPos ? "Offres proches de vous" : "Toute la France"}
             </div>
           </div>
-          <button onClick={refresh} style={{ width:36, height:36, borderRadius:DS.r99, background:DS.gray100, border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:DS.gray700 }}>
-            <span style={{ display:"flex", animation:spinning?"spin 0.6s linear infinite":"none" }}>{Icon.refresh(16, DS.gray700)}</span>
-          </button>
+          <div style={{ display:"flex", gap:6 }}>
+            <button onClick={() => setSearchOpen(o => !o)} style={{ width:36, height:36, borderRadius:DS.pill, background:searchOpen?DS.ink05:DS.white, border:`1px solid ${DS.ink10}`, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              {Ic.search(DS.ink60)}
+            </button>
+            <button onClick={refresh} style={{ width:36, height:36, borderRadius:DS.pill, background:DS.white, border:`1px solid ${DS.ink10}`, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <span style={{ display:"flex", animation:spinning?"spin .6s linear infinite":"none" }}>{Ic.refresh(DS.ink60)}</span>
+            </button>
+          </div>
         </div>
 
-        {/* Search */}
-        <div style={{ position:"relative", marginBottom:12 }}>
-          <span style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", display:"flex", color:DS.gray400 }}>{Icon.search(16,DS.gray400)}</span>
-          <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Rechercher une offre, un commerce..."
-            style={{ width:"100%", border:`1.5px solid ${DS.gray100}`, borderRadius:DS.r12, padding:"11px 14px 11px 40px", fontSize:14, outline:"none", background:DS.gray50, color:DS.black, boxSizing:"border-box", fontFamily:DS.font, transition:"border-color 0.2s" }}
-            onFocus={e=>e.target.style.borderColor=DS.orange}
-            onBlur={e=>e.target.style.borderColor=DS.gray100}
-          />
-        </div>
+        {/* Barre de recherche (collapse) */}
+        {searchOpen && (
+          <div style={{ padding:"0 16px 10px" }}>
+            <div style={{ position:"relative" }}>
+              <span style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", display:"flex" }}>{Ic.search(DS.ink20)}</span>
+              <input autoFocus value={q} onChange={e => setQ(e.target.value)}
+                placeholder="Rechercher une offre, un commerce…"
+                style={{ width:"100%", border:`1.5px solid ${DS.ink10}`, borderRadius:DS.lg, padding:"11px 14px 11px 40px", fontSize:14, outline:"none", background:DS.ink05, color:DS.ink, boxSizing:"border-box", fontFamily:DS.font, transition:"border-color .2s" }}
+                onFocus={e => e.target.style.borderColor = DS.brand}
+                onBlur={e => e.target.style.borderColor = DS.ink10}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Catégories */}
-        <div style={{ display:"flex", gap:7, overflowX:"auto", paddingBottom:12, scrollbarWidth:"none" }}>
-          {CATEGORIES.map(c=>{
-            const on=cat===c; const col=CAT_COLORS[c]||DS.gray500;
+        <div style={{ display:"flex", gap:7, overflowX:"auto", padding:"0 16px 12px", scrollbarWidth:"none" }}>
+          {CATS.map(c => {
+            const on = cat === c;
+            const meta = CAT_META[c] || CAT_META["Tout"];
             return (
-              <button key={c} onClick={()=>setCat(c)} style={{
-                flexShrink:0, border:"none", cursor:"pointer", borderRadius:DS.r99,
-                padding:"7px 13px", fontFamily:DS.font,
-                background:on?col:DS.gray100,
-                color:on?"white":DS.gray700,
-                fontSize:12, fontWeight:on?700:500,
-                display:"flex", alignItems:"center", gap:5,
-                boxShadow:on?`0 4px 12px ${col}44`:"none",
-                transition:"all 0.2s"
+              <button key={c} onClick={() => setCat(c)} style={{
+                flexShrink:0, cursor:"pointer", fontFamily:DS.font,
+                border:`1.5px solid ${on ? meta.color : DS.ink10}`,
+                borderRadius:DS.pill, padding:"6px 13px",
+                background: on ? meta.color : DS.white,
+                color: on ? DS.white : DS.ink60,
+                fontSize:12, fontWeight: on ? 700 : 500,
+                display:"flex", alignItems:"center", gap:6,
+                transition:"all .18s",
+                boxShadow: on ? `0 4px 12px ${meta.color}30` : "none",
               }}>
-                <span style={{ display:"flex", color:on?"white":col }}>{CAT_SVG[c]||CAT_SVG["Tout"]}</span>
+                <span style={{ display:"flex", color: on ? DS.white : meta.color }}>
+                  {meta.icon(on ? DS.white : meta.color, 13)}
+                </span>
                 {c}
               </button>
             );
           })}
         </div>
-      </div>
 
-      <div style={{ padding:"14px 14px 100px" }}>
-
-        {/* Tri */}
-        <div style={{ display:"flex", gap:6, marginBottom:14, overflowX:"auto", scrollbarWidth:"none" }}>
+        {/* Sort pills */}
+        <div style={{ display:"flex", gap:6, padding:"0 16px 12px" }}>
           {[
-            { k:"proximite", label:"Distance",  ico:Icon.pin(12,"currentColor") },
-            { k:"reduction", label:"Réduction", ico:Icon.percent(12,"currentColor") },
-            { k:"urgence",   label:"Flash",     ico:Icon.flash(12,"currentColor") },
-          ].map(t=>{
-            const on=tri===t.k;
-            return (
-              <button key={t.k} onClick={()=>setTri(t.k)} style={{
-                flexShrink:0, border:`1.5px solid ${on?DS.orange:DS.gray200}`,
-                borderRadius:DS.r99, padding:"6px 12px",
-                background:on?DS.orange:"white",
-                color:on?"white":DS.gray700,
-                fontSize:12, fontWeight:on?700:500, cursor:"pointer",
-                display:"flex", alignItems:"center", gap:5, fontFamily:DS.font,
-                boxShadow:on?`0 4px 10px ${DS.orange}33`:"none",
-                transition:"all 0.2s"
-              }}>
-                <span style={{ display:"flex", color:on?"white":DS.gray500 }}>{t.ico}</span>
-                {t.label}
-              </button>
-            );
-          })}
+            { k:"distance",  label:"Distance" },
+            { k:"reduction", label:"Réduction" },
+          ].map(t => (
+            <button key={t.k} onClick={() => setSort(t.k)} style={{
+              border:`1px solid ${sort===t.k ? DS.brand : DS.ink10}`,
+              borderRadius:DS.pill, padding:"5px 12px",
+              background: sort===t.k ? DS.brand : DS.white,
+              color: sort===t.k ? DS.white : DS.ink60,
+              fontSize:11, fontWeight: sort===t.k ? 700 : 500,
+              cursor:"pointer", fontFamily:DS.font, letterSpacing:0.2,
+              transition:"all .18s",
+            }}>{t.label}</button>
+          ))}
+          <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:4, fontSize:11, color:DS.ink40 }}>
+            {Ic.pin(DS.ink20, 11)}
+            {list.length} résultat{list.length!==1?"s":""}
+          </div>
         </div>
+      </header>
 
-        {/* Flash deals section */}
-        {!loading && flash.length>0 && (
-          <div style={{ marginBottom:20 }}>
+      {/* ── CONTENU ────────────────────────────────────────────── */}
+      <main style={{ padding:"14px 14px 100px" }}>
+
+        {/* Flash deals */}
+        {!loading && flash.length > 0 && (
+          <section style={{ marginBottom:24 }}>
             <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
-              <div style={{ display:"flex", alignItems:"center", gap:6, background:"#FEF2F2", borderRadius:DS.r99, padding:"5px 12px", border:`1px solid #FECACA` }}>
-                <span style={{ display:"flex", color:DS.red }}>{Icon.flash(13, DS.red)}</span>
-                <span style={{ fontSize:12, fontWeight:800, color:DS.red, letterSpacing:0.5, textTransform:"uppercase" }}>Flash deals</span>
+              <div style={{ display:"flex", alignItems:"center", gap:6, background:DS.danger, borderRadius:DS.sm, padding:"4px 10px" }}>
+                {Ic.bolt(DS.white, 12)}
+                <span style={{ fontSize:11, fontWeight:700, color:DS.white, letterSpacing:0.8, textTransform:"uppercase" }}>Flash deals</span>
               </div>
-              <span style={{ fontSize:12, color:DS.gray500 }}>{flash.length} offre{flash.length>1?"s":""}</span>
+              <span style={{ fontSize:12, color:DS.ink40 }}>· {flash.length} offre{flash.length>1?"s":""}</span>
             </div>
-            {flash.map(o=><OffreCard key={o.id} offre={o} favs={favs} onToggle={toggle} userPos={userPos} onFavChange={showToast}/>)}
-          </div>
+            {flash.map(o => <OffreCard key={o.id} offre={o} favs={favs} onToggle={toggleFav} onFavChange={showToast} userPos={userPos}/>)}
+          </section>
         )}
 
-        {/* Label */}
-        {!loading && list.length>0 && (
-          <div style={{ fontSize:11, fontWeight:700, color:DS.gray400, marginBottom:10, textTransform:"uppercase", letterSpacing:1 }}>
-            {list.length} offre{list.length>1?"s":" "} disponible{list.length>1?"s":""}
-          </div>
+        {/* Section normale */}
+        {!loading && normal.length > 0 && (
+          <section>
+            {flash.length > 0 && (
+              <div style={{ fontSize:11, fontWeight:700, color:DS.ink20, textTransform:"uppercase", letterSpacing:1, marginBottom:12 }}>
+                Toutes les offres
+              </div>
+            )}
+            {normal.map(o => <OffreCard key={o.id} offre={o} favs={favs} onToggle={toggleFav} onFavChange={showToast} userPos={userPos}/>)}
+          </section>
         )}
 
-        {/* Skeleton */}
-        {loading && [1,2,3].map(i=><Skeleton key={i}/>)}
-
-        {/* Offres */}
-        {!loading && normal.map(o=><OffreCard key={o.id} offre={o} favs={favs} onToggle={toggle} userPos={userPos} onFavChange={showToast}/>)}
+        {/* Skeletons */}
+        {loading && [1,2,3].map(i => <Skeleton key={i}/>)}
 
         {/* Vide */}
-        {!loading && list.length===0 && (
-          <div style={{ textAlign:"center", padding:"64px 24px" }}>
-            <div style={{ width:72, height:72, borderRadius:DS.r20, background:DS.gray100, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 16px", color:DS.gray400 }}>
-              {Icon.search(32,DS.gray400)}
+        {!loading && list.length === 0 && (
+          <div style={{ textAlign:"center", padding:"72px 24px" }}>
+            <div style={{ width:72, height:72, borderRadius:DS.xl, background:DS.white, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 18px", boxShadow:DS.e1 }}>
+              {Ic.search(DS.ink20, 30)}
             </div>
-            <div style={{ fontWeight:700, fontSize:17, color:DS.black, marginBottom:8 }}>Aucune offre trouvée</div>
-            <div style={{ fontSize:14, color:DS.gray500, lineHeight:1.7, marginBottom:20 }}>Essayez une autre catégorie ou attendez de nouvelles offres.</div>
-            <button onClick={()=>{setCat("Tout");setQ("")}} style={{ background:DS.orange, color:"white", border:"none", borderRadius:DS.r16, padding:"12px 24px", fontWeight:700, fontSize:14, cursor:"pointer", boxShadow:DS.sOrange }}>
-              Voir tout
+            <div style={{ fontSize:18, fontWeight:700, color:DS.ink, marginBottom:8 }}>Aucune offre trouvée</div>
+            <div style={{ fontSize:14, color:DS.ink40, lineHeight:1.7, marginBottom:20 }}>Essayez une autre catégorie ou revenez plus tard.</div>
+            <button onClick={() => { setCat("Tout"); setQ(""); }} style={{ background:DS.brand, color:DS.white, border:"none", borderRadius:DS.lg, padding:"12px 24px", fontWeight:700, fontSize:14, cursor:"pointer", boxShadow:DS.eBrand }}>
+              Tout afficher
             </button>
           </div>
         )}
-      </div>
+      </main>
 
       <NavBar active="feed"/>
 
       <style>{`
-        @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+        @keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
         @keyframes spin{to{transform:rotate(360deg)}}
-        @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-        *{-webkit-tap-highlight-color:transparent}
+        @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+        *{-webkit-tap-highlight-color:transparent;box-sizing:border-box}
         ::-webkit-scrollbar{display:none}
       `}</style>
     </div>
