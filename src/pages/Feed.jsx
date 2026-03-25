@@ -129,351 +129,254 @@ function AlerteSetup({ isPremium, navigate, onClose }) {
       <div onClick={onClose} style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.5)", backdropFilter:"blur(4px)" }}/>
       <div style={{ position:"relative", width:"100%", maxWidth:430, margin:"0 auto", background:DS.white, borderRadius:"24px 24px 0 0", padding:"24px 20px 40px", boxShadow:"0 -20px 60px rgba(0,0,0,0.18)", animation:"slideUp .35s cubic-bezier(.34,1.1,.64,1)" }}>
         <div style={{ width:36, height:4, background:DS.ink10, borderRadius:2, margin:"0 auto 18px" }}/>
-        <div style={{ fontWeight:800, fontSize:18, color:DS.ink, marginBottom:4, letterSpacing:-.4 }}>Configurer mes alertes</div>
-        <div style={{ fontSize:12, color:DS.ink40, marginBottom:18 }}>Vous serez notifié en avant-première sur ces catégories</div>
-        <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:18 }}>
-          {allCats.map(c=>{const on=cats.includes(c);return<button key={c} onClick={()=>toggle(c)} style={{background:on?DS.brand:DS.ink05,color:on?DS.white:DS.ink60,border:"none",borderRadius:DS.pill,padding:"7px 14px",fontSize:12,fontWeight:on?700:500,cursor:"pointer",transition:"all .18s"}}>{c}</button>;})}
+        <div style={{ fontWeight:800, fontSize:18, color:DS.ink, marginBottom:16 }}>Configurer les alertes</div>
+        <div style={{ marginBottom:20 }}>
+          <div style={{ fontSize:12, fontWeight:700, color:DS.ink40, marginBottom:10, textTransform:"uppercase", letterSpacing:0.5 }}>Catégories</div>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+            {allCats.map(c=><button key={c} onClick={()=>toggle(c)} style={{ background:cats.includes(c)?DS.brand:DS.ink05, color:cats.includes(c)?DS.white:DS.ink, border:"none", borderRadius:DS.pill, padding:"7px 14px", fontSize:12, fontWeight:600, cursor:"pointer", transition:"all .18s" }}>{c}</button>)}
+          </div>
         </div>
         <div style={{ marginBottom:20 }}>
-          <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
-            <span style={{ fontSize:12, color:DS.ink60 }}>Rayon d'alerte</span>
-            <span style={{ fontSize:12, fontWeight:700, color:DS.brand }}>{rayon} km</span>
-          </div>
-          <input type="range" min={1} max={50} value={rayon} onChange={e=>setRayon(+e.target.value)} style={{ width:"100%", accentColor:DS.brand }}/>
+          <div style={{ fontSize:12, fontWeight:700, color:DS.ink40, marginBottom:8, textTransform:"uppercase", letterSpacing:0.5 }}>Rayon : {rayon}km</div>
+          <input type="range" min={1} max={25} value={rayon} onChange={e=>setRayon(parseInt(e.target.value))} style={{ width:"100%", accentColor:DS.brand, height:3 }}/>
         </div>
-        {saved ? (
-          <div style={{ background:"#F0FFF9", borderRadius:DS.md, padding:14, textAlign:"center", color:DS.success, fontWeight:700, display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>{Ic.check(DS.success,15)} Alertes enregistrées !</div>
-        ) : (
-          <button onClick={save} disabled={cats.length===0} style={{ width:"100%", background:cats.length===0?DS.ink10:DS.brand, color:cats.length===0?DS.ink40:DS.white, border:"none", borderRadius:DS.lg, padding:"14px", fontWeight:700, fontSize:14, cursor:cats.length===0?"not-allowed":"pointer", boxShadow:cats.length===0?"none":DS.eBrand }}>
-            Activer les alertes
-          </button>
-        )}
+        {saved && <div style={{ background:DS.success+"12", color:DS.success, padding:"10px 12px", borderRadius:DS.sm, fontSize:13, fontWeight:600, marginBottom:12, textAlign:"center" }}>✅ Alertes configurées</div>}
+        <button onClick={save} style={{ width:"100%", background:DS.brand, color:DS.white, border:"none", borderRadius:DS.lg, padding:"14px", fontSize:14, fontWeight:700, cursor:"pointer", boxShadow:DS.eBrand }}>Sauvegarder</button>
       </div>
+      <style>{`@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}`}</style>
     </div>
   );
 }
 
-// ── Barre économies Premium ────────────────────────────────────────────────
-function EcoBar({ offres, isPremium }) {
-  const total = offres.filter(o=>o.est_active).reduce((s,o)=> o.prix_original&&o.prix_promo ? s+(o.prix_original-o.prix_promo) : s, 0);
-  if (total < 50) return null;
-  return (
-    <div style={{ margin:"0 14px 12px", background:DS.white, borderRadius:DS.lg, padding:"12px 14px", boxShadow:DS.e1, display:"flex", alignItems:"center", gap:12 }}>
-      <div style={{ width:38, height:38, borderRadius:DS.md, background:`${DS.success}10`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, color:DS.success }}>{IcEuro(17)}</div>
-      <div style={{ flex:1 }}>
-        <div style={{ fontSize:13, fontWeight:700, color:DS.ink }}>Jusqu'à <span style={{color:DS.success}}>{total.toFixed(0)}€</span> d'économies disponibles</div>
-        <div style={{ fontSize:11, color:DS.ink40, marginTop:1 }}>sur {offres.filter(o=>o.est_active).length} offres actives{isPremium?" · -5% supplémentaires inclus":""}</div>
-      </div>
-      {isPremium && <div style={{ background:`${DS.brand}10`, borderRadius:DS.pill, padding:"2px 8px", flexShrink:0 }}><span style={{fontSize:10,fontWeight:700,color:DS.brand}}>PREMIUM</span></div>}
-    </div>
-  );
-}
-
-// ── Card ───────────────────────────────────────────────────────────────────
-function OffreCard({ offre, favs, onToggle, onFavChange, userPos, isPremium, onPremiumClick }) {
-  const isFav = favs.includes(offre.id);
-  const dist = userPos && offre.latitude ? haversine(userPos.lat, userPos.lng, offre.latitude, offre.longitude) : null;
-  const pct = offre.stock_initial ? (offre.stock_restant / offre.stock_initial) * 100 : 100;
-  const expired = offre.date_fin && new Date(offre.date_fin) < new Date();
-  const meta = CAT_META[offre.categorie] || CAT_META["Tout"];
-  const bigDiscount = offre.valeur_reduction >= 40;
-
-  // Offres exclusives Premium : réduction >= 50% ou marquées comme flash ET stock < 10
-  const isExclusive = offre.valeur_reduction >= 50 || (offre.est_urgente && offre.stock_restant != null && offre.stock_restant < 10);
-  // Afficher flou si exclusive et non premium
-  const isLocked = isExclusive && !isPremium;
-
-  // Prix avec réduction premium supplémentaire
-  const prixDisplay = isPremium && offre.prix_promo > 0 ? (offre.prix_promo * 0.95).toFixed(2) : offre.prix_promo;
-
-  const toggleFav = e => { e.preventDefault(); e.stopPropagation(); onToggle(offre.id); onFavChange(!isFav); if(navigator.vibrate)navigator.vibrate(10); };
-
-  return (
-    <div style={{ marginBottom:12, position:"relative" }}>
-      {/* Badge exclusif */}
-      {isExclusive && (
-        <div style={{ position:"absolute", top:-6, left:14, zIndex:10, background:`linear-gradient(135deg,${DS.brand},#FF8C42)`, color:DS.white, borderRadius:DS.pill, padding:"3px 10px", fontSize:10, fontWeight:800, letterSpacing:.5, textTransform:"uppercase", boxShadow:DS.eBrand }}>
-          {isPremium ? "✦ Exclusif Premium" : "✦ Premium requis"}
-        </div>
-      )}
-      <Link to={isLocked ? "#" : `/OffreDetail?id=${offre.id}`} onClick={isLocked ? e=>{e.preventDefault();onPremiumClick();} : undefined} style={{ textDecoration:"none", display:"block" }}>
-        <article style={{ background:DS.white, borderRadius:DS.xl, overflow:"hidden", boxShadow:isExclusive?`0 4px 20px ${DS.brand}18`:DS.e1, border:isExclusive?`1.5px solid ${DS.brand}20`:"none" }}>
-          <div style={{ position:"relative", height:210 }}>
-            <img src={offre.image_url} alt={offre.titre} loading="lazy" style={{ width:"100%", height:"100%", objectFit:"cover", filter:isLocked?"blur(6px) brightness(0.8)":"none", transition:"filter .3s" }}
-              onError={e=>e.target.src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800"}/>
-            <div style={{ position:"absolute", inset:0, background:"linear-gradient(to bottom, rgba(0,0,0,0) 45%, rgba(0,0,0,0.62) 100%)" }}/>
-
-            {/* Lock overlay sur exclusive */}
-            {isLocked && (
-              <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:8 }}>
-                <div style={{ width:48, height:48, borderRadius:DS.pill, background:"rgba(255,255,255,0.9)", backdropFilter:"blur(8px)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                  {Ic.lock(DS.brand, 20)}
-                </div>
-                <div style={{ background:"rgba(0,0,0,0.6)", backdropFilter:"blur(8px)", borderRadius:DS.md, padding:"6px 14px", color:DS.white, fontSize:12, fontWeight:700 }}>
-                  Offre exclusive Premium
-                </div>
-              </div>
-            )}
-
-            <div style={{ position:"absolute", top:14, left:14, background:bigDiscount?DS.danger:DS.ink, color:DS.white, borderRadius:DS.sm, padding:"5px 12px", fontWeight:800, fontSize:14, letterSpacing:-.3 }}>
-              -{offre.valeur_reduction}{offre.type_reduction==="pourcentage"?"%":"€"}
-            </div>
-            {!isLocked && (
-              <button onClick={toggleFav} style={{ position:"absolute", top:12, right:12, width:36, height:36, borderRadius:DS.pill, background:"rgba(255,255,255,0.88)", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(10px)", transition:"transform .2s cubic-bezier(.34,1.56,.64,1)", transform:isFav?"scale(1.12)":"scale(1)" }}>
-                {Ic.heart(isFav?DS.danger:DS.ink40,17,isFav)}
-              </button>
-            )}
-            <div style={{ position:"absolute", bottom:12, left:14, right:14, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              {offre.est_urgente && !expired && !isLocked && <Timer dateFin={offre.date_fin}/>}
-              {dist!==null && !isLocked && <span style={{ marginLeft:"auto", display:"inline-flex", alignItems:"center", gap:5, background:"rgba(0,0,0,0.55)", backdropFilter:"blur(8px)", color:DS.white, borderRadius:DS.pill, padding:"4px 10px", fontSize:11, fontWeight:600 }}>{Ic.pin(DS.white,12)} {formatDist(dist)}</span>}
-            </div>
-          </div>
-
-          <div style={{ padding:"14px 16px 16px" }}>
-            <div style={{ display:"inline-flex", alignItems:"center", gap:5, marginBottom:9, background:`${meta.color}12`, borderRadius:DS.pill, padding:"3px 10px" }}>
-              <span style={{ display:"flex", color:meta.color }}>{meta.icon(meta.color,12)}</span>
-              <span style={{ fontSize:11, fontWeight:700, color:meta.color, letterSpacing:.4, textTransform:"uppercase" }}>{offre.categorie}</span>
-            </div>
-            <div style={{ fontSize:15, fontWeight:700, color:DS.ink, lineHeight:1.35, letterSpacing:-.2, marginBottom:5, filter:isLocked?"blur(3px)":"none" }}>{offre.titre}</div>
-            <div style={{ display:"flex", alignItems:"center", gap:5, color:DS.ink40, fontSize:12, marginBottom:12 }}>{Ic.store(DS.ink20,13)}<span style={{filter:isLocked?"blur(3px)":"none"}}>{offre.commercant_nom}</span></div>
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-              <div style={{ display:"flex", alignItems:"baseline", gap:8 }}>
-                {isLocked ? (
-                  <span style={{ fontSize:20, fontWeight:800, color:DS.brand }}>???</span>
-                ) : offre.prix_promo > 0 ? (
-                  <>
-                    <span style={{ fontSize:22, fontWeight:800, color:DS.brand, letterSpacing:-.8 }}>{prixDisplay}€</span>
-                    {isPremium && offre.prix_promo > 0 && <span style={{ fontSize:10, fontWeight:700, color:DS.brand, background:`${DS.brand}10`, borderRadius:DS.pill, padding:"2px 6px" }}>-5% Premium</span>}
-                    {offre.prix_original > 0 && offre.prix_original !== offre.prix_promo && <span style={{ fontSize:13, color:DS.ink20, textDecoration:"line-through" }}>{offre.prix_original}€</span>}
-                  </>
-                ) : <span style={{ fontSize:18, fontWeight:700, color:DS.success }}>Gratuit</span>}
-              </div>
-              {offre.stock_restant != null && !isLocked && (
-                <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:3 }}>
-                  <span style={{ fontSize:11, fontWeight:600, color:pct<30?DS.danger:DS.ink40 }}>{offre.stock_restant} dispo</span>
-                  <div style={{ width:52, height:3, background:DS.ink10, borderRadius:DS.pill }}><div style={{ height:"100%", borderRadius:DS.pill, background:pct<30?DS.danger:DS.success, width:`${Math.min(pct,100)}%` }}/></div>
-                </div>
-              )}
-            </div>
-          </div>
-        </article>
-      </Link>
-    </div>
-  );
-}
-
-// ── Bannière Premium dans le feed ──────────────────────────────────────────
-function PremiumBanner({ navigate }) {
-  return (
-    <div onClick={()=>navigate("/Abonnement?tab=user")} style={{ margin:"0 0 16px", background:`linear-gradient(135deg,${DS.ink} 0%,#1A1A2E 100%)`, borderRadius:DS.xl, padding:"16px 18px", cursor:"pointer", position:"relative", overflow:"hidden" }}>
-      <div style={{ position:"absolute", top:-20, right:-20, width:100, height:100, borderRadius:"50%", background:`radial-gradient(circle,${DS.brand}30,transparent 70%)` }}/>
-      <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-        <div style={{ width:44, height:44, borderRadius:DS.lg, background:`linear-gradient(135deg,${DS.brand},#FF8C42)`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, color:DS.white, boxShadow:DS.eBrand }}>{IcPremium(18)}</div>
-        <div style={{ flex:1 }}>
-          <div style={{ color:DS.white, fontWeight:800, fontSize:14, letterSpacing:-.2, marginBottom:3 }}>Passez Premium</div>
-          <div style={{ color:"rgba(255,255,255,.5)", fontSize:11, lineHeight:1.5 }}>Accès prioritaire aux flash · -5% · Alertes · Rayon 50km</div>
-        </div>
-        <div style={{ background:DS.brand, borderRadius:DS.md, padding:"8px 12px", color:DS.white, fontSize:12, fontWeight:700, flexShrink:0, boxShadow:DS.eBrand }}>9,99€</div>
-      </div>
-    </div>
-  );
-}
-
-// ── Feed principal ─────────────────────────────────────────────────────────
+// ── Main Feed ──────────────────────────────────────────────────────────────
 export default function Feed() {
   const navigate = useNavigate();
-  const [offres,setOffres] = useState([]);
-  const [loading,setLoading] = useState(true);
-  const [cat,setCat] = useState("Tout");
-  const [q,setQ] = useState("");
-  const [sort,setSort] = useState("distance");
-  const [userPos,setUserPos] = useState(null);
-  const [spinning,setSpinning] = useState(false);
-  const [favs,setFavs] = useState(()=>{ try{return JSON.parse(localStorage.getItem("cp_favs")||"[]");}catch{return [];} });
-  const [toast,setToast] = useState(null);
-  const [searchOpen,setSearchOpen] = useState(false);
-  const [isPremium,setIsPremium] = useState(false);
-  const [showPaywall,setShowPaywall] = useState(false);
-  const [showAlertes,setShowAlertes] = useState(false);
-  const [rayonPremium] = useState(50);
+  const scrollRef = useRef(null);
+  const [offres, setOffres] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [catFilter, setCatFilter] = useState("Tout");
+  const [recherche, setRecherche] = useState("");
+  const [tri, setTri] = useState("recent");
+  const [userPos, setUserPos] = useState(null);
+  const [favs, setFavs] = useState([]);
+  const [premiumModal, setPremiumModal] = useState(false);
+  const [alertesModal, setAlertsModal] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [pullY, setPullY] = useState(0);
 
-  useEffect(()=>{
-    navigator.geolocation?.getCurrentPosition(p=>setUserPos({lat:p.coords.latitude,lng:p.coords.longitude}),()=>{},{enableHighAccuracy:true,timeout:8000});
-    // Check premium
-    UserAuth.me().then(async u=>{
-      if(!u)return;
-      try{ const ps=await ProfilUtilisateur.filter({user_id:u.id}); if(ps.length&&ps[0].est_premium)setIsPremium(true); }catch{}
-    }).catch(()=>{});
-  },[]);
+  // Charger les offres
+  useEffect(() => {
+    const loadData = async () => {
+      const data = await Offre.list();
+      setOffres(data.filter(o => o.est_active));
+      setLoading(false);
+    };
+    loadData();
+  }, []);
 
-  const load = async () => { const d = await Offre.list(); setOffres(d.filter(o=>o.est_active)); };
-  useEffect(()=>{ load().finally(()=>setLoading(false)); },[]);
+  // Géolocalisation
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      p => setUserPos({ lat: p.coords.latitude, lng: p.coords.longitude }),
+      () => {},
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  }, []);
 
-  const refresh = async () => { setSpinning(true); await load(); setTimeout(()=>setSpinning(false),600); if(navigator.vibrate)navigator.vibrate([8,20,8]); };
-  const toggleFav = id => { const nf=favs.includes(id)?favs.filter(f=>f!==id):[...favs,id]; setFavs(nf); localStorage.setItem("cp_favs",JSON.stringify(nf)); };
-  const showToast = added => { setToast(added); setTimeout(()=>setToast(null),2000); };
+  // Favoris depuis localStorage
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem("cp_favs") || "[]");
+    setFavs(stored);
+  }, []);
 
-  // Rayon max selon premium
-  const rayonActif = isPremium ? rayonPremium : 10;
+  // Pull-to-refresh
+  const handleTouchStart = (e) => {
+    if (scrollRef.current && scrollRef.current.scrollTop === 0) {
+      const start = e.touches[0].clientY;
+      const handleTouchMove = (ev) => {
+        const delta = ev.touches[0].clientY - start;
+        if (delta > 0) setPullY(Math.min(delta, 100));
+      };
+      const handleTouchEnd = () => {
+        if (pullY > 50) refresh();
+        setPullY(0);
+        window.removeEventListener("touchmove", handleTouchMove);
+        window.removeEventListener("touchend", handleTouchEnd);
+      };
+      window.addEventListener("touchmove", handleTouchMove);
+      window.addEventListener("touchend", handleTouchEnd);
+    }
+  };
 
-  const list = offres
-    .map(o=>({...o, _dist:userPos&&o.latitude?haversine(userPos.lat,userPos.lng,o.latitude,o.longitude):null}))
-    .filter(o=>{
-      if(cat!=="Tout"&&o.categorie!==cat) return false;
-      if(q&&!o.titre.toLowerCase().includes(q.toLowerCase())&&!o.commercant_nom?.toLowerCase().includes(q.toLowerCase())) return false;
-      // Rayon limité pour non-premium
-      if(userPos&&o._dist!==null&&o._dist>rayonActif) return false;
-      return true;
-    })
-    .sort((a,b)=>{
-      if(sort==="distance"&&userPos) return (a._dist||999)-(b._dist||999);
-      if(sort==="reduction") return b.valeur_reduction-a.valeur_reduction;
-      // Premium → flash en priorité
-      if(isPremium&&a.est_urgente&&!b.est_urgente) return -1;
-      return 0;
-    });
+  const refresh = async () => {
+    setRefreshing(true);
+    await new Promise(r => setTimeout(r, 1000));
+    const data = await Offre.list();
+    setOffres(data.filter(o => o.est_active));
+    setRefreshing(false);
+  };
 
-  const flash = list.filter(o=>o.est_urgente);
-  const normal = list.filter(o=>!o.est_urgente);
-  // Offres exclusives visibles pour tous (mais locked si non premium)
-  const exclusives = offres.filter(o=>(o.valeur_reduction>=50||(o.est_urgente&&o.stock_restant!=null&&o.stock_restant<10))&&!flash.find(f=>f.id===o.id));
+  // Filtrage
+  let filtered = offres.filter(o => {
+    if (catFilter !== "Tout" && o.categorie !== catFilter) return false;
+    if (recherche && !o.titre.toLowerCase().includes(recherche.toLowerCase())) return false;
+    return true;
+  });
 
-  // Alertes enregistrées
-  const alertes = (() => { try { return JSON.parse(localStorage.getItem("cp_alertes")||"null"); } catch { return null; } })();
+  // Tri
+  if (tri === "reduction") filtered = [...filtered].sort((a, b) => b.valeur_reduction - a.valeur_reduction);
+  else if (tri === "urgence") filtered = [...filtered].sort((a, b) => (b.est_urgente ? 1 : 0) - (a.est_urgente ? 1 : 0));
+  else if (tri === "proximite" && userPos) filtered = [...filtered].map(o => ({ ...o, dist: haversine(userPos.lat, userPos.lng, o.latitude, o.longitude) })).sort((a, b) => a.dist - b.dist);
+
+  const toggleFav = (id) => {
+    const newFavs = favs.includes(id) ? favs.filter(f => f !== id) : [...favs, id];
+    setFavs(newFavs);
+    localStorage.setItem("cp_favs", JSON.stringify(newFavs));
+    navigator.vibrate?.(50);
+  };
 
   return (
-    <div style={{ background:DS.ink05, minHeight:"100vh", fontFamily:DS.font, maxWidth:430, margin:"0 auto" }}>
-
-      {/* Toast */}
-      {toast!==null && (
-        <div style={{ position:"fixed", top:16, left:"50%", transform:"translateX(-50%)", zIndex:9999, background:DS.ink, color:DS.white, borderRadius:DS.pill, padding:"10px 18px", fontSize:12, fontWeight:600, display:"flex", alignItems:"center", gap:8, boxShadow:DS.e4, whiteSpace:"nowrap", animation:"toastIn .3s cubic-bezier(.34,1.56,.64,1)" }}>
-          {Ic.heart(toast?DS.danger:DS.ink40,13,toast)}
-          {toast?"Ajouté aux favoris":"Retiré des favoris"}
-        </div>
-      )}
-
-      {/* Paywall */}
-      {showPaywall && <PremiumPaywall onClose={()=>setShowPaywall(false)} navigate={navigate}/>}
-      {showAlertes && <AlerteSetup isPremium={isPremium} navigate={navigate} onClose={()=>setShowAlertes(false)}/>}
-
-      {/* ── HEADER ── */}
-      <header style={{ background:DS.white, position:"sticky", top:0, zIndex:100, borderBottom:`1px solid ${DS.ink10}` }}>
-        <div style={{ padding:"52px 16px 12px", display:"flex", alignItems:"center", gap:10 }}>
-          <CPLogo size={34}/>
-          <div style={{ flex:1 }}>
-            <div style={{ fontSize:18, fontWeight:800, color:DS.ink, letterSpacing:-.5, display:"flex", alignItems:"center", gap:7 }}>
-              Click & Promo
-              {isPremium && <span style={{ fontSize:10, fontWeight:800, color:DS.brand, background:`${DS.brand}12`, borderRadius:DS.pill, padding:"2px 8px", letterSpacing:.5 }}>PREMIUM</span>}
-            </div>
-            <div style={{ fontSize:11, color:DS.ink40, display:"flex", alignItems:"center", gap:4 }}>
-              {Ic.pin(userPos?DS.success:DS.ink20,11)}
-              {userPos?(isPremium?`Rayon ${rayonPremium}km — Premium`:"Offres proches"):"Toute la France"}
-            </div>
-          </div>
-          <div style={{ display:"flex", gap:6 }}>
-            {/* Bouton alertes Premium */}
-            <button onClick={()=>isPremium?setShowAlertes(true):setShowPaywall(true)} style={{ width:36, height:36, borderRadius:DS.pill, background:alertes?`${DS.brand}12`:DS.white, border:`1px solid ${alertes?`${DS.brand}30`:DS.ink10}`, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:alertes?DS.brand:DS.ink40 }}>
-              <span style={{display:"flex"}}>{IcAlerte(15)}</span>
-            </button>
-            <button onClick={()=>setSearchOpen(o=>!o)} style={{ width:36, height:36, borderRadius:DS.pill, background:searchOpen?DS.ink05:DS.white, border:`1px solid ${DS.ink10}`, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
-              {Ic.search(DS.ink60)}
-            </button>
-            <button onClick={refresh} style={{ width:36, height:36, borderRadius:DS.pill, background:DS.white, border:`1px solid ${DS.ink10}`, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
-              <span style={{ display:"flex", animation:spinning?"spin .6s linear infinite":"none" }}>{Ic.refresh(DS.ink60)}</span>
-            </button>
-          </div>
-        </div>
-
-        {searchOpen && (
-          <div style={{ padding:"0 16px 10px" }}>
-            <div style={{ position:"relative" }}>
-              <span style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", display:"flex" }}>{Ic.search(DS.ink20)}</span>
-              <input autoFocus value={q} onChange={e=>setQ(e.target.value)} placeholder="Rechercher une offre, un commerce…"
-                style={{ width:"100%", border:`1.5px solid ${DS.ink10}`, borderRadius:DS.lg, padding:"11px 14px 11px 40px", fontSize:14, outline:"none", background:DS.ink05, color:DS.ink, boxSizing:"border-box", fontFamily:DS.font, transition:"border-color .2s" }}
-                onFocus={e=>e.target.style.borderColor=DS.brand} onBlur={e=>e.target.style.borderColor=DS.ink10}/>
-            </div>
+    <div ref={scrollRef} onTouchStart={handleTouchStart} style={{ background:DS.ink05, minHeight:"100vh", fontFamily:DS.font, maxWidth:430, margin:"0 auto", overflow:"auto", position:"relative" }}>
+      {/* Pull indicator */}
+      <div style={{ position:"fixed", top:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:430, zIndex:50, background:DS.white, borderBottom:`1px solid ${DS.ink10}`, padding:`16px 16px max(${pullY}px, 0px)`, transition:pullY>0?"none":"padding 0.3s", display:"flex", alignItems:"center", gap:12 }}>
+        {pullY > 0 && (
+          <div style={{ transform:`scale(${pullY/100})`, opacity:pullY/100, transition:"transform 0.1s" }}>
+            {refreshing ? Ic.loader(DS.brand,16) : Ic.arrowdown(DS.brand,16)}
           </div>
         )}
+      </div>
+
+      {/* Header */}
+      <header style={{ background:DS.white, borderBottom:`1px solid ${DS.ink10}`, padding:"52px 16px 14px", marginTop:pullY }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:12 }}>
+          <CPLogo size={32}/>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:18, fontWeight:800, color:DS.ink, letterSpacing:-0.5 }}>Click & Promo</div>
+            <div style={{ fontSize:11, color:DS.ink40, display:"flex", alignItems:"center", gap:4 }}>
+              {Ic.pin(userPos ? DS.success : DS.ink20, 10)}
+              {userPos ? "Près de vous" : "Paris, France"}
+            </div>
+          </div>
+          <button onClick={() => setAlertsModal(true)} style={{ display:"flex", alignItems:"center", justifyContent:"center", width:38, height:38, borderRadius:DS.md, background:DS.ink05, border:"none", cursor:"pointer", color:DS.ink40 }}>
+            {Ic.bell(DS.ink40,16)}
+          </button>
+        </div>
+
+        {/* Recherche */}
+        <div style={{ background:DS.white, border:`1px solid ${DS.ink10}`, borderRadius:DS.lg, display:"flex", alignItems:"center", padding:"10px 14px", gap:8, marginBottom:12 }}>
+          {Ic.search(DS.ink20,16)}
+          <input
+            value={recherche}
+            onChange={e => setRecherche(e.target.value)}
+            placeholder="Chercher une offre…"
+            style={{ border:"none", outline:"none", flex:1, fontSize:14, background:"transparent", color:DS.ink, fontFamily:DS.font }}
+          />
+          {recherche && <button onClick={() => setRecherche("")} style={{ background:"none", border:"none", cursor:"pointer", color:DS.ink20 }}>{Ic.x(DS.ink20,14)}</button>}
+        </div>
 
         {/* Catégories */}
-        <div style={{ display:"flex", gap:7, overflowX:"auto", padding:"0 16px 12px", scrollbarWidth:"none" }}>
-          {CATS.map(c=>{
-            const on=cat===c; const meta=CAT_META[c]||CAT_META["Tout"];
-            return <button key={c} onClick={()=>setCat(c)} style={{ flexShrink:0, cursor:"pointer", fontFamily:DS.font, border:`1.5px solid ${on?meta.color:DS.ink10}`, borderRadius:DS.pill, padding:"6px 13px", background:on?meta.color:DS.white, color:on?DS.white:DS.ink60, fontSize:12, fontWeight:on?700:500, display:"flex", alignItems:"center", gap:6, transition:"all .18s", boxShadow:on?`0 4px 12px ${meta.color}30`:"none" }}>
-              <span style={{ display:"flex", color:on?DS.white:meta.color }}>{meta.icon(on?DS.white:meta.color,13)}</span>
-              {c}
-            </button>;
+        <div style={{ display:"flex", gap:7, overflowX:"auto", scrollbarWidth:"none", marginBottom:12 }}>
+          {CATS.map(c => {
+            const on = catFilter === c;
+            return (
+              <button key={c} onClick={() => setCatFilter(c)} style={{ flexShrink:0, border:`1.5px solid ${on ? DS.brand : DS.ink10}`, borderRadius:DS.pill, padding:"6px 12px", background:on ? DS.brand : DS.white, color:on ? DS.white : DS.ink60, fontSize:11, fontWeight:on ? 700 : 500, cursor:"pointer", transition:"all 0.18s", fontFamily:DS.font }}>
+                {c}
+              </button>
+            );
           })}
         </div>
 
-        {/* Sort + rayon non-premium */}
-        <div style={{ display:"flex", gap:6, padding:"0 16px 12px", alignItems:"center" }}>
-          {[{k:"distance",l:"Distance"},{k:"reduction",l:"Réduction"}].map(t=>(
-            <button key={t.k} onClick={()=>setSort(t.k)} style={{ border:`1px solid ${sort===t.k?DS.brand:DS.ink10}`, borderRadius:DS.pill, padding:"5px 12px", background:sort===t.k?DS.brand:DS.white, color:sort===t.k?DS.white:DS.ink60, fontSize:11, fontWeight:sort===t.k?700:500, cursor:"pointer", fontFamily:DS.font, transition:"all .18s" }}>{t.l}</button>
-          ))}
-          {!isPremium && userPos && (
-            <button onClick={()=>setShowPaywall(true)} style={{ border:"none", borderRadius:DS.pill, padding:"5px 10px", background:`${DS.brand}10`, color:DS.brand, fontSize:11, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:4 }}>
-              {Ic.lock(DS.brand,10)} Rayon 10km
-            </button>
-          )}
-          <div style={{ marginLeft:"auto", fontSize:11, color:DS.ink40 }}>{list.length} résultat{list.length!==1?"s":""}</div>
+        {/* Tri */}
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <span style={{ fontSize:11, fontWeight:700, color:DS.ink40, textTransform:"uppercase", letterSpacing:0.5 }}>
+            {filtered.length} offre{filtered.length !== 1 ? "s" : ""}
+          </span>
+          <select value={tri} onChange={e => setTri(e.target.value)} style={{ background:DS.white, border:`1px solid ${DS.ink10}`, borderRadius:DS.sm, padding:"6px 10px", fontSize:12, color:DS.ink60, outline:"none", cursor:"pointer", fontFamily:DS.font }}>
+            <option value="recent">Récents</option>
+            <option value="reduction">Meilleures réductions</option>
+            <option value="urgence">Plus urgentes</option>
+            {userPos && <option value="proximite">Plus proches</option>}
+          </select>
         </div>
       </header>
 
-      {/* ── CONTENU ── */}
-      <main style={{ padding:"14px 14px 100px" }}>
+      {/* Contenu */}
+      <div style={{ padding:"12px 14px 100px" }}>
+        {loading && [1,2,3,4].map(i => <Skeleton key={i}/>)}
 
-        {/* Barre économies */}
-        {!loading && <EcoBar offres={offres} isPremium={isPremium}/>}
-
-        {/* Bannière premium (non premium uniquement) */}
-        {!isPremium && !loading && offres.length > 4 && <PremiumBanner navigate={navigate}/>}
-
-        {/* Flash deals */}
-        {!loading && flash.length > 0 && (
-          <section style={{ marginBottom:24 }}>
-            <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
-              <div style={{ display:"flex", alignItems:"center", gap:6, background:DS.danger, borderRadius:DS.sm, padding:"4px 10px" }}>
-                {Ic.bolt(DS.white,12)}
-                <span style={{ fontSize:11, fontWeight:700, color:DS.white, letterSpacing:.8, textTransform:"uppercase" }}>Flash deals</span>
-              </div>
-              <span style={{ fontSize:12, color:DS.ink40 }}>· {flash.length} offre{flash.length>1?"s":""}</span>
-              {isPremium && <span style={{ fontSize:10, fontWeight:700, color:DS.brand, background:`${DS.brand}10`, borderRadius:DS.pill, padding:"2px 7px", marginLeft:"auto" }}>Prioritaire ✦</span>}
-            </div>
-            {flash.map(o=><OffreCard key={o.id} offre={o} favs={favs} onToggle={toggleFav} onFavChange={showToast} userPos={userPos} isPremium={isPremium} onPremiumClick={()=>setShowPaywall(true)}/>)}
-          </section>
-        )}
-
-        {/* Section normale */}
-        {!loading && normal.length > 0 && (
-          <section>
-            {flash.length > 0 && <div style={{ fontSize:11, fontWeight:700, color:DS.ink20, textTransform:"uppercase", letterSpacing:1, marginBottom:12 }}>Toutes les offres</div>}
-            {normal.map(o=><OffreCard key={o.id} offre={o} favs={favs} onToggle={toggleFav} onFavChange={showToast} userPos={userPos} isPremium={isPremium} onPremiumClick={()=>setShowPaywall(true)}/>)}
-          </section>
-        )}
-
-        {/* Skeletons */}
-        {loading && [1,2,3].map(i=><Skeleton key={i}/>)}
-
-        {/* Vide */}
-        {!loading && list.length === 0 && (
-          <div style={{ textAlign:"center", padding:"72px 24px" }}>
-            <div style={{ width:72, height:72, borderRadius:DS.xl, background:DS.white, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 18px", boxShadow:DS.e1 }}>{Ic.search(DS.ink20,30)}</div>
-            <div style={{ fontSize:18, fontWeight:700, color:DS.ink, marginBottom:8 }}>Aucune offre trouvée</div>
-            <div style={{ fontSize:14, color:DS.ink40, lineHeight:1.7, marginBottom:20 }}>Essayez une autre catégorie ou revenez plus tard.</div>
-            <button onClick={()=>{setCat("Tout");setQ("");}} style={{ background:DS.brand, color:DS.white, border:"none", borderRadius:DS.lg, padding:"12px 24px", fontWeight:700, fontSize:14, cursor:"pointer", boxShadow:DS.eBrand }}>Tout afficher</button>
+        {!loading && filtered.length === 0 && (
+          <div style={{ textAlign:"center", padding:"60px 20px" }}>
+            <div style={{ fontSize:48, marginBottom:12 }}>🏷️</div>
+            <div style={{ fontSize:16, fontWeight:700, color:DS.ink, marginBottom:6 }}>Aucune offre</div>
+            <div style={{ fontSize:13, color:DS.ink40 }}>Essayez avec d'autres filtres</div>
           </div>
         )}
-      </main>
 
+        {filtered.map(offre => {
+          const isFav = favs.includes(offre.id);
+          const stockPct = offre.stock_initial ? (offre.stock_restant / offre.stock_initial) * 100 : 100;
+          return (
+            <div key={offre.id} onClick={() => navigate(`/OffreDetail?id=${offre.id}`)} style={{ background:DS.white, borderRadius:DS.xl, overflow:"hidden", marginBottom:12, boxShadow:DS.e1, cursor:"pointer", position:"relative" }}>
+              <div style={{ position:"relative", height:200 }}>
+                <img src={offre.image_url} alt={offre.titre} style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }} onError={e => e.target.style.display="none"}/>
+                <div style={{ position:"absolute", top:12, left:12, background:DS.brand, color:DS.white, borderRadius:DS.sm, padding:"5px 12px", fontWeight:800, fontSize:14 }}>
+                  -{offre.valeur_reduction}{offre.type_reduction === "pourcentage" ? "%" : "€"}
+                </div>
+                <button onClick={(e) => { e.stopPropagation(); toggleFav(offre.id); }} style={{ position:"absolute", top:10, right:12, background:"rgba(255,255,255,0.95)", border:"none", borderRadius:"50%", width:36, height:36, fontSize:18, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  {isFav ? "❤️" : "🤍"}
+                </button>
+                {offre.est_urgente && (
+                  <div style={{ position:"absolute", bottom:10, left:12 }}>
+                    <Timer dateFin={offre.date_fin}/>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ padding:"12px 14px 16px" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}>
+                  <span style={{ fontSize:13 }}>🏷️</span>
+                  <span style={{ fontSize:12, color:DS.ink40, fontWeight:500 }}>{offre.categorie}</span>
+                  <span style={{ fontSize:12, color:DS.ink20, marginLeft:"auto" }}>📍 {offre.ville}</span>
+                </div>
+
+                <div style={{ fontWeight:700, fontSize:15, color:DS.ink, marginBottom:4, lineHeight:1.3 }}>
+                  {offre.titre}
+                </div>
+
+                <div style={{ fontSize:13, color:DS.ink40, marginBottom:10 }}>
+                  {offre.commercant_nom}
+                </div>
+
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                  <div style={{ display:"flex", alignItems:"baseline", gap:6 }}>
+                    {offre.prix_promo > 0 && <span style={{ fontSize:18, fontWeight:800, color:DS.brand }}>{offre.prix_promo}€</span>}
+                    {offre.prix_original > 0 && <span style={{ fontSize:12, color:DS.ink20, textDecoration:"line-through" }}>{offre.prix_original}€</span>}
+                  </div>
+                  {offre.stock_restant !== undefined && (
+                    <div style={{ textAlign:"right" }}>
+                      <div style={{ fontSize:11, color:stockPct < 30 ? DS.error : DS.ink40, fontWeight:600 }}>
+                        {offre.stock_restant} restant{offre.stock_restant > 1 ? "s" : ""}
+                      </div>
+                      <div style={{ background:DS.ink05, borderRadius:3, height:4, width:70, marginTop:3 }}>
+                        <div style={{ background:stockPct < 30 ? DS.error : DS.success, height:"100%", borderRadius:3, width:`${Math.min(stockPct, 100)}%` }}/>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {premiumModal && <PremiumPaywall onClose={() => setPremiumModal(false)} navigate={navigate}/>}
+      {alertesModal && <AlerteSetup isPremium={isPremium} navigate={navigate} onClose={() => setAlertsModal(false)}/>}
+      
       <NavBar active="feed"/>
       <style>{`
-        @keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
-        @keyframes spin{to{transform:rotate(360deg)}}
-        @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-        @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-        *{-webkit-tap-highlight-color:transparent;box-sizing:border-box}
-        ::-webkit-scrollbar{display:none}
+        @keyframes sh { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
       `}</style>
     </div>
   );

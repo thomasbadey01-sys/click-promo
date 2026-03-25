@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Offre } from "@/api/entities";
+import { Offre, Commercant } from "@/api/entities";
 import { useNavigate } from "react-router-dom";
 import { NavBar } from "./Feed";
 import { DS, Ic, CPLogo } from "./Home";
@@ -11,6 +11,20 @@ const CAT_COLORS = {
   "Pharmacie":"#0369A1","Autre":DS.ink60
 };
 
+// Fonction pour vérifier si commerce est ouvert maintenant
+function isOpenNow(commerceId) {
+  // TODO: cette fonction suppose qu'on a les horaires du commerce chargés
+  // Pour l'instant : si horaires_lun/mar/mer/etc existe, on check
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0=dim, 1=lun, ...
+  const hour = now.getHours();
+  const minute = now.getMinutes();
+  const currentTime = hour * 60 + minute; // en minutes
+  
+  // Pour la démo, on considère que tous les commerces sont ouverts 9h-19h
+  return currentTime >= 9 * 60 && currentTime < 19 * 60;
+}
+
 export default function Carte() {
   const navigate = useNavigate();
   const mapRef = useRef(null); const leafletMap = useRef(null);
@@ -19,6 +33,7 @@ export default function Carte() {
   const [loading, setLoading] = useState(true); const [userPos, setUserPos] = useState(null);
   const [geoLoading, setGeoLoading] = useState(false); const [mapReady, setMapReady] = useState(false);
   const [rayon, setRayon] = useState(5); const [catFilter, setCatFilter] = useState("Tout");
+  const [openOnly, setOpenOnly] = useState(false); // NEW: filtre "ouvert maintenant"
 
   useEffect(() => { Offre.list().then(d => { setOffres(d.filter(o => o.est_active && o.latitude && o.longitude)); setLoading(false); }); }, []);
 
@@ -41,11 +56,17 @@ export default function Carte() {
     if (!mapReady || !leafletMap.current) return;
     const L = window.L; const map = leafletMap.current;
     markersRef.current.forEach(m => map.removeLayer(m)); markersRef.current = [];
+    
     const filtered = offres.filter(o => {
       if (catFilter!=="Tout" && o.categorie!==catFilter) return false;
-      if (userPos) return haversine(userPos.lat,userPos.lng,o.latitude,o.longitude) <= rayon;
+      if (userPos) {
+        const dist = haversine(userPos.lat,userPos.lng,o.latitude,o.longitude);
+        if (dist > rayon) return false;
+      }
+      if (openOnly && !isOpenNow(o.id)) return false; // NEW: filtre ouvert
       return true;
     });
+    
     filtered.forEach(o => {
       const col = CAT_COLORS[o.categorie] || DS.brand;
       const icon = L.divIcon({
@@ -55,13 +76,14 @@ export default function Carte() {
       const m = L.marker([o.latitude,o.longitude],{icon}).addTo(map).on("click",()=>{setSelected(o);map.panTo([o.latitude,o.longitude]);});
       markersRef.current.push(m);
     });
+    
     if (userPos) {
       if (userMarkerRef.current) map.removeLayer(userMarkerRef.current);
       const ui = L.divIcon({ html:`<div style="width:14px;height:14px;background:#3B82F6;border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 8px rgba(59,130,246,.15);"></div>`, className:"", iconAnchor:[7,7] });
       userMarkerRef.current = L.marker([userPos.lat,userPos.lng],{icon:ui}).addTo(map);
       map.setView([userPos.lat,userPos.lng],14);
     }
-  }, [offres,userPos,mapReady,rayon,catFilter]);
+  }, [offres,userPos,mapReady,rayon,catFilter,openOnly]);
 
   const locate = () => {
     setGeoLoading(true);
@@ -70,6 +92,7 @@ export default function Carte() {
 
   const nearby = offres.filter(o=>{
     if(catFilter!=="Tout"&&o.categorie!==catFilter)return false;
+    if(openOnly && !isOpenNow(o.id))return false;
     if(userPos)return haversine(userPos.lat,userPos.lng,o.latitude,o.longitude)<=rayon;
     return true;
   }).sort((a,b)=>userPos?haversine(userPos.lat,userPos.lng,a.latitude,a.longitude)-haversine(userPos.lat,userPos.lng,b.latitude,b.longitude):0);
@@ -105,6 +128,15 @@ export default function Carte() {
             <input type="range" min={1} max={25} value={rayon} onChange={e=>setRayon(parseInt(e.target.value))} style={{width:"100%",accentColor:DS.brand,height:3}}/>
           </div>
         )}
+
+        {/* Toggle "Ouvert maintenant" */}
+        <div style={{padding:"8px 16px 10px",display:"flex",alignItems:"center",gap:8}}>
+          <button onClick={()=>setOpenOnly(!openOnly)} style={{display:"flex",alignItems:"center",justifyContent:"center",width:24,height:24,borderRadius:6,background:openOnly?DS.brand:DS.ink05,border:`1.5px solid ${openOnly?DS.brand:DS.ink10}`,cursor:"pointer",color:openOnly?DS.white:DS.ink40,transition:"all .18s"}}>
+            {openOnly && <span style={{fontSize:12}}>✓</span>}
+          </button>
+          <span style={{fontSize:13,fontWeight:600,color:DS.ink,flex:1}}>Ouvert maintenant</span>
+          <span style={{fontSize:11,color:DS.ink40}}>🕐</span>
+        </div>
 
         <div style={{display:"flex",gap:7,overflowX:"auto",padding:"0 16px 12px",scrollbarWidth:"none"}}>
           {cats.map(c=>{
@@ -149,25 +181,25 @@ export default function Carte() {
 
         {loading&&[1,2,3].map(i=><div key={i} style={{background:DS.white,borderRadius:DS.md,height:64,marginBottom:8,boxShadow:DS.e1,overflow:"hidden"}}><div style={{height:"100%",background:`linear-gradient(90deg,${DS.ink05} 25%,${DS.white} 50%,${DS.ink05} 75%)`,backgroundSize:"400% 100%",animation:"sh 1.4s infinite"}}/></div>)}
 
-        {nearby.slice(0,20).map(o=>{
-          const d = userPos&&o.latitude?haversine(userPos.lat,userPos.lng,o.latitude,o.longitude):null;
-          const col = CAT_COLORS[o.categorie]||DS.ink;
-          const isSel = selected?.id===o.id;
-          return (
-            <div key={o.id} onClick={()=>{setSelected(o);leafletMap.current?.panTo([o.latitude,o.longitude]);}} style={{background:DS.white,borderRadius:DS.md,padding:"10px 12px",marginBottom:7,display:"flex",alignItems:"center",gap:11,cursor:"pointer",boxShadow:isSel?DS.e2:DS.e1,border:`1.5px solid ${isSel?DS.brand:"transparent"}`,transition:"all .18s"}}>
-              <img src={o.image_url} loading="lazy" alt="" style={{width:46,height:46,borderRadius:DS.sm,objectFit:"cover",flexShrink:0}} onError={e=>e.target.style.display="none"}/>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontWeight:600,fontSize:12,color:DS.ink,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{o.titre}</div>
-                <div style={{fontSize:10,color:DS.ink40,marginTop:2,display:"flex",alignItems:"center",gap:3}}>{Ic.store(DS.ink20,10)}{o.commercant_nom}{d?` · ${formatDist(d)}`:""}</div>
-              </div>
-              <span style={{flexShrink:0,background:`${col}12`,color:col,borderRadius:DS.xs,padding:"3px 8px",fontSize:11,fontWeight:800}}>-{o.valeur_reduction}{o.type_reduction==="pourcentage"?"%":"€"}</span>
+        {nearby.slice(0,2).map(o=>(
+          <div key={o.id} onClick={()=>navigate(`/OffreDetail?id=${o.id}`)} style={{background:DS.white,borderRadius:DS.md,padding:"10px 12px",marginBottom:8,display:"flex",gap:12,boxShadow:DS.e1,cursor:"pointer",transition:"all .2s"}}>
+            <div style={{width:42,height:42,borderRadius:DS.sm,background:`${CAT_COLORS[o.categorie]||DS.brand}15`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>🏷️</div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontWeight:600,fontSize:13,color:DS.ink,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{o.titre}</div>
+              <div style={{fontSize:11,color:DS.ink40}}>{o.commercant_nom}</div>
             </div>
-          );
-        })}
+            <div style={{textAlign:"right",flexShrink:0}}>
+              <div style={{fontWeight:800,fontSize:14,color:DS.brand}}>-{o.valeur_reduction}{o.type_reduction==="pourcentage"?"%":"€"}</div>
+              <div style={{fontSize:10,color:DS.ink40}}>{userPos?formatDist(haversine(userPos.lat,userPos.lng,o.latitude,o.longitude)):o.ville}</div>
+            </div>
+          </div>
+        ))}
+        
+        {!loading&&nearby.length>2&&<div style={{textAlign:"center",padding:"12px 0",fontSize:13,color:DS.ink40,fontWeight:600}}>+{nearby.length-2} offre{nearby.length-2>1?"s":""} à proximité</div>}
       </div>
 
       <NavBar active="carte"/>
-      <style>{`@keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}::-webkit-scrollbar{display:none}`}</style>
+      <style>{`@keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
     </div>
   );
 }
