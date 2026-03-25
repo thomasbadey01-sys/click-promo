@@ -1,7 +1,3 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { UserAuth } from "@/api/auth";
-
 // ─────────────────────────────────────────────────────────────
 //  DESIGN SYSTEM — Click & Promo 2025
 // ─────────────────────────────────────────────────────────────
