@@ -105,7 +105,7 @@ export default function Home() {
   const [slide, setSlide] = useState(0);
 
   useEffect(() => {
-    UserAuth.me().then(u => { if (u) navigate("/Feed"); else setTimeout(() => setStep(1), 1200); }).catch(() => setTimeout(() => setStep(1), 1200));
+    const target = window.location.pathname; UserAuth.me().then(u => { if (u && target === '/') navigate('/Feed'); else setTimeout(() => setStep(1), 1200); }).catch(() => setTimeout(() => setStep(1), 1200));
   }, []);
 
   const slides = [

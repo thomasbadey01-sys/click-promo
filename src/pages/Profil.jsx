@@ -230,6 +230,13 @@ export default function Profil() {
                 {Ic.chev(DS.ink20,15)}
               </button>
             ))}
+                        <div onClick={()=>navigate("/InscriptionCommercant")} style={{background:"#FFF5F0",border:"1.5px solid #FFD0B5",borderRadius:DS.lg,padding:"14px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer",marginTop:8}}>
+              <div>
+                <div style={{fontSize:13,fontWeight:700,color:DS.ink}}>🏪 Vous êtes commerçant ?</div>
+                <div style={{fontSize:11,color:DS.ink40,marginTop:2}}>Référencez votre commerce et publiez vos promos</div>
+              </div>
+              {Ic.chev(DS.brand,15)}
+            </div>
             <div style={{textAlign:"center",marginTop:14,color:DS.ink20,fontSize:11}}>Click & Promo v1.0 — 2025</div>
           </>
         )}
