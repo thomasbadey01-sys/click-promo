@@ -163,6 +163,13 @@ export default function Home() {
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
             <button onClick={() => navigate("/Login?mode=register")} style={{ width:"100%", background:DS.brand, color:DS.white, border:"none", borderRadius:DS.lg, padding:"16px", fontSize:15, fontWeight:700, cursor:"pointer", boxShadow:DS.eBrand }}>Créer un compte gratuit</button>
             <button onClick={() => navigate("/Login")} style={{ width:"100%", background:DS.white, color:DS.ink, border:`1.5px solid ${DS.ink10}`, borderRadius:DS.lg, padding:"15px", fontSize:14, fontWeight:600, cursor:"pointer" }}>J'ai déjà un compte</button>
+            <div style={{ display:"flex", alignItems:"center", gap:8, margin:"4px 0" }}>
+              <div style={{ flex:1, height:1, background:DS.ink10 }}/><span style={{ color:DS.ink20, fontSize:11 }}>Vous êtes commerçant ?</span><div style={{ flex:1, height:1, background:DS.ink10 }}/>
+            </div>
+            <button onClick={() => navigate("/InscriptionCommercant")} style={{ width:"100%", background:DS.ink05, color:DS.ink60, border:`1.5px solid ${DS.ink10}`, borderRadius:DS.lg, padding:"13px", fontSize:13, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+              <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              Référencer mon commerce →
+            </button>
             <button onClick={() => { localStorage.setItem("cp_skip","1"); navigate("/Feed"); }} style={{ background:"none", border:"none", color:DS.ink20, fontSize:13, cursor:"pointer", padding:"8px" }}>Continuer sans compte</button>
           </div>
         )}
