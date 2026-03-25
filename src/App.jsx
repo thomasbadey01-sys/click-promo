@@ -9,6 +9,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import Profil from './pages/Profil';
 import Login from './pages/Login';
 import Abonnement from './pages/Abonnement';
+import Admin from './pages/Admin';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
         <Route path="/Profil" element={<Profil />} />
         <Route path="/Login" element={<Login />} />
         <Route path="/Abonnement" element={<Abonnement />} />
+        <Route path="/Admin" element={<Admin />} />
       </Routes>
     </BrowserRouter>
   )
