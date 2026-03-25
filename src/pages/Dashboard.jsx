@@ -75,6 +75,32 @@ function Kpi({icon,val,label,col,sub,trend}){
   );
 }
 
+
+// ─────────────────────────────────────────────────────────────
+// Export CSV des offres
+// ─────────────────────────────────────────────────────────────
+function exportCSV(offres) {
+  const headers = ["Titre","Catégorie","Ville","Prix promo","Vues","Clics","Conversions","Stock restant","Active","Date fin"];
+  const rows = offres.map(o => [
+    `"${(o.titre||"").replace(/"/g,'""')}"`,
+    o.categorie||"",
+    o.ville||"",
+    o.prix_promo||0,
+    o.nb_vues||0,
+    o.nb_clics||0,
+    o.nb_conversions||0,
+    o.stock_restant||0,
+    o.est_active?"Oui":"Non",
+    o.date_fin ? new Date(o.date_fin).toLocaleDateString("fr-FR") : ""
+  ]);
+  const csv = [headers.join(";"), ...rows.map(r => r.join(";"))].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "click_promo_offres.csv"; a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function Dashboard(){
   const [offres,setOffres]=useState([]); const [mode,setMode]=useState("stats");
   const [loading,setLoading]=useState(true); const [saving,setSaving]=useState(false);
@@ -85,6 +111,26 @@ export default function Dashboard(){
   const [form,setForm]=useState(empty);
 
   useEffect(()=>{Offre.list().then(d=>{setOffres(d);setLoading(false);});},[]);
+
+  const duplicate = async (offre) => {
+    const { id, created_date, updated_date, created_by, nb_vues, nb_clics, nb_conversions, ...rest } = offre;
+    const copy = {
+      ...rest,
+      titre: rest.titre + " (copie)",
+      est_active: false,
+      nb_vues: 0,
+      nb_clics: 0,
+      nb_conversions: 0,
+      stock_restant: rest.stock_initial || 0,
+    };
+    const created = await Offre.create(copy);
+    setOffres(prev => [created, ...prev]);
+    setMode("liste");
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+
 
   // Quand la catégorie change → recalcule achat_en_ligne automatiquement
   useEffect(()=>{
@@ -202,7 +248,12 @@ export default function Dashboard(){
               <div style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.35)",textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>ROI estimé</div>
               <div style={{fontSize:32,fontWeight:900,color:DS.white,letterSpacing:-1}}>{(totalCo*18).toLocaleString()}€</div>
               <div style={{fontSize:11,color:"rgba(255,255,255,.3)",marginTop:4}}>Base 18€/conversion moyenne</div>
-            </div>
+
+            {/* Export CSV */}
+            <button onClick={()=>exportCSV(offres)} style={{width:"100%",background:DS.white,border:`1.5px solid ${DS.ink10}`,borderRadius:DS.lg,padding:"13px",fontSize:13,fontWeight:700,color:DS.ink60,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginTop:10}}>
+              <svg width="16" height="16" fill="none" stroke={DS.ink60} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Exporter les stats (CSV)
+            </button>
           </>
         )}
 
@@ -369,6 +420,7 @@ export default function Dashboard(){
                   </div>
                   <div style={{display:"flex",gap:7,marginTop:10}}>
                     <button onClick={()=>startEdit(o)} style={{flex:1,background:DS.ink05,border:"none",borderRadius:DS.sm,padding:"7px",fontSize:11,fontWeight:600,color:DS.brand,cursor:"pointer"}}>Modifier</button>
+                    <button onClick={()=>duplicate(o)} style={{flex:1,background:DS.ink05,border:"none",borderRadius:DS.sm,padding:"7px",fontSize:11,fontWeight:600,color:DS.ink60,cursor:"pointer"}}>Dupliquer</button>
                     {delConf===o.id?(
                       <>
                         <button onClick={()=>delO(o.id)} style={{flex:1,background:DS.danger,border:"none",borderRadius:DS.sm,padding:"7px",fontSize:11,fontWeight:700,color:DS.white,cursor:"pointer"}}>Confirmer</button>

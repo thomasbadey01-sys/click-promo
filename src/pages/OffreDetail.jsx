@@ -5,6 +5,32 @@ import { DS, Ic, CPLogo } from "./theme";
 import { haversine, formatDist } from "./Feed";
 import { UserAuth } from "@/api/auth";
 
+
+// ─────────────────────────────────────────────────────────────
+// QR CODE via api.qrserver.com (service gratuit, pas de npm)
+// ─────────────────────────────────────────────────────────────
+function QRCode({ url, size = 180 }) {
+  const [show, setShow] = useState(false);
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(url)}&format=svg&bgcolor=ffffff&color=1a1a2e&margin=2`;
+  if (!show) return (
+    <button onClick={() => setShow(true)} style={{ width: "100%", background: DS.white, border: `1.5px solid ${DS.ink10}`, borderRadius: DS.lg, padding: "12px", fontSize: 13, fontWeight: 700, color: DS.ink60, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+      <svg width="16" height="16" fill="none" stroke={DS.ink60} strokeWidth="1.8" strokeLinecap="round" viewBox="0 0 24 24"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="3" width="6" height="6" rx="1"/><rect x="3" y="15" width="6" height="6" rx="1"/><path d="M15 15h.01M15 18h.01M18 15h.01M18 18h.01"/></svg>
+      Afficher le QR code
+    </button>
+  );
+  return (
+    <div style={{ background: DS.white, borderRadius: DS.xl, padding: 22, textAlign: "center", boxShadow: DS.e1 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: DS.ink, marginBottom: 4 }}>QR Code de l'offre</div>
+      <div style={{ fontSize: 12, color: DS.ink40, marginBottom: 16 }}>Scannez pour accéder directement à cette offre</div>
+      <div style={{ display: "inline-block", background: DS.white, borderRadius: DS.md, padding: 10, border: `2px solid ${DS.ink05}` }}>
+        <img src={qrUrl} alt="QR Code" width={size} height={size} style={{ display: "block" }} />
+      </div>
+      <div style={{ marginTop: 14, fontSize: 11, color: DS.ink20, wordBreak: "break-all", padding: "0 10px" }}>{url}</div>
+      <button onClick={() => setShow(false)} style={{ marginTop: 12, background: "none", border: "none", color: DS.ink40, fontSize: 12, cursor: "pointer" }}>Masquer</button>
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────
 // LOGIQUE MÉTIER : achat en ligne autorisé ?
 // Doit être IDENTIQUE à celle du Dashboard pour cohérence
@@ -314,7 +340,10 @@ export default function OffreDetail(){
         {/* Conditions */}
         {offre.conditions&&<div style={{background:"#FFFBEB",borderRadius:DS.md,padding:14,border:"1px solid #FDE68A"}}><div style={{fontSize:11,fontWeight:700,color:"#92400E",textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>Conditions</div><div style={{fontSize:13,color:"#78350F",lineHeight:1.75}}>{offre.conditions}</div></div>}
 
-        {used&&<Stars onRate={n=>console.log("Note:",n)}/>}
+        {/* QR Code */}
+        <QRCode url={window.location.href} />
+
+                {used&&<Stars onRate={n=>console.log("Note:",n)}/>}
         <Similar offreId={id} categorie={offre.categorie}/>
       </div>
     </div>
