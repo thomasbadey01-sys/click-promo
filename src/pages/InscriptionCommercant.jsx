@@ -246,7 +246,7 @@ export default function InscriptionCommercant() {
 
               <div style={{ marginBottom: 12 }}>
                 <label style={{ fontSize: 12, fontWeight: 700, color: DS.ink60, display: "block", marginBottom: 5 }}>Catégorie *</label>
-                <select value={form.categorie} onChange={e => set("categorie", e.target.value)} style={inp({ appearance: "none", errs: errs.categorie ? { borderColor: DS.danger } : {} })}>
+                <select value={form.categorie} onChange={e => set("categorie", e.target.value)} style={inp({ appearance: "none", ...(errs.categorie ? { borderColor: "#E53E3E" } : {}) })}>
                   <option value="">Sélectionnez une catégorie</option>
                   {CATS.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
