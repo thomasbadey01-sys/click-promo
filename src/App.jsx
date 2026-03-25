@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import OffreDetail from './pages/OffreDetail';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import Profil from './pages/Profil';
+import Login from './pages/Login';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="/OffreDetail" element={<OffreDetail />} />
         <Route path="/PrivacyPolicy" element={<PrivacyPolicy />} />
         <Route path="/Profil" element={<Profil />} />
+        <Route path="/Login" element={<Login />} />
       </Routes>
     </BrowserRouter>
   )
