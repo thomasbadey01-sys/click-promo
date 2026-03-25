@@ -91,3 +91,8 @@ export function CPLogo({ size=36, inverted=false }) {
     </svg>
   );
 }
+
+// Required: default export so Base44 doesn't crash this route
+export default function ThemePage() {
+  return null;
+}
