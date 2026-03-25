@@ -11,6 +11,7 @@ import Admin from './pages/Admin';
 import Favoris from './pages/Favoris';
 import Profil from './pages/Profil';
 import Feed from './pages/Feed';
+import theme from './pages/theme';
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
         <Route path="/Favoris" element={<Favoris />} />
         <Route path="/Profil" element={<Profil />} />
         <Route path="/Feed" element={<Feed />} />
+        <Route path="/theme" element={<theme />} />
       </Routes>
     </BrowserRouter>
   )

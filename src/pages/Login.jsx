@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { UserAuth } from "@/api/auth";
-import { DS, Ic, CPLogo } from "./Home";
+import { DS, Ic, CPLogo } from "./theme";
 
 export default function Login() {
   const navigate = useNavigate();

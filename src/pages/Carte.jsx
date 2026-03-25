@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Offre, Commercant } from "@/api/entities";
 import { useNavigate } from "react-router-dom";
 import { NavBar } from "./Feed";
-import { DS, Ic, CPLogo } from "./Home";
+import { DS, Ic, CPLogo } from "./theme";
 import { haversine, formatDist } from "./Feed";
 
 const CAT_COLORS = {

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Offre } from "@/api/entities";
 import { useNavigate } from "react-router-dom";
 import { NavBar } from "./Feed";
-import { DS, Ic, CPLogo } from "./Home";
+import { DS, Ic, CPLogo } from "./theme";
 
 export default function Favoris() {
   const navigate = useNavigate();

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Offre, ProfilUtilisateur } from "@/api/entities";
 import { Link, useNavigate } from "react-router-dom";
 import { UserAuth } from "@/api/auth";
-import { DS, Ic, CPLogo } from "./Home";
+import { DS, Ic, CPLogo } from "./theme";
 
 // ── Utils ──────────────────────────────────────────────────────────────────
 export function haversine(la1,lo1,la2,lo2){const R=6371,dL=((la2-la1)*Math.PI)/180,dO=((lo2-lo1)*Math.PI)/180,a=Math.sin(dL/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dO/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}

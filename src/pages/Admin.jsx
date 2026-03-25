@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Offre, CommandeCommission, Abonnement, DemandeCommercant, Commercant } from "@/api/entities";
-import { DS, Ic, CPLogo } from "./Home";
+import { DS, Ic, CPLogo } from "./theme";
 
 const IcCheck = (c=DS.success,s=16) => <svg width={s} height={s} fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>;
 const IcX = (c=DS.danger,s=16) => <svg width={s} height={s} fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;

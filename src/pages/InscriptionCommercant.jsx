@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DemandeCommercant } from "@/api/entities";
 import { UserAuth } from "@/api/auth";
-import { DS, Ic, CPLogo } from "./Home";
+import { DS, Ic, CPLogo } from "./theme";
 
 const CATS = ["Restaurant","Boutique","Beauté & Coiffure","Fitness & Sport","Services","Épicerie","Pharmacie","Autre"];
 const JOURS = ["lun","mar","mer","jeu","ven","sam","dim"];

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Offre } from "@/api/entities";
-import { DS, Ic, CPLogo } from "./Home";
+import { DS, Ic, CPLogo } from "./theme";
 
 const CATS = ["Restaurant","Boutique","Beauté & Coiffure","Fitness & Sport","Services","Épicerie","Pharmacie","Autre"];
 const IMGS = {"Restaurant":"https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800","Boutique":"https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800","Beauté & Coiffure":"https://images.unsplash.com/photo-1560066984-138daaa0e9cd?w=800","Fitness & Sport":"https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800","Services":"https://images.unsplash.com/photo-1521791136064-7986c2920216?w=800","Épicerie":"https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800","Pharmacie":"https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=800","Autre":"https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800"};

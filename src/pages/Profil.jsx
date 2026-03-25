@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { NavBar } from "./Feed";
 import { ProfilUtilisateur } from "@/api/entities";
 import { UserAuth } from "@/api/auth";
-import { DS, Ic, CPLogo } from "./Home";
+import { DS, Ic, CPLogo } from "./theme";
 
 const NIVEAUX = [
   {n:1,label:"Débutant",    xp:0,    col:"#9CA3AF"},

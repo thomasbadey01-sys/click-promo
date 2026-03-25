@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Offre } from "@/api/entities";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { DS, Ic, CPLogo } from "./Home";
+import { DS, Ic, CPLogo } from "./theme";
 import { haversine, formatDist } from "./Feed";
 import { UserAuth } from "@/api/auth";
 
