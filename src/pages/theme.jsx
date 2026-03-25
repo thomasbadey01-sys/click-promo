@@ -1,7 +1,9 @@
 // ─────────────────────────────────────────────────────────────
 //  DESIGN SYSTEM — Click & Promo 2025
+//  Support mode clair (light) et sombre (dark)
 // ─────────────────────────────────────────────────────────────
-export const DS = {
+
+export const DS_LIGHT = {
   // Brand
   brand:    "#FF5C00",
   brandDark:"#CC4900",
@@ -31,6 +33,54 @@ export const DS = {
   e4: "0 20px 48px rgba(0,0,0,0.14), 0 8px 16px rgba(0,0,0,0.08)",
   eBrand: "0 8px 32px rgba(255,92,0,0.30)",
 };
+
+export const DS_DARK = {
+  // Brand (plus lumineux en dark)
+  brand:    "#FF7A38",
+  brandDark:"#FF5C00",
+  brandBg:  "#1F1108",
+  // Neutrals (inversés)
+  ink:      "#F5F5F5",
+  ink80:    "#E0E0E0",
+  ink60:    "#C0C0C0",
+  ink40:    "#808080",
+  ink20:    "#505050",
+  ink10:    "#2A2A2A",
+  ink05:    "#1a1a1a",
+  white:    "#0A0A0A",
+  // Status
+  success:  "#00D99F",
+  danger:   "#FF6B6B",
+  warning:  "#FFA940",
+  info:     "#5BA3FF",
+  // Type
+  font:     "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+  // Radius
+  xs:4, sm:8, md:12, lg:16, xl:20, xxl:28, pill:999,
+  // Elevation (plus subtiles en dark)
+  e1: "0 1px 2px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.2)",
+  e2: "0 2px 8px rgba(0,0,0,0.4), 0 1px 3px rgba(0,0,0,0.3)",
+  e3: "0 8px 24px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.4)",
+  e4: "0 20px 48px rgba(0,0,0,0.6), 0 8px 16px rgba(0,0,0,0.5)",
+  eBrand: "0 8px 32px rgba(255,122,56,0.40)",
+};
+
+// Hook pour obtenir le theme courant
+export const getDarkMode = () => {
+  if (typeof window === 'undefined') return false;
+  const saved = localStorage.getItem('cp_darkmode');
+  if (saved !== null) return saved === 'true';
+  // Fallback : détecte préférence système
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+};
+
+export const toggleDarkMode = (on) => {
+  localStorage.setItem('cp_darkmode', String(on));
+  window.location.reload();
+};
+
+// Alias DS qui change dynamiquement
+export const DS = getDarkMode() ? DS_DARK : DS_LIGHT;
 
 // ─────────────────────────────────────────────────────────────
 //  ICON SYSTEM — SVG strokes uniquement, pas d'emojis
@@ -62,6 +112,9 @@ export const Ic = {
   nav:    (c=DS.ink60,s=16)=><svg width={s} height={s} fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>,
   percent:(c=DS.brand,s=18)=><svg width={s} height={s} fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>,
   store:  (c=DS.ink60,s=16)=><svg width={s} height={s} fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  moon:   (c=DS.ink60,s=18)=><svg width={s} height={s} fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>,
+  sun:    (c=DS.ink60,s=18)=><svg width={s} height={s} fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>,
+  history:(c=DS.ink60,s=16)=><svg width={s} height={s} fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>,
   // Catégories — icônes distinctives
   cat: {
     restaurant: (c,s=15)=><svg width={s} height={s} fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>,
@@ -86,13 +139,8 @@ export function CPLogo({ size=36, inverted=false }) {
       <rect width="40" height="40" rx="11" fill={bg}/>
       {/* percent sign */}
       <line x1="26" y1="14" x2="14" y2="26" stroke={fg} strokeWidth="2.2" strokeLinecap="round"/>
-      <circle cx="15" cy="15" r="3" stroke={fg} strokeWidth="2"/>
-      <circle cx="25" cy="25" r="3" stroke={fg} strokeWidth="2"/>
+      <circle cx="28" cy="12" r="2.5" fill={fg}/>
+      <circle cx="12" cy="28" r="2.5" fill={fg}/>
     </svg>
   );
-}
-
-// Required: default export so Base44 doesn't crash this route
-export default function ThemePage() {
-  return null;
 }

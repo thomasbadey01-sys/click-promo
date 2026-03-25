@@ -9,6 +9,7 @@ export const AvisCommercant = base44.entities.AvisCommercant;
 export const Abonnement = base44.entities.Abonnement;
 export const CommandeCommission = base44.entities.CommandeCommission;
 export const DemandeCommercant = base44.entities.DemandeCommercant;
+export const HistoriqueOffresVues = base44.entities.HistoriqueOffresVues;
 
 // auth sdk:
 export const User = base44.auth;

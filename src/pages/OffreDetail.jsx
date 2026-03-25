@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Offre } from "@/api/entities";
+import { Offre, HistoriqueOffresVues } from "@/api/entities";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { DS, Ic, CPLogo } from "./theme";
 import { haversine, formatDist } from "./Feed";
@@ -113,7 +113,27 @@ export default function OffreDetail(){
 
   useEffect(()=>{
     if(!id)return;
-    Offre.get(id).then(d=>{setOffre(d);setLoading(false);setIsFav(JSON.parse(localStorage.getItem("cp_favs")||"[]").includes(id));Offre.update(id,{nb_vues:(d.nb_vues||0)+1}).catch(()=>{});});
+    Offre.get(id).then(d=>{
+      setOffre(d);
+      setLoading(false);
+      setIsFav(JSON.parse(localStorage.getItem("cp_favs")||"[]").includes(id));
+      Offre.update(id,{nb_vues:(d.nb_vues||0)+1}).catch(()=>{});
+      // Tracker historique
+      UserAuth.me().then(u=>{
+        if(u?.id){
+          HistoriqueOffresVues.create({
+            user_id:u.id,
+            offre_id:id,
+            offre_titre:d.titre,
+            commercant_nom:d.commercant_nom,
+            categorie:d.categorie,
+            date_vue:new Date().toISOString(),
+            image_url:d.image_url,
+            ville:d.ville
+          }).catch(()=>{});
+        }
+      }).catch(()=>{});
+    });
     navigator.geolocation?.getCurrentPosition(p=>setUserPos({lat:p.coords.latitude,lng:p.coords.longitude}),()=>{});
     UserAuth.me().then(u=>{if(u?.email)setUserEmail(u.email);}).catch(()=>{});
   },[id]);

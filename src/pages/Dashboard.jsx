@@ -348,11 +348,19 @@ export default function Dashboard(){
                   <div style={{display:"flex",gap:11,alignItems:"center"}}>
                     <img src={o.image_url} alt="" style={{width:44,height:44,borderRadius:DS.sm,objectFit:"cover",flexShrink:0}} onError={e=>e.target.style.display="none"}/>
                     <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontWeight:600,fontSize:13,color:DS.ink,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{o.titre}</div>
-                      <div style={{fontSize:10,color:DS.ink40,marginTop:2,display:"flex",alignItems:"center",gap:6}}>
+                      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:3}}>
+                        <div style={{fontWeight:600,fontSize:13,color:DS.ink,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>{o.titre}</div>
+                        {o.stock_restant!==null&&o.stock_restant<(o.stock_initial*0.2)&&o.stock_restant>0&&(
+                          <div style={{background:`${DS.warning}22`,color:DS.warning,borderRadius:DS.pill,padding:"3px 8px",fontSize:10,fontWeight:700,flexShrink:0}}>
+                            {o.stock_restant}/{o.stock_initial} restant
+                          </div>
+                        )}
+                      </div>
+                      <div style={{fontSize:10,color:DS.ink40,display:"flex",alignItems:"center",gap:6}}>
                         {o.ville} · {o.nb_vues||0} vues · {o.nb_conversions||0} conv.
                         {o.achat_en_ligne&&<span style={{color:DS.success,fontWeight:700}}>· En ligne</span>}
                         {oResult==="never"&&<span style={{color:DS.ink20}}>· Code promo</span>}
+                        {o.stock_restant!==null&&o.stock_restant<(o.stock_initial*0.2)&&<span style={{color:DS.warning,fontWeight:700}}>⚠️ Stock faible</span>}
                       </div>
                     </div>
                     <button onClick={()=>toggleA(o)} style={{background:o.est_active?`${DS.success}12`:DS.ink05,color:o.est_active?DS.success:DS.ink40,border:"none",borderRadius:DS.pill,padding:"4px 10px",fontSize:10,fontWeight:700,cursor:"pointer",flexShrink:0}}>

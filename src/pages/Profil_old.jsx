@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { NavBar } from "./Feed";
-import { ProfilUtilisateur, HistoriqueOffresVues } from "@/api/entities";
+import { ProfilUtilisateur } from "@/api/entities";
 import { UserAuth } from "@/api/auth";
-import { DS, Ic, CPLogo, getDarkMode, toggleDarkMode } from "./theme";
+import { DS, Ic, CPLogo } from "./theme";
 
 const NIVEAUX = [
   {n:1,label:"Débutant",    xp:0,    col:"#9CA3AF"},
@@ -23,8 +23,6 @@ export default function Profil() {
   const [pid, setPid] = useState(null); const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false); const [form, setForm] = useState(defP);
   const [tab, setTab] = useState("stats"); const [saving, setSaving] = useState(false); const [saved, setSaved] = useState(false);
-  const [darkMode, setDarkMode] = useState(getDarkMode());
-  const [historique, setHistorique] = useState([]);
 
   useEffect(()=>{
     const load=async()=>{
@@ -34,9 +32,6 @@ export default function Profil() {
           const ps=await ProfilUtilisateur.filter({user_id:u.id});
           if(ps.length){const p={...defP,...ps[0],prenom:ps[0].prenom||u.full_name?.split(" ")[0]||"",nom:ps[0].nom||"",email:u.email};setProfil(p);setForm(p);setPid(ps[0].id);}
           else{const np={...defP,user_id:u.id,prenom:(u.full_name||"").split(" ")[0]||""};const c=await ProfilUtilisateur.create(np);setPid(c.id);setProfil(np);setForm(np);}
-          // Charger l'historique
-          const hist = await HistoriqueOffresVues.filter({user_id:u.id});
-          setHistorique(hist.sort((a,b)=>new Date(b.date_vue)-new Date(a.date_vue)).slice(0,30));
         }
       }catch{}
       setLoading(false);
@@ -46,7 +41,6 @@ export default function Profil() {
 
   const save=async()=>{setSaving(true);const u={...profil,...form};setProfil(u);if(pid)await ProfilUtilisateur.update(pid,{prenom:form.prenom,nom:form.nom,ville:form.ville,categories_favorites:form.categories_favorites,rayon_recherche_km:form.rayon_recherche_km,notifications_actives:form.notifications_actives});setSaving(false);setSaved(true);setEditing(false);setTimeout(()=>setSaved(false),2500);};
   const logout=async()=>{await UserAuth.logout();navigate("/Login");};
-  const toggleDark = () => { setDarkMode(!darkMode); toggleDarkMode(!darkMode); };
 
   const niv=getNiv(profil.points); const next=getNext(profil.points);
   const xpPct=next?((profil.points-niv.xp)/(next.xp-niv.xp))*100:100;
@@ -107,9 +101,9 @@ export default function Profil() {
       </div>
 
       {/* Tabs */}
-      <div style={{display:"flex",background:DS.white,borderBottom:`1px solid ${DS.ink10}`,overflowX:"auto"}}>
-        {[{k:"stats",l:"Activité"},{k:"historique",l:"Historique"},{k:"badges",l:"Badges"},{k:"compte",l:"Compte"}].map(t=>(
-          <button key={t.k} onClick={()=>setTab(t.k)} style={{flex:"0 0 auto",background:"none",border:"none",borderBottom:`2px solid ${tab===t.k?DS.brand:"transparent"}`,padding:"12px 14px",fontSize:12,fontWeight:tab===t.k?700:500,color:tab===t.k?DS.brand:DS.ink40,cursor:"pointer",fontFamily:DS.font,transition:"all .2s",whiteSpace:"nowrap"}}>{t.l}</button>
+      <div style={{display:"flex",background:DS.white,borderBottom:`1px solid ${DS.ink10}`}}>
+        {[{k:"stats",l:"Activité"},{k:"badges",l:"Badges"},{k:"compte",l:"Compte"}].map(t=>(
+          <button key={t.k} onClick={()=>setTab(t.k)} style={{flex:1,background:"none",border:"none",borderBottom:`2px solid ${tab===t.k?DS.brand:"transparent"}`,padding:"12px 4px",fontSize:12,fontWeight:tab===t.k?700:500,color:tab===t.k?DS.brand:DS.ink40,cursor:"pointer",fontFamily:DS.font,transition:"all .2s"}}>{t.l}</button>
         ))}
       </div>
 
@@ -133,42 +127,32 @@ export default function Profil() {
             <div style={{marginBottom:14}}>
               <div style={{fontSize:11,fontWeight:700,color:DS.ink40,textTransform:"uppercase",letterSpacing:0.7,marginBottom:8}}>Catégories favorites</div>
               <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
-                {CATS.map(c=>{const on=form.categories_favorites?.includes(c);return<button key={c} onClick={()=>{const cats=on?form.categories_favorites.filter(x=>x!==c):[...(form.categories_favorites||[]),c];setForm({...form,categories_favorites:cats});}} style={{background:on?DS.brand:DS.white,color:on?DS.white:DS.ink,border:`1px solid ${on?DS.brand:DS.ink10}`,borderRadius:DS.pill,padding:"7px 12px",fontSize:12,fontWeight:on?600:500,cursor:"pointer",fontFamily:DS.font,transition:"all .2s"}}>{c}</button>;})}
+                {CATS.map(c=>{const on=form.categories_favorites?.includes(c);return<button key={c} onClick={()=>{const cats=on?form.categories_favorites.filter(x=>x!==c):[...(form.categories_favorites||[]),c];setForm({...form,categories_favorites:cats});}} style={{background:on?DS.brand:DS.white,color:on?DS.white:DS.ink60,border:`1.5px solid ${on?DS.brand:DS.ink10}`,borderRadius:DS.pill,padding:"6px 12px",fontSize:12,fontWeight:600,cursor:"pointer",transition:"all .18s"}}>{c}</button>;})}
               </div>
             </div>
-            <div style={{display:"flex",gap:8}}>
-              <button onClick={save} style={{flex:1,background:DS.brand,color:DS.white,border:"none",borderRadius:DS.md,padding:"12px",fontWeight:700,fontSize:13,cursor:"pointer",transition:"all .2s",boxShadow:DS.eBrand}}>
-                {saving?"Sauvegarde...":"Enregistrer"}
-              </button>
-              <button onClick={()=>setEditing(false)} style={{flex:1,background:DS.ink05,color:DS.ink,border:"none",borderRadius:DS.md,padding:"12px",fontWeight:600,fontSize:13,cursor:"pointer"}}>Annuler</button>
-            </div>
+            <button onClick={save} disabled={saving} style={{width:"100%",background:saving?DS.ink10:DS.brand,color:saving?DS.ink40:DS.white,border:"none",borderRadius:DS.md,padding:"13px",fontSize:14,fontWeight:700,cursor:saving?"not-allowed":"pointer",boxShadow:saving?"none":DS.eBrand}}>
+              {saving?"Enregistrement…":"Sauvegarder"}
+            </button>
           </div>
         )}
 
-        {/* STATS / ACTIVITÉ */}
-        {tab==="stats"&&(
+        {/* ACTIVITÉ */}
+        {tab==="stats"&&!editing&&(
           <>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
-              {[{icon:Ic.eye(DS.brand,16),l:"Vues totales",v:(profil.nb_vues_stats||0)},{icon:Ic.heart(DS.danger,16,true),l:"Favoris",v:profil.nb_favoris||0},{icon:Ic.check(DS.success,16),l:"Offres utilisées",v:profil.nb_offres_utilisees},{icon:Ic.star(DS.warning,16,true),l:"Points XP",v:profil.points}].map((s,i)=><div key={i} style={{background:DS.white,borderRadius:DS.lg,padding:14,boxShadow:DS.e1}}><div style={{display:"flex",alignItems:"center",gap:9,marginBottom:8}}>{s.icon}<span style={{fontSize:11,color:DS.ink40,fontWeight:600}}>{s.l}</span></div><div style={{fontSize:18,fontWeight:900,color:DS.ink}}>{s.v}</div></div>)}
-            </div>
-
-            {/* Badges progress */}
-            <div style={{background:DS.white,borderRadius:DS.lg,padding:18,marginBottom:12,boxShadow:DS.e1}}>
-              <div style={{fontWeight:700,fontSize:14,color:DS.ink,marginBottom:12}}>Objectifs</div>
-              {[{l:"Saver",cur:profil.total_economies||0,goal:50},{l:"Speed Shopper",cur:profil.nb_offres_utilisees||0,goal:5},{l:"Loyal",cur:profil.nb_offres_utilisees||0,goal:10}].map(o=>(
-                <div key={o.l} style={{marginBottom:14}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-                    <span style={{fontSize:12,fontWeight:600,color:DS.ink}}>{o.l}</span>
-                    <span style={{fontSize:11,color:DS.ink40}}>{Math.min(o.cur,o.goal)}/{o.goal}</span>
+            <div style={{background:DS.white,borderRadius:DS.lg,padding:18,marginBottom:10,boxShadow:DS.e1}}>
+              <div style={{fontWeight:700,fontSize:14,color:DS.ink,marginBottom:14}}>Objectifs du mois</div>
+              {[{label:"Offres utilisées",cur:profil.nb_offres_utilisees,goal:10,col:DS.brand},{label:"Économies réalisées",cur:profil.total_economies,goal:50,col:DS.success,unit:"€"}].map((o,i)=>(
+                <div key={i} style={{marginBottom:i===0?14:0}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                    <span style={{fontSize:13,color:DS.ink60}}>{o.label}</span>
+                    <span style={{fontSize:13,fontWeight:700,color:o.col}}>{o.cur}{o.unit||""}<span style={{color:DS.ink20,fontWeight:400}}> / {o.goal}{o.unit||""}</span></span>
                   </div>
                   <div style={{background:DS.ink10,borderRadius:DS.pill,height:5}}>
-                    <div style={{background:DS.brand,height:"100%",borderRadius:DS.pill,width:`${Math.min((o.cur/o.goal)*100,100)}%`,transition:"width 1s"}}/>
+                    <div style={{background:o.col,height:"100%",borderRadius:DS.pill,width:`${Math.min((o.cur/o.goal)*100,100)}%`,transition:"width 1s"}}/>
                   </div>
                 </div>
               ))}
             </div>
-
-            {/* Info bloc */}
             <div style={{background:DS.white,borderRadius:DS.lg,padding:18,boxShadow:DS.e1}}>
               <div style={{fontWeight:700,fontSize:14,color:DS.ink,marginBottom:12}}>Informations</div>
               {[{l:"Ville",v:profil.ville||"—"},{l:"Rayon",v:`${profil.rayon_recherche_km||5} km`},{l:"Catégories",v:profil.categories_favorites?.length?profil.categories_favorites.slice(0,2).join(", ")+(profil.categories_favorites.length>2?"…":""):"Toutes"},{l:"Compte",v:user?"Connecté":"Hors ligne"}].map((r,i,a)=>(
@@ -178,35 +162,6 @@ export default function Profil() {
                 </div>
               ))}
             </div>
-          </>
-        )}
-
-        {/* HISTORIQUE */}
-        {tab==="historique"&&(
-          <>
-            <div style={{fontSize:11,color:DS.ink40,marginBottom:12,fontWeight:600}}>{historique.length} offre{historique.length!==1?"s":""} vue{historique.length!==1?"s":""}</div>
-            {historique.length===0?(
-              <div style={{background:DS.white,borderRadius:DS.lg,padding:28,textAlign:"center",boxShadow:DS.e1}}>
-                <div style={{display:"flex",justifyContent:"center",marginBottom:12}}>{Ic.history(DS.ink20,32)}</div>
-                <div style={{color:DS.ink40,fontSize:13}}>Aucune offre consultée pour l'instant</div>
-              </div>
-            ):(
-              <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                {historique.map((h,i)=>(
-                  <div key={h.id} onClick={()=>navigate(`/OffreDetail?id=${h.offre_id}`)} style={{background:DS.white,borderRadius:DS.lg,padding:12,boxShadow:DS.e1,cursor:"pointer",display:"flex",gap:12,overflow:"hidden",transition:"all .2s"}}>
-                    <img src={h.image_url} onError={e=>e.target.src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 150'%3E%3Crect fill='%23E8E8E8' width='200' height='150'/%3E%3C/svg%3E"} alt="" style={{width:64,height:64,borderRadius:DS.md,objectFit:"cover",flexShrink:0}}/>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:12,fontWeight:700,color:DS.ink,marginBottom:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{h.offre_titre}</div>
-                      <div style={{fontSize:11,color:DS.ink40,marginBottom:3}}>{h.commercant_nom}</div>
-                      <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                        <span style={{fontSize:9,background:`${DS.brand}12`,color:DS.brand,borderRadius:DS.pill,padding:"2px 8px",fontWeight:600}}>{h.categorie}</span>
-                        <span style={{fontSize:9,color:DS.ink20}}>{new Date(h.date_vue).toLocaleDateString("fr-FR")}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </>
         )}
 
@@ -252,22 +207,6 @@ export default function Profil() {
               </div>
             )}
 
-            {/* Mode sombre */}
-            <div style={{background:DS.white,borderRadius:DS.lg,padding:16,marginBottom:10,boxShadow:DS.e1}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <div style={{display:"flex",alignItems:"center",gap:11}}>
-                  <div style={{width:36,height:36,borderRadius:DS.md,background:`${darkMode?DS.brand:DS.ink}12`,display:"flex",alignItems:"center",justifyContent:"center"}}>{darkMode?Ic.moon(darkMode?DS.brand:DS.ink,17):Ic.sun(DS.ink60,17)}</div>
-                  <div>
-                    <div style={{fontWeight:600,fontSize:13,color:DS.ink}}>Mode sombre</div>
-                    <div style={{fontSize:11,color:DS.ink40,marginTop:1}}>Thème nuit pour les yeux</div>
-                  </div>
-                </div>
-                <div onClick={toggleDark} style={{width:44,height:24,borderRadius:12,background:darkMode?DS.brand:DS.ink10,cursor:"pointer",position:"relative",transition:"background .3s"}}>
-                  <div style={{position:"absolute",width:18,height:18,borderRadius:"50%",background:DS.white,top:3,left:darkMode?23:3,transition:"left .3s",boxShadow:DS.e1}}/>
-                </div>
-              </div>
-            </div>
-
             {/* Notifs */}
             <div style={{background:DS.white,borderRadius:DS.lg,padding:16,marginBottom:10,boxShadow:DS.e1}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -291,14 +230,14 @@ export default function Profil() {
                 {Ic.chev(DS.ink20,15)}
               </button>
             ))}
-            <div onClick={()=>navigate("/InscriptionCommercant")} style={{background:"#FFF5F0",border:"1.5px solid #FFD0B5",borderRadius:DS.lg,padding:"14px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer",marginTop:8}}>
+                        <div onClick={()=>navigate("/InscriptionCommercant")} style={{background:"#FFF5F0",border:"1.5px solid #FFD0B5",borderRadius:DS.lg,padding:"14px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer",marginTop:8}}>
               <div>
                 <div style={{fontSize:13,fontWeight:700,color:DS.ink}}>🏪 Vous êtes commerçant ?</div>
                 <div style={{fontSize:11,color:DS.ink40,marginTop:2}}>Référencez votre commerce et publiez vos promos</div>
               </div>
               {Ic.chev(DS.brand,15)}
             </div>
-            <div style={{textAlign:"center",marginTop:14,color:DS.ink20,fontSize:11}}>Click & Promo v1.1 — 2025 | Dark mode enabled</div>
+            <div style={{textAlign:"center",marginTop:14,color:DS.ink20,fontSize:11}}>Click & Promo v1.0 — 2025</div>
           </>
         )}
       </div>
