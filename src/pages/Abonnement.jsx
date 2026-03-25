@@ -19,7 +19,7 @@ const PLANS_COMMERCANT = [
 // Avantages Premium utilisateur détaillés
 const PREMIUM_PERKS = [
   {
-    icon: (c)=><span style={{color:c}}>{IcAlerte(18)}</span>,
+    icon: (c)=><span style={{color:c}}>{<IcAlerte s={18} />}</span>,
     titre: "Alertes avant-première",
     desc: "Soyez notifié 30 min avant les autres utilisateurs dès qu'une offre flash apparaît près de chez vous.",
     tag: "Exclusif",
@@ -31,13 +31,13 @@ const PREMIUM_PERKS = [
     tag: "Accès exclusif",
   },
   {
-    icon: (c)=><span style={{color:c}}>{IcEuro(18)}</span>,
+    icon: (c)=><span style={{color:c}}>{<IcEuro s={18} />}</span>,
     titre: "-5% supplémentaires partout",
     desc: "Sur toutes les offres disponibles en ligne, votre prix Premium est automatiquement 5% moins cher.",
     tag: "-5% auto",
   },
   {
-    icon: (c)=><span style={{color:c}}>{IcRadar(18)}</span>,
+    icon: (c)=><span style={{color:c}}>{<IcRadar s={18} />}</span>,
     titre: "Rayon de recherche 50 km",
     desc: "Les utilisateurs classiques sont limités à 10 km. Premium vous donne accès jusqu'à 50 km à la ronde.",
     tag: "50 km",
@@ -114,7 +114,7 @@ export default function Abonnement() {
               <div style={{position:"absolute",top:-40,right:-40,width:180,height:180,borderRadius:"50%",background:`radial-gradient(circle,${DS.brand}25,transparent 70%)`}}/>
               <div style={{position:"absolute",bottom:-60,left:-30,width:150,height:150,borderRadius:"50%",background:`radial-gradient(circle,#7C3AED18,transparent 70%)`}}/>
               <div style={{position:"relative",textAlign:"center"}}>
-                <div style={{width:64,height:64,borderRadius:DS.xl,background:`linear-gradient(135deg,${DS.brand},#FF8C42)`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px",boxShadow:DS.eBrand,color:DS.white}}>{IcPremium(24)}</div>
+                <div style={{width:64,height:64,borderRadius:DS.xl,background:`linear-gradient(135deg,${DS.brand},#FF8C42)`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px",boxShadow:DS.eBrand,color:DS.white}}>{<IcPremium s={24} />}</div>
                 <div style={{color:DS.white,fontSize:28,fontWeight:900,letterSpacing:-.8,marginBottom:6}}>Premium</div>
                 <div style={{color:"rgba(255,255,255,.45)",fontSize:13,marginBottom:20}}>L'expérience Click & Promo sans limite</div>
                 <div style={{display:"flex",alignItems:"baseline",gap:6,justifyContent:"center",marginBottom:6}}>

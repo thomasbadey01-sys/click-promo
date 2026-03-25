@@ -12,7 +12,6 @@ import Feed from './pages/Feed';
 import Profil from './pages/Profil';
 import Carte from './pages/Carte';
 import Home from './pages/Home';
-import Profil_old from './pages/Profil_old';
 
 function App() {
   return (
@@ -32,7 +31,6 @@ function App() {
         <Route path="/Profil" element={<Profil />} />
         <Route path="/Carte" element={<Carte />} />
         <Route path="/Home" element={<Home />} />
-        <Route path="/Profil_old" element={<Profil_old />} />
       </Routes>
     </BrowserRouter>
   )

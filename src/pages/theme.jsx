@@ -144,3 +144,7 @@ export function CPLogo({ size=36, inverted=false }) {
     </svg>
   );
 }
+
+// Required export for Base44 routing
+export default function ThemePage() { return null; }
+
