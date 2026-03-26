@@ -1,5 +1,6 @@
 // ─────────────────────────────────────────────────────────────
 // CLICK & PROMO — Design System v2
+import { useNavigate } from "react-router-dom";
 // Style: screenshots de référence (violet #6C3BFF, dark dashboard,
 //         feed blanc, badges pill violet, typo bold)
 // ─────────────────────────────────────────────────────────────
@@ -197,7 +198,7 @@ export function CPLogo({ size = 24 }) {
 
 // Navbar main
 export function NavBar({ active = "Feed" }) {
-  const navigate = require("react-router-dom").useNavigate?.();
+  const navigate = useNavigate();
   const isDark = typeof localStorage !== 'undefined' && localStorage.getItem("cp_darkmode") === "1";
   const bg = isDark ? DS.dark2 : DS.white;
   const color = isDark ? DS.white : DS.ink;
@@ -234,7 +235,7 @@ export function NavBar({ active = "Feed" }) {
 
 // Dark Navbar
 export function DarkNavBar({ active = "Dashboard" }) {
-  const navigate = require("react-router-dom").useNavigate?.();
+  const navigate = useNavigate();
   const tabs = [
     { id: "Dashboard", label: "Stats", icon: Ic.star },
     { id: "Profil", label: "Compte", icon: Ic.user },
