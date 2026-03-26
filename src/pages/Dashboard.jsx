@@ -211,7 +211,7 @@ export default function Dashboard() {
     <div style={{ background: DS.dark, minHeight: "100vh", fontFamily: DS.fontBase, color: DS.white }}>
 
       {/* Header */}
-      <div style={{ padding: "52px 16px 16px", background: DS.dark2, borderBottom: `1px solid ${DS.darkBorder}` }}>
+      <div style={{ padding: `calc(${DS.safeTop} + 8px) 16px 16px`, background: DS.dark2, borderBottom: `1px solid ${DS.darkBorder}` }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ fontSize: 26, fontWeight: 900, color: DS.white, letterSpacing: -0.8 }}>Tableau de Bord</div>

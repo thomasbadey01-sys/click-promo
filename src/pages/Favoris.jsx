@@ -61,10 +61,15 @@ export default function Favoris() {
   };
 
   if (loading) return (
-    <div style={{ background: DS.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: DS.fontBase }}>
-      <div style={{ textAlign: "center" }}>
-        <CPLogo size={40} />
-        <div style={{ marginTop: 12, color: DS.ink40, fontSize: 14 }}>Chargement…</div>
+    <div style={{ background: DS.bg, minHeight: "100vh", fontFamily: DS.fontBase }}>
+      <div style={{ background: DS.white, padding: `calc(${DS.safeTop} + 8px) 16px 12px`, marginBottom: 8 }}>
+        <div className="shimmer-card" style={{ height: 28, width: 160, marginBottom: 14 }} />
+        <div style={{ display: "flex", gap: 8 }}>
+          {[70, 100, 90, 110, 85].map((w, i) => <div key={i} className="shimmer-card" style={{ height: 34, width: w, borderRadius: 100, flexShrink: 0 }} />)}
+        </div>
+      </div>
+      <div style={{ padding: "0 16px" }}>
+        {[1,2,3].map(i => <div key={i} style={{ background: "#fff", borderRadius: 20, marginBottom: 12, overflow: "hidden" }}><div className="shimmer-card" style={{ height: 160 }} /><div style={{ padding: "12px 14px" }}><div className="shimmer-card" style={{ height: 16, width: "60%", marginBottom: 8 }} /><div className="shimmer-card" style={{ height: 13, width: "40%" }} /></div></div>)}
       </div>
     </div>
   );
@@ -73,7 +78,7 @@ export default function Favoris() {
     <div style={{ background: DS.bg, minHeight: "100vh", fontFamily: DS.fontBase }}>
 
       {/* Header */}
-      <div style={{ background: DS.white, padding: "52px 16px 12px", borderBottom: `1px solid ${DS.ink10}` }}>
+      <div style={{ background: DS.white, padding: `calc(${DS.safeTop} + 8px) 16px 12px`, borderBottom: `1px solid ${DS.ink10}` }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
           <div style={{ fontSize: 22, fontWeight: 900, color: DS.ink, letterSpacing: -0.5 }}>
             Mes Favoris <span style={{ fontSize: 16, color: DS.ink40, fontWeight: 600 }}>({items.length})</span>

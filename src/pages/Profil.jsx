@@ -92,7 +92,7 @@ export default function Profil() {
       {/* Header violet dégradé */}
       <div style={{
         background: `linear-gradient(160deg, ${DS.brand} 0%, ${DS.brand2} 50%, #A855F7 100%)`,
-        padding: "52px 16px 0",
+        padding: `calc(${DS.safeTop} + 8px) 16px 0`,
       }}>
         {/* Barre top */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>

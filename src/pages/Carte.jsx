@@ -91,7 +91,7 @@ export default function Carte() {
       {/* Filtres en overlay */}
       <div style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
-        padding: "52px 16px 12px",
+        padding: `calc(${DS.safeTop} + 8px) 16px 12px`,
         background: DS.white,
         borderBottom: `1px solid ${DS.ink10}`,
       }}>

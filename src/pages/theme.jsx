@@ -312,7 +312,7 @@ export function NavBar({ active = "Feed" }) {
       position: "fixed", bottom: 0, left: 0, right: 0,
       background: bg, borderTop: `1px solid ${isDark ? DS.darkBorder : DS.ink10}`,
       display: "flex", justifyContent: "space-around", alignItems: "center",
-      height: 70, paddingBottom: 12, fontFamily: DS.fontBase, zIndex: 100,
+      height: 70, paddingBottom: "max(env(safe-area-inset-bottom, 8px), 8px)", fontFamily: DS.fontBase, zIndex: 100,
     }}>
       {tabs.map(t => (
         <button key={t.id} onClick={() => navigate?.(`/${t.id}`)} style={{
@@ -320,6 +320,7 @@ export function NavBar({ active = "Feed" }) {
           display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
           color: active === t.id ? DS.brand : inactiveColor, fontWeight: 600,
           fontSize: 11, transition: "all 0.2s",
+          minWidth: 44, minHeight: 44, justifyContent: "center",
         }}>
           {t.icon(active === t.id ? DS.brand : inactiveColor, 20)}
           <span>{t.label}</span>
@@ -342,7 +343,7 @@ export function DarkNavBar({ active = "Dashboard" }) {
       position: "fixed", bottom: 0, left: 0, right: 0,
       background: DS.dark2, borderTop: `1px solid ${DS.darkBorder}`,
       display: "flex", justifyContent: "space-around", alignItems: "center",
-      height: 70, paddingBottom: 12, fontFamily: DS.fontBase, zIndex: 100,
+      height: 70, paddingBottom: "max(env(safe-area-inset-bottom, 8px), 8px)", fontFamily: DS.fontBase, zIndex: 100,
     }}>
       {tabs.map(t => (
         <button key={t.id} onClick={() => navigate?.(`/${t.id}`)} style={{
@@ -350,6 +351,7 @@ export function DarkNavBar({ active = "Dashboard" }) {
           display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
           color: active === t.id ? DS.brand : "rgba(255,255,255,.4)", fontWeight: 600,
           fontSize: 11, transition: "all 0.2s",
+          minWidth: 44, minHeight: 44, justifyContent: "center",
         }}>
           {t.icon(active === t.id ? DS.brand : "rgba(255,255,255,.4)", 20)}
           <span>{t.label}</span>
