@@ -1,72 +1,59 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { DS, Ic, CPLogo } from "./theme";
 
 export default function PrivacyPolicy() {
+  const navigate = useNavigate();
   return (
-    <div style={{
-      background: "#F2F2F7", minHeight: "100vh",
-      fontFamily: "'SF Pro Display', -apple-system, sans-serif",
-      maxWidth: 430, margin: "0 auto"
-    }}>
+    <div style={{ minHeight:"100vh", background:DS.bg, fontFamily:DS.fontBase }}>
       {/* Header */}
-      <div style={{ background: "linear-gradient(135deg, #FF6B00, #FF3B30)", padding: "52px 20px 20px" }}>
-        <Link to="/Profil" style={{ textDecoration: "none" }}>
-          <div style={{ color: "rgba(255,255,255,0.8)", fontSize: 14, marginBottom: 8 }}>← Retour</div>
-        </Link>
-        <div style={{ color: "white", fontSize: 20, fontWeight: 800 }}>🔒 Politique de confidentialité</div>
-        <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 12, marginTop: 4 }}>Dernière mise à jour : Mars 2026</div>
+      <div style={{ background:`linear-gradient(135deg,${DS.brand},${DS.brand2})`, padding:"52px 16px 28px" }}>
+        <button onClick={()=>navigate(-1)} style={{ background:"rgba(255,255,255,.2)", border:"none", borderRadius:DS.pill, width:38, height:38, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", marginBottom:16 }}>
+          {Ic.back(DS.white,20)}
+        </button>
+        <div style={{ fontSize:24, fontWeight:900, color:DS.white, marginBottom:6 }}>Politique de confidentialité</div>
+        <div style={{ fontSize:13, color:"rgba(255,255,255,.7)" }}>Dernière mise à jour : 25 mars 2026</div>
       </div>
 
-      <div style={{ padding: "20px 16px 60px" }}>
+      <div style={{ padding:"20px 16px 60px" }}>
         {[
           {
-            title: "1. Collecte des données",
-            content: `Click & Promo collecte les données suivantes :\n\n• Données de localisation (GPS) : utilisées uniquement pour afficher les offres proches de vous. Elles ne sont jamais stockées de façon permanente.\n\n• Données de profil (prénom, ville, email) : renseignées volontairement par l'utilisateur et stockées localement sur l'appareil.\n\n• Données d'utilisation anonymisées : comptage des vues et clics sur les offres (sans identification personnelle).`
+            title:"1. Collecte des données",
+            content:"Nous collectons les données que vous nous fournissez directement (nom, email, localisation) ainsi que les données d'utilisation de l'application. La géolocalisation n'est utilisée qu'avec votre consentement explicite pour afficher les offres à proximité."
           },
           {
-            title: "2. Utilisation des données",
-            content: `Vos données sont utilisées exclusivement pour :\n\n• Vous afficher les offres les plus pertinentes selon votre localisation\n• Personnaliser votre expérience selon vos catégories préférées\n• Améliorer l'application grâce à des statistiques anonymes\n\nVos données ne sont jamais vendues à des tiers.`
+            title:"2. Utilisation des données",
+            content:"Vos données sont utilisées pour : afficher des offres personnalisées, améliorer notre service, envoyer des notifications push (avec consentement), calculer vos économies et points de fidélité, et permettre aux commerçants de mesurer l'efficacité de leurs offres."
           },
           {
-            title: "3. Géolocalisation",
-            content: `L'accès à votre position GPS est toujours demandé explicitement. Vous pouvez refuser ou révoquer cet accès à tout moment dans les paramètres de votre appareil. Sans localisation, l'app fonctionne en mode dégradé (offres non triées par distance).`
+            title:"3. Partage des données",
+            content:"Nous ne vendons jamais vos données. Elles peuvent être partagées avec nos commerçants partenaires (de façon anonymisée), nos prestataires techniques (hébergement, paiement via Stripe) et les autorités compétentes si requis par la loi."
           },
           {
-            title: "4. Stockage local",
-            content: `Vos favoris, votre profil et vos préférences sont stockés localement sur votre appareil via le stockage local (localStorage). Ces données ne quittent pas votre appareil sauf si vous les saisissez explicitement.`
+            title:"4. Paiement & Stripe",
+            content:"Les paiements sont traités par Stripe, certifié PCI-DSS. Nous ne stockons jamais vos données bancaires. Stripe peut utiliser vos données conformément à sa propre politique de confidentialité."
           },
           {
-            title: "5. Cookies et traceurs",
-            content: `Click & Promo n'utilise pas de cookies publicitaires ni de traceurs tiers. Seul un identifiant de session technique est utilisé pour le bon fonctionnement de l'application.`
+            title:"5. Vos droits (RGPD)",
+            content:"Conformément au RGPD, vous disposez des droits d'accès, de rectification, d'effacement, de portabilité et d'opposition. Pour exercer vos droits : privacy@clicketpromo.fr. Nous répondons sous 30 jours."
           },
           {
-            title: "6. Droits des utilisateurs",
-            content: `Conformément au RGPD, vous disposez des droits suivants :\n\n• Droit d'accès à vos données\n• Droit de rectification\n• Droit à l'effacement (suppression du compte)\n• Droit à la portabilité\n\nPour exercer ces droits : contact@clicketpromo.fr`
+            title:"6. Cookies",
+            content:"Nous utilisons uniquement des cookies essentiels au fonctionnement de l'application (session, préférences). Aucun cookie publicitaire tiers n'est utilisé."
           },
           {
-            title: "7. Sécurité",
-            content: `Toutes les communications entre l'application et nos serveurs sont chiffrées via HTTPS/TLS. Nous appliquons les meilleures pratiques de sécurité pour protéger vos données.`
+            title:"7. Conservation des données",
+            content:"Vos données sont conservées pendant la durée de votre compte actif, plus 3 ans après désactivation pour des raisons légales. Les données de paiement sont conservées 5 ans (obligation légale)."
           },
           {
-            title: "8. Contact",
-            content: `Pour toute question relative à vos données personnelles :\n\nClick & Promo SAS\nEmail : contact@clicketpromo.fr\nAdresse : Paris, France`
+            title:"8. Contact",
+            content:"Pour toute question : privacy@clicketpromo.fr\nClick & Promo SAS — Paris, France\nDélégué à la protection des données : dpo@clicketpromo.fr"
           },
-        ].map((section, i) => (
-          <div key={i} style={{
-            background: "white", borderRadius: 14, padding: 16,
-            marginBottom: 12, boxShadow: "0 2px 6px rgba(0,0,0,0.04)"
-          }}>
-            <div style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a", marginBottom: 10 }}>
-              {section.title}
-            </div>
-            <div style={{ fontSize: 13, color: "#555", lineHeight: 1.7, whiteSpace: "pre-line" }}>
-              {section.content}
-            </div>
+        ].map((s,i) => (
+          <div key={i} style={{ background:DS.white, borderRadius:DS.xl, padding:"18px 20px", marginBottom:12, boxShadow:DS.e1, border:`1px solid ${DS.ink10}` }}>
+            <div style={{ fontSize:15, fontWeight:800, color:DS.brand, marginBottom:10 }}>{s.title}</div>
+            <div style={{ fontSize:14, color:DS.ink60, lineHeight:1.85, whiteSpace:"pre-line" }}>{s.content}</div>
           </div>
         ))}
-
-        <div style={{ textAlign: "center", padding: "10px 0 20px" }}>
-          <div style={{ fontSize: 12, color: "#aaa" }}>Click & Promo © 2026 — Tous droits réservés</div>
-        </div>
       </div>
     </div>
   );
