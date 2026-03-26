@@ -32,6 +32,7 @@ export default function Feed() {
   const [filtered, setFiltered] = useState([]);
   const [cat, setCat] = useState("tout");
   const [search, setSearch] = useState("");
+  const [postalCode, setPostalCode] = useState("");
   const [userPos, setUserPos] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -65,6 +66,10 @@ export default function Feed() {
         o.ville?.toLowerCase().includes(q)
       );
     }
+    // Postal code filter
+    if (postalCode.trim()) {
+      list = list.filter(o => o.code_postal && o.code_postal.toString().startsWith(postalCode));
+    }
     if (userPos) {
       list = list.map(o => ({
         ...o,
@@ -72,7 +77,7 @@ export default function Feed() {
       })).sort((a, b) => (a._dist ?? 999) - (b._dist ?? 999));
     }
     setFiltered(list);
-  }, [offres, cat, search, userPos]);
+  }, [offres, cat, search, postalCode, userPos]);
 
   // Pull-to-refresh touch
   const [startY, setStartY] = useState(null);
@@ -133,6 +138,38 @@ export default function Feed() {
           />
         </div>
 
+        {/* Postal Code Filter */}
+        <div style={{ position: "relative", marginBottom: 12 }}>
+          <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)" }}>
+            {Ic.location(DS.ink40, 16)}
+          </div>
+          <input
+            value={postalCode}
+            onChange={e => setPostalCode(e.target.value)}
+            placeholder="Filtrer par code postal (ex: 75...)"
+            type="number"
+            maxLength="5"
+            style={{
+              width: "100%", boxSizing: "border-box",
+              background: DS.bg,
+              border: `1px solid ${DS.ink10}`,
+              borderRadius: DS.pill,
+              padding: "11px 14px 11px 40px",
+              fontSize: 13, color: DS.ink,
+              fontFamily: DS.fontBase,
+              outline: "none",
+            }}
+          />
+          {postalCode && (
+            <button onClick={() => setPostalCode("")} style={{
+              position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+              background: "none", border: "none", cursor: "pointer", color: DS.ink40,
+            }}>
+              ✕
+            </button>
+          )}
+        </div>
+
         {/* Chips catégories */}
         <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2, scrollbarWidth: "none" }}>
           {CATS.map(c => (
@@ -148,120 +185,93 @@ export default function Feed() {
               display: "flex", alignItems: "center", gap: 5,
               whiteSpace: "nowrap",
             }}>
-              {c.emoji && <span>{c.emoji}</span>}
-              {c.label}
+              <span>{c.emoji}</span> {c.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Pull-to-refresh indicator */}
-      {refreshing && (
-        <div style={{ textAlign: "center", padding: "12px", fontSize: 13, color: DS.brand, fontWeight: 600 }}>
-          Actualisation…
-        </div>
-      )}
-
-      {/* Liste offres */}
-      <div style={{ padding: "12px 16px 100px" }}>
-        {filtered.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "60px 20px", color: DS.ink40 }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
-            <div style={{ fontWeight: 700, fontSize: 16, color: DS.ink, marginBottom: 6 }}>Aucune offre trouvée</div>
-            <div style={{ fontSize: 14 }}>Essayez d'autres filtres</div>
+      {/* Liste des offres */}
+      <div style={{ padding: "14px 16px 100px" }}>
+        {refreshing && (
+          <div style={{ textAlign: "center", padding: "20px 0", color: DS.ink40, fontSize: 13 }}>
+            Actualisation en cours…
           </div>
-        ) : filtered.map(o => <OffreCard key={o.id} offre={o} navigate={navigate} />)}
+        )}
+
+        {filtered.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "60px 20px" }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: DS.ink, marginBottom: 8 }}>
+              Aucune offre trouvée
+            </div>
+            <div style={{ fontSize: 13, color: DS.ink40 }}>
+              Essayez d'ajuster vos filtres ou votre recherche
+            </div>
+          </div>
+        ) : filtered.map(o => {
+          const expired = o.date_fin && new Date(o.date_fin) < new Date();
+          const lowStock = o.stock_initial > 0 && (o.stock_restant / o.stock_initial) < 0.2;
+          return (
+            <div key={o.id} onClick={() => navigate(`/OffreDetail?id=${o.id}`)} style={{
+              background: DS.white, borderRadius: DS.xl, marginBottom: 12,
+              overflow: "hidden", cursor: "pointer", boxShadow: DS.e1,
+              border: `1px solid ${DS.ink10}`, opacity: expired ? 0.6 : 1,
+            }}>
+              <div style={{ position: "relative", height: 160 }}>
+                <img src={o.image_url} alt={o.titre} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => e.target.src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800"} />
+                <div style={{ position: "absolute", bottom: 10, right: 10 }}>
+                  <BadgeReduction valeur={o.valeur_reduction} type={o.type_reduction} />
+                </div>
+                {expired && (
+                  <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(0,0,0,.6)", color: DS.white, borderRadius: DS.pill, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>
+                    Expirée
+                  </div>
+                )}
+                {lowStock && !expired && (
+                  <div style={{ position: "absolute", top: 10, left: 10, background: DS.warning, color: DS.white, borderRadius: DS.pill, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>
+                    ⚠️ Stock faible
+                  </div>
+                )}
+              </div>
+              <div style={{ padding: "12px 14px" }}>
+                <div style={{ fontWeight: 800, fontSize: 16, color: DS.ink, marginBottom: 2 }}>
+                  {o.titre}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ fontSize: 13, color: DS.ink60 }}>
+                    {o.commercant_nom}
+                  </div>
+                  {o._dist !== null && (
+                    <div style={{ fontSize: 12, color: DS.brand, fontWeight: 700 }}>
+                      {formatDist(o._dist)}
+                    </div>
+                  )}
+                </div>
+                {o.categorie && (
+                  <div style={{ fontSize: 12, color: DS.ink40, marginTop: 4 }}>
+                    {o.categorie}
+                  </div>
+                )}
+                {o.prix_promo > 0 && (
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 8 }}>
+                    <span style={{ fontWeight: 800, fontSize: 18, color: DS.brand }}>
+                      {o.prix_promo}€
+                    </span>
+                    {o.prix_original > 0 && (
+                      <span style={{ fontSize: 13, color: DS.ink40, textDecoration: "line-through" }}>
+                        {o.prix_original}€
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       <NavBar active="Feed" />
-    </div>
-  );
-}
-
-function OffreCard({ offre, navigate }) {
-  const dist = offre._dist;
-  const isUrgente = offre.est_urgente;
-  const pct = offre.stock_initial > 0 ? Math.round((offre.stock_restant / offre.stock_initial) * 100) : null;
-
-  return (
-    <div
-      onClick={() => navigate(`/OffreDetail?id=${offre.id}`)}
-      style={{
-        background: DS.white,
-        borderRadius: DS.xl,
-        marginBottom: 14,
-        overflow: "hidden",
-        boxShadow: DS.e1,
-        cursor: "pointer",
-        border: `1px solid ${DS.ink10}`,
-      }}
-    >
-      {/* Image */}
-      <div style={{ position: "relative", height: 200 }}>
-        <img
-          src={offre.image_url}
-          alt={offre.titre}
-          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-          onError={e => e.target.src = "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800"}
-          loading="lazy"
-        />
-        {/* Badge urgence */}
-        {isUrgente && (
-          <div style={{
-            position: "absolute", top: 10, left: 10,
-            background: DS.danger, color: DS.white,
-            borderRadius: DS.pill, padding: "3px 10px",
-            fontSize: 11, fontWeight: 700,
-          }}>⚡ Flash</div>
-        )}
-        {/* Badge réduction — en bas à droite sur l'image */}
-        <div style={{ position: "absolute", bottom: 10, right: 10 }}>
-          <BadgeReduction valeur={offre.valeur_reduction} type={offre.type_reduction} />
-        </div>
-      </div>
-
-      {/* Infos */}
-      <div style={{ padding: "14px 14px 12px" }}>
-        <div style={{ fontWeight: 800, fontSize: 17, color: DS.ink, marginBottom: 3, letterSpacing: -0.3 }}>
-          {offre.commercant_nom || offre.titre}
-        </div>
-        <div style={{ fontSize: 13, color: DS.ink60, marginBottom: 4 }}>
-          {offre.categorie}
-          {offre.ville ? ` | ${offre.ville}` : ""}
-          {offre.date_fin ? ` · Valable jusqu'au ${new Date(offre.date_fin).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}` : ""}
-        </div>
-        <div style={{ fontSize: 13, color: DS.ink60, marginBottom: 8 }}>{offre.titre}</div>
-
-        {/* Distance */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            {offre.prix_promo > 0 && (
-              <span style={{ fontWeight: 800, fontSize: 16, color: DS.brand }}>{offre.prix_promo}€</span>
-            )}
-            {offre.prix_original > 0 && offre.prix_original !== offre.prix_promo && (
-              <span style={{ fontSize: 13, color: DS.ink40, textDecoration: "line-through" }}>{offre.prix_original}€</span>
-            )}
-          </div>
-          {dist !== null && (
-            <div style={{ display: "flex", alignItems: "center", gap: 3, color: DS.ink60, fontSize: 13 }}>
-              {Ic.pin(DS.brand, 13)}
-              <span style={{ fontWeight: 600 }}>{formatDist(dist)}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Barre stock */}
-        {pct !== null && pct < 40 && (
-          <div style={{ marginTop: 8 }}>
-            <div style={{ background: DS.ink10, borderRadius: DS.pill, height: 3 }}>
-              <div style={{ background: pct < 20 ? DS.danger : DS.warning, height: "100%", borderRadius: DS.pill, width: `${pct}%` }} />
-            </div>
-            <div style={{ fontSize: 10, color: pct < 20 ? DS.danger : DS.ink40, marginTop: 3, fontWeight: 600 }}>
-              {offre.stock_restant} restant{offre.stock_restant > 1 ? "s" : ""}
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
