@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Offre } from "@/api/entities";
 import { useNavigate } from "react-router-dom";
-import { DS, Ic, CPLogo, NavBar, BadgeReduction } from "./theme";
+import { DS, Ic, CPLogo, NavBar, BadgeReduction, SkeletonCard, NotificationBadge } from "./theme";
 
 // ── Utilitaires géo ──────────────────────────────────────────
 export function haversine(lat1, lon1, lat2, lon2) {
@@ -36,6 +36,17 @@ export default function Feed() {
   const [userPos, setUserPos] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [favs, setFavs] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("cp_favs") || "[]"); } catch { return []; }
+  });
+
+  const toggleFav = (id) => {
+    setFavs(prev => {
+      const next = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id];
+      localStorage.setItem("cp_favs", JSON.stringify(next));
+      return next;
+    });
+  };
 
   const load = useCallback(async () => {
     const data = await Offre.filter({ est_active: true });
@@ -90,10 +101,19 @@ export default function Feed() {
   };
 
   if (loading) return (
-    <div style={{ background: DS.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ textAlign: "center" }}>
-        <CPLogo size={48} />
-        <div style={{ marginTop: 16, color: DS.ink40, fontSize: 14 }}>Chargement des offres…</div>
+    <div style={{ background: DS.bg, minHeight: "100vh", fontFamily: DS.fontBase, paddingTop: DS.safeTop }}>
+      <div style={{ background: DS.white, padding: "16px 16px 12px", marginBottom: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+          <CPLogo size={30} />
+          <span style={{ fontSize: 18, fontWeight: 800, color: DS.brand }}>Click & Promo</span>
+        </div>
+        <div className="shimmer-card" style={{ height: 42, borderRadius: DS.pill, marginBottom: 10 }} />
+        <div style={{ display: "flex", gap: 8 }}>
+          {[80, 100, 90, 110, 85].map((w, i) => <div key={i} className="shimmer-card" style={{ height: 34, width: w, borderRadius: DS.pill, flexShrink: 0 }} />)}
+        </div>
+      </div>
+      <div style={{ padding: "0 16px" }}>
+        {[1,2,3,4].map(i => <SkeletonCard key={i} />)}
       </div>
     </div>
   );
@@ -102,7 +122,7 @@ export default function Feed() {
     <div style={{ background: DS.bg, minHeight: "100vh", fontFamily: DS.fontBase }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
 
       {/* Header */}
-      <div style={{ background: DS.white, padding: "52px 16px 12px", position: "sticky", top: 0, zIndex: 50, borderBottom: `1px solid ${DS.ink10}` }}>
+      <div style={{ background: DS.white, padding: `calc(${DS.safeTop} + 8px) 16px 12px`, position: "sticky", top: 0, zIndex: 50, borderBottom: `1px solid ${DS.ink10}` }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {Ic.menu(DS.ink, 22)}
@@ -111,9 +131,11 @@ export default function Feed() {
               <span style={{ fontSize: 18, fontWeight: 800, color: DS.brand, fontFamily: DS.fontBase, letterSpacing: -0.5 }}>Click & Promo</span>
             </div>
           </div>
-          <button style={{ background: "none", border: "none", cursor: "pointer" }}>
-            {Ic.bell(DS.ink, 22)}
-          </button>
+          <div style={{ position: "relative" }}>
+            <button style={{ background: "none", border: "none", cursor: "pointer", minWidth: 44, minHeight: 44, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {Ic.bell(DS.ink, 22)}
+            </button>
+          </div>
         </div>
 
         {/* Barre de recherche */}
@@ -209,20 +231,34 @@ export default function Feed() {
               Essayez d'ajuster vos filtres ou votre recherche
             </div>
           </div>
-        ) : filtered.map(o => {
+        ) : filtered.map((o, idx) => {
           const expired = o.date_fin && new Date(o.date_fin) < new Date();
           const lowStock = o.stock_initial > 0 && (o.stock_restant / o.stock_initial) < 0.2;
+          const isFav = favs.includes(o.id);
           return (
-            <div key={o.id} onClick={() => navigate(`/OffreDetail?id=${o.id}`)} style={{
+            <div key={o.id} className="fade-up" style={{
               background: DS.white, borderRadius: DS.xl, marginBottom: 12,
               overflow: "hidden", cursor: "pointer", boxShadow: DS.e1,
               border: `1px solid ${DS.ink10}`, opacity: expired ? 0.6 : 1,
+              animationDelay: `${idx * 0.04}s`,
             }}>
               <div style={{ position: "relative", height: 160 }}>
                 <img src={o.image_url} alt={o.titre} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => e.target.src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800"} />
                 <div style={{ position: "absolute", bottom: 10, right: 10 }}>
                   <BadgeReduction valeur={o.valeur_reduction} type={o.type_reduction} />
                 </div>
+                <button
+                  onClick={e => { e.stopPropagation(); toggleFav(o.id); }}
+                  style={{
+                    position: "absolute", top: 10, right: 10,
+                    background: "rgba(255,255,255,.85)", border: "none",
+                    borderRadius: DS.pill, width: 34, height: 34,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    cursor: "pointer", backdropFilter: "blur(4px)",
+                  }}
+                >
+                  {Ic.heart(isFav ? DS.danger : DS.ink40, 16, isFav)}
+                </button>
                 {expired && (
                   <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(0,0,0,.6)", color: DS.white, borderRadius: DS.pill, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>
                     Expirée

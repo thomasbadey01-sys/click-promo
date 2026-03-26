@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 //         feed blanc, badges pill violet, typo bold)
 // ─────────────────────────────────────────────────────────────
 
-// Inject global CSS for page transitions
+// Inject global CSS
 const style = document.createElement('style');
 style.textContent = `
   @keyframes slideInUp {
@@ -20,9 +20,44 @@ style.textContent = `
     from { opacity: 0; }
     to { opacity: 1; }
   }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes popIn {
+    0% { opacity: 0; transform: scale(0.85); }
+    70% { transform: scale(1.05); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  @keyframes slideInFromRight {
+    from { opacity: 0; transform: translateX(30px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes slideInFromLeft {
+    from { opacity: 0; transform: translateX(-30px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
   [data-page-animate] {
     animation: slideInUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   }
+  .shimmer-card {
+    background: linear-gradient(90deg, #f0eff6 25%, #e8e6f0 50%, #f0eff6 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 16px;
+  }
+  .fade-up { animation: fadeUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+  .pop-in  { animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+  * { -webkit-tap-highlight-color: transparent; }
+  html { height: -webkit-fill-available; }
 `;
 if (typeof document !== 'undefined' && !document.querySelector('style[data-cp-anim]')) {
   style.setAttribute('data-cp-anim', '1');
@@ -39,8 +74,8 @@ export const DS = {
 
   // Neutrals light
   white:    "#FFFFFF",
-  bg:       "#F5F5F7",
-  bg2:      "#EBEBF0",
+  bg:       "#F0EFF6",
+  bg2:      "#E8E6F0",
   ink:      "#1A1A2E",
   ink80:    "#1A1A2Ecc",
   ink60:    "#1A1A2E99",
@@ -81,6 +116,10 @@ export const DS = {
   e2:  "0 4px 8px rgba(0,0,0,0.08)",
   e3:  "0 8px 16px rgba(0,0,0,0.1)",
   eBrand: `0 4px 12px rgba(108, 59, 255, 0.25)`,
+
+  // Safe area helpers
+  safeTop:    "env(safe-area-inset-top, 44px)",
+  safeBottom: "env(safe-area-inset-bottom, 16px)",
 };
 
 // Icônes
@@ -368,6 +407,35 @@ export function toggleDarkMode() {
     localStorage.setItem("cp_darkmode", getDarkMode() ? "0" : "1");
     window.location.reload();
   }
+}
+
+// Notification Badge
+export function NotificationBadge({ count = 0 }) {
+  if (!count) return null;
+  return (
+    <div style={{
+      position: "absolute", top: -4, right: -4,
+      background: DS.danger, color: DS.white,
+      borderRadius: DS.pill, minWidth: 18, height: 18,
+      fontSize: 10, fontWeight: 800,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: "0 4px", border: `2px solid ${DS.white}`,
+    }}>{count > 99 ? "99+" : count}</div>
+  );
+}
+
+// Skeleton Card
+export function SkeletonCard() {
+  return (
+    <div style={{ background: DS.white, borderRadius: DS.xl, marginBottom: 12, overflow: "hidden", boxShadow: DS.e1 }}>
+      <div className="shimmer-card" style={{ height: 160 }} />
+      <div style={{ padding: "12px 14px" }}>
+        <div className="shimmer-card" style={{ height: 18, width: "70%", marginBottom: 8 }} />
+        <div className="shimmer-card" style={{ height: 14, width: "50%", marginBottom: 6 }} />
+        <div className="shimmer-card" style={{ height: 14, width: "30%" }} />
+      </div>
+    </div>
+  );
 }
 
 // Export default requis par Base44
