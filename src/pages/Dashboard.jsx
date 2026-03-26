@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Offre } from "@/api/entities";
 import { DS, Ic, Sparkline, DarkNavBar } from "./theme";
-import { UserAuth } from "@/api/auth";
+import { base44 } from "@/api/base44Client";
 
 const CATS = ["Restaurant","Boutique","Beauté & Coiffure","Fitness & Sport","Services","Épicerie","Pharmacie","Autre"];
 const IMGS = {
@@ -139,7 +139,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     Offre.list().then(d => { setOffres(d); setLoading(false); });
-    UserAuth.me().then(setUser).catch(() => {});
+    base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
   const totalV  = offres.reduce((s,o) => s + (o.nb_vues||0), 0);

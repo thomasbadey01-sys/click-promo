@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Offre, FavoriUtilisateur, HistoriqueOffresVues, UtilisationOffre } from "@/api/entities";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { DS, Ic, BadgeReduction } from "./theme";
-import { UserAuth } from "@/api/auth";
+import { base44 } from "@/api/base44Client";
 import { haversine, formatDist } from "./Feed";
 
 // QR Code
@@ -82,7 +82,7 @@ export default function OffreDetail() {
       () => setUserPos({ lat: 48.8566, lon: 2.3522 })
     );
     // Favoris + tracking
-    UserAuth.me().then(async user => {
+    base44.auth.me().then(async user => {
       try {
         const favs = await FavoriUtilisateur.filter({ offre_id: id, user_id: user.id });
         if (favs.length > 0) { setIsFav(true); setFavId(favs[0].id); }
@@ -117,7 +117,7 @@ export default function OffreDetail() {
 
   const toggleFav = async () => {
     try {
-      const user = await UserAuth.me();
+      const user = await base44.auth.me();
       if (isFav && favId) {
         await FavoriUtilisateur.delete(favId);
         setIsFav(false); setFavId(null);
@@ -137,7 +137,7 @@ export default function OffreDetail() {
   const useOffer = async () => {
     setCodeVis(true);
     try {
-      const user = await UserAuth.me();
+      const user = await base44.auth.me();
       await UtilisationOffre.create({
         offre_id: id, user_id: user.id, commercant_id: offre.commercant_id,
         date_utilisation: new Date().toISOString(),
@@ -161,7 +161,7 @@ export default function OffreDetail() {
   const buyOnline = async () => {
     setBuying(true); setBuyErr("");
     try {
-      const user = await UserAuth.me();
+      const user = await base44.auth.me();
       const res = await fetch("/functions/buyOffer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

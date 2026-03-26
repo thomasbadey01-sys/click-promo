@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ProfilUtilisateur, HistoriqueOffresVues, UtilisationOffre } from "@/api/entities";
 import { useNavigate } from "react-router-dom";
-import { UserAuth } from "@/api/auth";
+import { base44 } from "@/api/base44Client";
 import { DS, Ic, CPLogo, NavBar } from "./theme";
 
 // ── Niveaux & badges ─────────────────────────────────────────
@@ -37,7 +37,7 @@ export default function Profil() {
   useEffect(() => {
     (async () => {
       try {
-        const u = await UserAuth.me();
+        const u = await base44.auth.me();
         setUser(u);
         const profils = await ProfilUtilisateur.filter({ user_id: u.id });
         if (profils.length > 0) {
@@ -294,7 +294,7 @@ export default function Profil() {
               ))}
             </div>
 
-            <button onClick={() => UserAuth.logout().then(() => navigate("/Login"))} style={{
+            <button onClick={() => base44.auth.logout().then(() => navigate("/Login"))} style={{
               width: "100%", background: "#FEF2F2", border: `1px solid ${DS.danger}22`,
               borderRadius: DS.xl, padding: "16px",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 10,

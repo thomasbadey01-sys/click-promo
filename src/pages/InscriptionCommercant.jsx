@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DemandeCommercant } from "@/api/entities";
-import { UserAuth } from "@/api/auth";
+import { base44 } from "@/api/base44Client";
 import { DS, Ic, CPLogo } from "./theme";
 
 const CATS = ["Restaurant","Boutique","Beauté & Coiffure","Fitness & Sport","Services","Épicerie","Pharmacie","Autre"];
@@ -27,7 +27,7 @@ export default function InscriptionCommercant() {
     setSubmitting(true);
     try {
       let user_id = null;
-      try { const u = await UserAuth.me(); user_id = u.id; } catch {}
+      try { const u = await base44.auth.me(); user_id = u.id; } catch {}
       await DemandeCommercant.create({
         ...form, user_id, statut: "en_attente",
         date_soumission: new Date().toISOString(),

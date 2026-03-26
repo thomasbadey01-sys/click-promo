@@ -1,13 +1,13 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { UserAuth } from "@/api/auth";
+import { base44 } from "@/api/base44Client";
 import { DS, CPLogo } from "./theme";
 
 export default function Home() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    UserAuth.me()
+    base44.auth.me()
       .then(() => navigate("/Feed"))
       .catch(() => {});
   }, [navigate]);
