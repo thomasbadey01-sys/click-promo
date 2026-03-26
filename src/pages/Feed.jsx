@@ -15,12 +15,14 @@ export function formatDist(km) {
 }
 
 const CATS = [
-  { id: "tout",             label: "Tout",    emoji: "🏠" },
-  { id: "Restaurant",       label: "Restos",  emoji: "🍽️" },
-  { id: "Boutique",         label: "Mode",    emoji: "👗" },
-  { id: "Beauté & Coiffure",label: "Beauté",  emoji: "💅" },
-  { id: "Fitness & Sport",  label: "Sport",   emoji: "🏋️" },
-  { id: "Épicerie",         label: "Épicerie",emoji: "🥐" },
+  { id: "tout",             label: "Tout",     emoji: "🏠" },
+  { id: "Restaurant",       label: "Restos",   emoji: "🍽️" },
+  { id: "Boutique",         label: "Mode",     emoji: "👗" },
+  { id: "Beauté & Coiffure",label: "Beauté",   emoji: "💅" },
+  { id: "Fitness & Sport",  label: "Sport",    emoji: "🏋️" },
+  { id: "Épicerie",         label: "Épicerie", emoji: "🥐" },
+  { id: "Services",         label: "Services", emoji: "🛠️" },
+  { id: "Pharmacie",        label: "Santé",    emoji: "💊" },
 ];
 
 const SECTIONS = [
@@ -28,8 +30,10 @@ const SECTIONS = [
   { id: "Boutique",          label: "Mode & Boutiques",  emoji: "👗" },
   { id: "Beauté & Coiffure", label: "Beauté & Coiffure", emoji: "💅" },
   { id: "Fitness & Sport",   label: "Sport & Fitness",   emoji: "🏋️" },
-  { id: "Épicerie",          label: "Épicerie",           emoji: "🥐" },
-  { id: "Services",          label: "Services",           emoji: "🏠" },
+  { id: "Épicerie",          label: "Épicerie & Bio",     emoji: "🥐" },
+  { id: "Services",          label: "Services",           emoji: "🛠️" },
+  { id: "Pharmacie",         label: "Pharmacie & Santé",  emoji: "💊" },
+  { id: "Autre",             label: "Autres bons plans",  emoji: "🎁" },
 ];
 
 // Petite card scroll horizontal (Flash Deals / Près de vous)
@@ -312,7 +316,7 @@ export default function Feed() {
                       <SectionHeader emoji={sec.emoji} label={sec.label} onSeeAll={() => setCat(sec.id)} />
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, padding: "0 16px" }}>
-                      {items.slice(0, 4).map(o => (
+                      {items.slice(0, 6).map(o => (
                         <GridCard key={o.id} o={o}
                           onPress={() => navigate(`/OffreDetail?id=${o.id}`)}
                           userPos={userPos} />
