@@ -8,14 +8,14 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
 import Abonnement from './pages/Abonnement';
 import Admin from './pages/Admin';
-import Carte from './pages/Carte';
+import Carte from './pages/Carte.jsx';
 import Dashboard from './pages/Dashboard';
-import Favoris from './pages/Favoris';
-import Feed from './pages/Feed';
+import Favoris from './pages/Favoris.jsx';
+import Feed from './pages/Feed.jsx';
 import Home from './pages/Home.jsx';
 import InscriptionCommercant from './pages/InscriptionCommercant';
 import Login from './pages/Login';
-import OffreDetail from './pages/OffreDetail';
+import OffreDetail from './pages/OffreDetail.jsx';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import Profil from './pages/Profil.jsx';
 

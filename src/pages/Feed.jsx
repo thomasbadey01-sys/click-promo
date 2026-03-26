@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Offre } from "@/api/entities";
 import { useNavigate } from "react-router-dom";
-import { DS, Ic, CPLogo, NavBar, SkeletonCard } from "./theme";
+import { DS, Ic, CPLogo, NavBar, SkeletonCard, NotificationBadge, getTheme } from "./theme";
 
 export function haversine(lat1, lon1, lat2, lon2) {
   const R = 6371;
@@ -15,60 +15,69 @@ export function formatDist(km) {
 }
 
 const CATS = [
-  { id: "tout",             label: "Tout",     emoji: "🏠" },
-  { id: "Restaurant",       label: "Restos",   emoji: "🍽️" },
-  { id: "Boutique",         label: "Mode",     emoji: "👗" },
-  { id: "Beauté & Coiffure",label: "Beauté",   emoji: "💅" },
-  { id: "Fitness & Sport",  label: "Sport",    emoji: "🏋️" },
-  { id: "Épicerie",         label: "Épicerie", emoji: "🥐" },
-  { id: "Services",         label: "Services", emoji: "🛠️" },
-  { id: "Pharmacie",        label: "Santé",    emoji: "💊" },
+  { id: "tout",              label: "Tout",     emoji: "🏠" },
+  { id: "Restaurant",        label: "Restos",   emoji: "🍽️" },
+  { id: "Boutique",          label: "Mode",     emoji: "👗" },
+  { id: "Beauté & Coiffure", label: "Beauté",   emoji: "💅" },
+  { id: "Fitness & Sport",   label: "Sport",    emoji: "🏋️" },
+  { id: "Épicerie",          label: "Épicerie", emoji: "🥐" },
+  { id: "Services",          label: "Services", emoji: "🛠️" },
+  { id: "Pharmacie",         label: "Santé",    emoji: "💊" },
 ];
 
 const SECTIONS = [
-  { id: "Restaurant",        label: "Restaurants",      emoji: "🍽️" },
+  { id: "Restaurant",        label: "Restaurants",       emoji: "🍽️" },
   { id: "Boutique",          label: "Mode & Boutiques",  emoji: "👗" },
   { id: "Beauté & Coiffure", label: "Beauté & Coiffure", emoji: "💅" },
   { id: "Fitness & Sport",   label: "Sport & Fitness",   emoji: "🏋️" },
-  { id: "Épicerie",          label: "Épicerie & Bio",     emoji: "🥐" },
-  { id: "Services",          label: "Services",           emoji: "🛠️" },
-  { id: "Pharmacie",         label: "Pharmacie & Santé",  emoji: "💊" },
-  { id: "Autre",             label: "Autres bons plans",  emoji: "🎁" },
+  { id: "Épicerie",          label: "Épicerie & Bio",    emoji: "🥐" },
+  { id: "Services",          label: "Services",          emoji: "🛠️" },
+  { id: "Pharmacie",         label: "Pharmacie & Santé", emoji: "💊" },
+  { id: "Autre",             label: "Autres bons plans", emoji: "🎁" },
 ];
 
-// Petite card scroll horizontal (Flash Deals / Près de vous)
-function HScrollCard({ o, isFav, onFav, onPress, userPos }) {
+function HScrollCard({ o, onPress, userPos }) {
   const dist = userPos && o.latitude && o.longitude
     ? haversine(userPos.lat, userPos.lon, o.latitude, o.longitude) : null;
   return (
     <div onClick={onPress} style={{
-      width: 160, flexShrink: 0, background: "#fff",
-      borderRadius: 16, overflow: "hidden", cursor: "pointer",
-      boxShadow: "0 2px 12px rgba(0,0,0,.08)",
+      width: 155, flexShrink: 0, background: "#fff", borderRadius: 16, overflow: "hidden",
+      cursor: "pointer", boxShadow: "0 2px 12px rgba(0,0,0,.08)",
     }}>
-      <div style={{ position: "relative", height: 110 }}>
+      <div style={{ position: "relative", height: 105 }}>
         <img src={o.image_url} alt={o.titre}
           style={{ width: "100%", height: "100%", objectFit: "cover" }}
           onError={e => e.target.src = "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400"} />
-        {(o.valeur_reduction > 0) && (
+        {o.valeur_reduction > 0 && (
           <div style={{
-            position: "absolute", bottom: 8, right: 8,
-            background: DS.brand, color: "#fff",
-            borderRadius: 20, padding: "3px 8px",
-            fontSize: 11, fontWeight: 800,
+            position: "absolute", bottom: 7, right: 7,
+            background: DS.brand, color: "#fff", borderRadius: 20,
+            padding: "3px 8px", fontSize: 11, fontWeight: 800,
           }}>-{o.valeur_reduction}{o.type_reduction === "pourcentage" ? "%" : "€"}</div>
+        )}
+        {o.est_urgente && (
+          <div style={{
+            position: "absolute", top: 7, left: 7,
+            background: DS.danger, color: "#fff", borderRadius: 20,
+            padding: "2px 7px", fontSize: 10, fontWeight: 800,
+          }}>⚡ FLASH</div>
         )}
       </div>
       <div style={{ padding: "8px 10px 10px" }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#1A1A2E", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: DS.ink, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {o.commercant_nom || o.titre}
         </div>
         {o.prix_promo > 0 && (
-          <div style={{ fontSize: 13, fontWeight: 800, color: "#1A1A2E" }}>{o.prix_promo} €</div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
+            <span style={{ fontSize: 13, fontWeight: 800, color: DS.brand }}>{o.prix_promo}€</span>
+            {o.prix_original > 0 && o.prix_original !== o.prix_promo && (
+              <span style={{ fontSize: 10, color: "#ccc", textDecoration: "line-through" }}>{o.prix_original}€</span>
+            )}
+          </div>
         )}
         {dist !== null && (
-          <div style={{ display: "flex", alignItems: "center", gap: 3, color: "#888", fontSize: 11, marginTop: 2 }}>
-            <span>✈</span> {formatDist(dist)}
+          <div style={{ display: "flex", alignItems: "center", gap: 3, color: "#aaa", fontSize: 10, marginTop: 2 }}>
+            📍 {formatDist(dist)}
           </div>
         )}
       </div>
@@ -76,7 +85,6 @@ function HScrollCard({ o, isFav, onFav, onPress, userPos }) {
   );
 }
 
-// Card grille 2 colonnes
 function GridCard({ o, onPress, userPos }) {
   const dist = userPos && o.latitude && o.longitude
     ? haversine(userPos.lat, userPos.lon, o.latitude, o.longitude) : null;
@@ -85,47 +93,71 @@ function GridCard({ o, onPress, userPos }) {
       background: "#fff", borderRadius: 16, overflow: "hidden",
       cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,.07)",
     }}>
-      <div style={{ position: "relative", height: 120 }}>
+      <div style={{ position: "relative", height: 115 }}>
         <img src={o.image_url} alt={o.titre}
           style={{ width: "100%", height: "100%", objectFit: "cover" }}
           onError={e => e.target.src = "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400"} />
-        {(o.valeur_reduction > 0) && (
+        {o.valeur_reduction > 0 && (
           <div style={{
-            position: "absolute", bottom: 8, right: 8,
-            background: DS.brand, color: "#fff",
-            borderRadius: 20, padding: "3px 8px",
-            fontSize: 11, fontWeight: 800,
+            position: "absolute", bottom: 7, right: 7,
+            background: DS.brand, color: "#fff", borderRadius: 20,
+            padding: "3px 8px", fontSize: 11, fontWeight: 800,
           }}>-{o.valeur_reduction}{o.type_reduction === "pourcentage" ? "%" : "€"}</div>
         )}
       </div>
       <div style={{ padding: "8px 10px 10px" }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: "#1A1A2E", marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: DS.ink, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {o.commercant_nom || o.titre}
         </div>
         {o.prix_promo > 0 && (
-          <div style={{ fontSize: 14, fontWeight: 800, color: "#1A1A2E" }}>{o.prix_promo} €</div>
+          <span style={{ fontSize: 13, fontWeight: 800, color: DS.brand }}>{o.prix_promo}€</span>
         )}
         {dist !== null && (
-          <div style={{ display: "flex", alignItems: "center", gap: 3, color: "#888", fontSize: 11, marginTop: 2 }}>
-            <span>✈</span> {formatDist(dist)}
-          </div>
+          <div style={{ color: "#aaa", fontSize: 10, marginTop: 2 }}>📍 {formatDist(dist)}</div>
         )}
       </div>
     </div>
   );
 }
 
-// Section titre avec "Voir tout"
 function SectionHeader({ emoji, label, onSeeAll }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-      <div style={{ fontSize: 18, fontWeight: 800, color: "#1A1A2E" }}>
-        {emoji} {label}
-      </div>
+      <div style={{ fontSize: 17, fontWeight: 800, color: DS.ink }}>{emoji} {label}</div>
       <button onClick={onSeeAll} style={{
         background: "none", border: "none", color: DS.brand,
         fontSize: 13, fontWeight: 700, cursor: "pointer", padding: 0,
       }}>Voir tout →</button>
+    </div>
+  );
+}
+
+// Panneau notifications
+function NotifPanel({ notifs, onClose }) {
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 200,
+    }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{
+        position: "absolute", top: 70, right: 12, width: 310,
+        background: "#fff", borderRadius: 20, boxShadow: "0 8px 32px rgba(0,0,0,.16)",
+        overflow: "hidden", animation: "popIn .25s ease",
+      }}>
+        <div style={{ padding: "14px 16px 10px", borderBottom: "1px solid #f0f0f0" }}>
+          <div style={{ fontWeight: 800, fontSize: 15, color: DS.ink }}>🔔 Notifications</div>
+        </div>
+        {notifs.length === 0 ? (
+          <div style={{ padding: 24, textAlign: "center", color: "#aaa", fontSize: 13 }}>Aucune nouvelle notification</div>
+        ) : notifs.map((n, i) => (
+          <div key={i} style={{ padding: "12px 16px", borderBottom: i < notifs.length - 1 ? "1px solid #f5f5f5" : "none", display: "flex", gap: 12, alignItems: "flex-start" }}>
+            <span style={{ fontSize: 22, flexShrink: 0 }}>{n.emoji}</span>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 13, color: DS.ink, marginBottom: 2 }}>{n.titre}</div>
+              <div style={{ fontSize: 12, color: "#888" }}>{n.message}</div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -138,6 +170,9 @@ export default function Feed() {
   const [userPos, setUserPos] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showNotifs, setShowNotifs] = useState(false);
+  const t = getTheme();
+
   const [favs, setFavs] = useState(() => {
     try { return JSON.parse(localStorage.getItem("cp_favs") || "[]"); } catch { return []; }
   });
@@ -176,7 +211,6 @@ export default function Feed() {
     setStartY(null);
   };
 
-  // Filtrage
   const filtered = offres.filter(o => {
     if (cat !== "tout" && o.categorie !== cat) return false;
     if (search.trim()) {
@@ -189,64 +223,96 @@ export default function Feed() {
     _dist: userPos && o.latitude && o.longitude ? haversine(userPos.lat, userPos.lon, o.latitude, o.longitude) : null,
   })).sort((a, b) => (a._dist ?? 999) - (b._dist ?? 999));
 
-  // Flash deals = offres urgentes
   const flashDeals = filtered.filter(o => o.est_urgente);
-  // Près de vous = < 2km
   const nearby = userPos ? filtered.filter(o => o._dist !== null && o._dist < 2) : [];
 
+  // Notifications intelligentes
+  const notifs = [
+    ...offres.filter(o => o.est_urgente && o.stock_restant <= 5 && o.stock_restant > 0).slice(0, 2).map(o => ({
+      emoji: "⚡",
+      titre: `${o.commercant_nom} — Stock critique !`,
+      message: `Plus que ${o.stock_restant} place(s) pour -${o.valeur_reduction}${o.type_reduction === "pourcentage" ? "%" : "€"}`,
+    })),
+    ...offres.filter(o => {
+      if (!userPos || !o.latitude) return false;
+      const d = haversine(userPos.lat, userPos.lon, o.latitude, o.longitude);
+      return d < 1 && o.valeur_reduction >= 30;
+    }).slice(0, 2).map(o => ({
+      emoji: "📍",
+      titre: `Super deal à ${formatDist(haversine(userPos?.lat || 0, userPos?.lon || 0, o.latitude, o.longitude))} !`,
+      message: `${o.commercant_nom} · -${o.valeur_reduction}%`,
+    })),
+    ...offres.filter(o => (o.nb_vues || 0) > 50).slice(0, 1).map(o => ({
+      emoji: "🔥",
+      titre: "Tendance du moment",
+      message: `${o.titre} — ${o.nb_vues} personnes l'ont vu aujourd'hui`,
+    })),
+  ];
+
   if (loading) return (
-    <div style={{ background: "#F5F5F7", minHeight: "100vh", fontFamily: DS.fontBase }}>
-      <div style={{ background: "#fff", padding: `calc(${DS.safeTop} + 8px) 16px 12px` }}>
-        <div className="shimmer-card" style={{ height: 40, borderRadius: 100, marginBottom: 10 }} />
+    <div style={{ background: t.bg, minHeight: "100vh", fontFamily: DS.fontBase }}>
+      <div style={{ background: t.card, padding: `calc(${DS.safeTop} + 8px) 16px 12px` }}>
+        <div className={t.shimmer} style={{ height: 40, borderRadius: 100, marginBottom: 10 }} />
         <div style={{ display: "flex", gap: 8 }}>
-          {[60, 80, 70, 90, 75, 85].map((w, i) => <div key={i} className="shimmer-card" style={{ height: 32, width: w, borderRadius: 100 }} />)}
+          {[60, 80, 70, 90, 75, 85].map((w, i) => <div key={i} className={t.shimmer} style={{ height: 32, width: w, borderRadius: 100 }} />)}
         </div>
       </div>
       <div style={{ padding: "0 16px" }}>
-        {[1, 2].map(i => <SkeletonCard key={i} />)}
+        {[1, 2].map(i => <SkeletonCard key={i} dark={t.isDark} />)}
       </div>
     </div>
   );
 
   return (
     <div
-      style={{ background: "#F5F5F7", minHeight: "100vh", fontFamily: DS.fontBase }}
+      style={{ background: t.bg, minHeight: "100vh", fontFamily: DS.fontBase }}
       onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
     >
-      {/* Header sticky */}
+      {/* Header */}
       <div style={{
-        background: "#fff",
-        padding: `calc(${DS.safeTop} + 8px) 16px 10px`,
+        background: t.card, padding: `calc(${DS.safeTop} + 8px) 16px 10px`,
         position: "sticky", top: 0, zIndex: 50,
-        borderBottom: "1px solid #f0f0f0",
+        borderBottom: `1px solid ${t.border}`,
         boxShadow: "0 1px 8px rgba(0,0,0,.04)",
       }}>
-        {/* Barre de recherche */}
-        <div style={{ position: "relative", marginBottom: 10 }}>
-          <div style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }}>
-            {Ic.search("#aaa", 15)}
+        {/* Top bar */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+          <div style={{ position: "relative", flex: 1 }}>
+            <div style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }}>
+              {Ic.search("#aaa", 15)}
+            </div>
+            <input value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Rechercher une offre, un commerce..."
+              style={{
+                width: "100%", boxSizing: "border-box",
+                background: t.isDark ? DS.dark3 : "#F5F5F7",
+                border: `1px solid ${t.border}`, borderRadius: 100,
+                padding: "10px 14px 10px 36px", fontSize: 14, color: t.text,
+                fontFamily: DS.fontBase, outline: "none",
+              }} />
           </div>
-          <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search"
-            style={{
-              width: "100%", boxSizing: "border-box",
-              background: "#F5F5F7", border: "none", borderRadius: 100,
-              padding: "10px 14px 10px 36px", fontSize: 15, color: "#1A1A2E",
-              fontFamily: DS.fontBase, outline: "none",
-            }} />
+          {/* Cloche */}
+          <button onClick={() => setShowNotifs(v => !v)} style={{
+            position: "relative", background: "none", border: "none", cursor: "pointer",
+            width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
+          }}>
+            {Ic.bell(t.isDark ? "rgba(255,255,255,.6)" : DS.ink60, 22)}
+            <NotificationBadge count={notifs.length} />
+          </button>
         </div>
 
         {/* Chips catégories */}
         <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none" }}>
           {CATS.map(c => (
             <button key={c.id} onClick={() => setCat(c.id)} style={{
-              flexShrink: 0, borderRadius: 100,
-              padding: "6px 14px", fontSize: 13, fontWeight: 600,
-              background: cat === c.id ? DS.brand : "#fff",
-              color: cat === c.id ? "#fff" : "#1A1A2E",
-              border: `1.5px solid ${cat === c.id ? DS.brand : "#e8e8e8"}`,
-              cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
+              flexShrink: 0, borderRadius: 100, padding: "6px 14px",
+              fontSize: 13, fontWeight: 600, cursor: "pointer",
+              background: cat === c.id ? DS.brand : (t.isDark ? DS.dark3 : "#fff"),
+              color: cat === c.id ? "#fff" : t.text,
+              border: `1.5px solid ${cat === c.id ? DS.brand : t.border}`,
               whiteSpace: "nowrap", fontFamily: DS.fontBase, minHeight: 34,
+              display: "flex", alignItems: "center", gap: 5,
             }}>
               {c.emoji} {c.label}
             </button>
@@ -254,32 +320,32 @@ export default function Feed() {
         </div>
       </div>
 
-      {/* Contenu scrollable */}
-      <div style={{ padding: "16px 0 100px" }}>
+      {/* Panneau notifications */}
+      {showNotifs && <NotifPanel notifs={notifs} onClose={() => setShowNotifs(false)} />}
 
+      {/* Contenu */}
+      <div style={{ padding: "16px 0 100px" }}>
         {refreshing && (
-          <div style={{ textAlign: "center", padding: "8px 0", color: DS.ink40, fontSize: 13 }}>Actualisation…</div>
+          <div style={{ textAlign: "center", padding: "8px 0", color: t.text2, fontSize: 13 }}>Actualisation…</div>
         )}
 
         {filtered.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 20px" }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: DS.ink, marginBottom: 8 }}>Aucune offre trouvée</div>
-            <div style={{ fontSize: 13, color: DS.ink40 }}>Essayez d'ajuster vos filtres</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: t.text, marginBottom: 8 }}>Aucune offre trouvée</div>
+            <div style={{ fontSize: 13, color: t.text2 }}>Essayez d'ajuster vos filtres</div>
           </div>
-        ) : (
+        ) : cat === "tout" ? (
           <>
             {/* ⚡ Flash Deals */}
-            {flashDeals.length > 0 && cat === "tout" && (
+            {flashDeals.length > 0 && (
               <div style={{ marginBottom: 24 }}>
                 <div style={{ padding: "0 16px", marginBottom: 12 }}>
-                  <SectionHeader emoji="🔥" label="Flash Deals" onSeeAll={() => {}} />
+                  <SectionHeader emoji="⚡" label="Flash Deals" onSeeAll={() => {}} />
                 </div>
                 <div style={{ display: "flex", gap: 12, overflowX: "auto", padding: "0 16px", scrollbarWidth: "none" }}>
                   {flashDeals.map(o => (
                     <HScrollCard key={o.id} o={o}
-                      isFav={favs.includes(o.id)}
-                      onFav={() => toggleFav(o.id)}
                       onPress={() => navigate(`/OffreDetail?id=${o.id}`)}
                       userPos={userPos} />
                   ))}
@@ -288,7 +354,7 @@ export default function Feed() {
             )}
 
             {/* 📍 Près de vous */}
-            {nearby.length > 0 && cat === "tout" && (
+            {nearby.length > 0 && (
               <div style={{ marginBottom: 24 }}>
                 <div style={{ padding: "0 16px", marginBottom: 12 }}>
                   <SectionHeader emoji="📍" label="Près de vous" onSeeAll={() => {}} />
@@ -296,8 +362,6 @@ export default function Feed() {
                 <div style={{ display: "flex", gap: 12, overflowX: "auto", padding: "0 16px", scrollbarWidth: "none" }}>
                   {nearby.slice(0, 10).map(o => (
                     <HScrollCard key={o.id} o={o}
-                      isFav={favs.includes(o.id)}
-                      onFav={() => toggleFav(o.id)}
                       onPress={() => navigate(`/OffreDetail?id=${o.id}`)}
                       userPos={userPos} />
                   ))}
@@ -306,38 +370,40 @@ export default function Feed() {
             )}
 
             {/* Sections par catégorie */}
-            {cat === "tout" ? (
-              SECTIONS.map(sec => {
-                const items = filtered.filter(o => o.categorie === sec.id);
-                if (items.length === 0) return null;
-                return (
-                  <div key={sec.id} style={{ marginBottom: 28 }}>
-                    <div style={{ padding: "0 16px", marginBottom: 12 }}>
-                      <SectionHeader emoji={sec.emoji} label={sec.label} onSeeAll={() => setCat(sec.id)} />
-                    </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, padding: "0 16px" }}>
-                      {items.slice(0, 6).map(o => (
-                        <GridCard key={o.id} o={o}
-                          onPress={() => navigate(`/OffreDetail?id=${o.id}`)}
-                          userPos={userPos} />
-                      ))}
-                    </div>
+            {SECTIONS.map(sec => {
+              const items = filtered.filter(o => o.categorie === sec.id);
+              if (items.length === 0) return null;
+              return (
+                <div key={sec.id} style={{ marginBottom: 28 }}>
+                  <div style={{ padding: "0 16px", marginBottom: 12 }}>
+                    <SectionHeader emoji={sec.emoji} label={sec.label} onSeeAll={() => setCat(sec.id)} />
                   </div>
-                );
-              })
-            ) : (
-              // Vue filtrée par catégorie
-              <div style={{ padding: "0 16px" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  {filtered.map(o => (
-                    <GridCard key={o.id} o={o}
-                      onPress={() => navigate(`/OffreDetail?id=${o.id}`)}
-                      userPos={userPos} />
-                  ))}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, padding: "0 16px" }}>
+                    {items.slice(0, 6).map(o => (
+                      <GridCard key={o.id} o={o}
+                        onPress={() => navigate(`/OffreDetail?id=${o.id}`)}
+                        userPos={userPos} />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })}
           </>
+        ) : (
+          // Vue filtrée
+          <div style={{ padding: "0 16px" }}>
+            <div style={{ fontSize: 14, color: t.text2, marginBottom: 12, fontWeight: 600 }}>
+              {filtered.length} offre{filtered.length > 1 ? "s" : ""} trouvée{filtered.length > 1 ? "s" : ""}
+              {userPos ? " · triées par distance" : ""}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              {filtered.map(o => (
+                <GridCard key={o.id} o={o}
+                  onPress={() => navigate(`/OffreDetail?id=${o.id}`)}
+                  userPos={userPos} />
+              ))}
+            </div>
+          </div>
         )}
       </div>
 
