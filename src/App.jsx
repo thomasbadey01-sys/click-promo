@@ -12,12 +12,12 @@ import Carte from './pages/Carte';
 import Dashboard from './pages/Dashboard';
 import Favoris from './pages/Favoris';
 import Feed from './pages/Feed';
-import Home from './pages/Home';
+import Home from './pages/Home.jsx';
 import InscriptionCommercant from './pages/InscriptionCommercant';
 import Login from './pages/Login';
 import OffreDetail from './pages/OffreDetail';
 import PrivacyPolicy from './pages/PrivacyPolicy';
-import Profil from './pages/Profil';
+import Profil from './pages/Profil.jsx';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();

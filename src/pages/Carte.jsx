@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { Offre } from "@/api/entities";
 import { DS, Ic, NavBar, BadgeReduction } from "./theme";
+import { haversine, formatDist } from "./Feed.jsx";
 import { useNavigate } from "react-router-dom";
-import { haversine, formatDist } from "./Feed";
+
 
 const CATS = ["Tout","Restaurant","Boutique","Beauté & Coiffure","Fitness & Sport","Épicerie","Services"];
 
@@ -39,7 +40,7 @@ export default function Carte() {
       const L = window.L;
       if (!L || !mapRef.current) return;
       const map = L.map(mapRef.current, { zoomControl: false }).setView([48.8566, 2.3522], 13);
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
         attribution: '© <a href="https://carto.com">CARTO</a>',
         maxZoom: 19,
       }).addTo(map);
@@ -86,25 +87,25 @@ export default function Carte() {
   }, [mapReady, offres, cat, rayon, userPos, ouvertNow]);
 
   return (
-    <div style={{ background: DS.white, minHeight: "100vh", fontFamily: DS.fontBase }}>
+    <div style={{ background: "#0F0F1A", minHeight: "100vh", fontFamily: DS.fontBase }}>
 
       {/* Filtres en overlay */}
       <div style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
         padding: `calc(${DS.safeTop} + 8px) 16px 12px`,
-        background: DS.white,
-        borderBottom: `1px solid ${DS.ink10}`,
+        background: "#0F0F1A",
+        borderBottom: "1px solid rgba(255,255,255,.08)",
       }}>
         {/* Chips catégories */}
         <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", marginBottom: 10 }}>
           {CATS.map(c => (
             <button key={c} onClick={() => setCat(c)} style={{
-              flexShrink: 0, borderRadius: DS.pill, padding: "7px 14px",
-              fontSize: 13, fontWeight: 600, cursor: "pointer",
-              background: cat === c ? DS.brand : DS.white,
-              color: cat === c ? DS.white : DS.ink,
-              border: `1.5px solid ${cat === c ? DS.brand : DS.ink10}`,
-              fontFamily: DS.fontBase,
+              flexShrink: 0, borderRadius: DS.pill, padding: "7px 16px",
+              fontSize: 13, fontWeight: 700, cursor: "pointer",
+              background: cat === c ? DS.brand : "rgba(255,255,255,.1)",
+              color: cat === c ? "#fff" : "rgba(255,255,255,.7)",
+              border: `1.5px solid ${cat === c ? DS.brand : "rgba(255,255,255,.15)"}`,
+              fontFamily: DS.fontBase, minHeight: 34,
             }}>{c}</button>
           ))}
         </div>
@@ -150,8 +151,8 @@ export default function Carte() {
       {selected && (
         <div style={{
           position: "fixed", bottom: 68, left: 0, right: 0, zIndex: 60,
-          background: DS.white, padding: "16px 16px 12px",
-          borderTop: `1px solid ${DS.ink10}`,
+          background: "#1A1A2E", padding: "16px 16px 12px",
+          borderTop: "1px solid rgba(255,255,255,.08)",
           boxShadow: "0 -4px 20px rgba(0,0,0,.08)",
         }}>
           <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
@@ -161,8 +162,8 @@ export default function Carte() {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div>
-                  <div style={{ fontWeight: 800, fontSize: 15, color: DS.ink, marginBottom: 2 }}>{selected.titre}</div>
-                  <div style={{ fontSize: 12, color: DS.ink60 }}>{selected.commercant_nom} · {selected.ville}</div>
+                  <div style={{ fontWeight: 800, fontSize: 15, color: "#fff", marginBottom: 2 }}>{selected.titre}</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,.5)" }}>{selected.commercant_nom} · {selected.ville}</div>
                 </div>
                 <BadgeReduction valeur={selected.valeur_reduction} type={selected.type_reduction} />
               </div>
@@ -181,15 +182,15 @@ export default function Carte() {
               boxShadow: DS.eBrand,
             }}>Voir l'offre</button>
             <button onClick={() => window.open(`https://maps.google.com/?q=${selected.latitude},${selected.longitude}`, "_blank")} style={{
-              background: DS.white, color: DS.ink, border: `1.5px solid ${DS.ink10}`,
+              background: "rgba(255,255,255,.1)", color: "#fff", border: "1.5px solid rgba(255,255,255,.2)",
               borderRadius: DS.lg, padding: "12px 16px", cursor: "pointer",
               display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600,
             }}>
               {Ic.nav(DS.ink, 14)} Y aller
             </button>
             <button onClick={() => setSelected(null)} style={{
-              background: DS.ink05, border: "none", borderRadius: DS.lg,
-              padding: "12px 16px", cursor: "pointer", fontSize: 18, color: DS.ink60,
+              background: "rgba(255,255,255,.08)", border: "none", borderRadius: DS.lg,
+              padding: "12px 16px", cursor: "pointer", fontSize: 18, color: "rgba(255,255,255,.5)",
             }}>✕</button>
           </div>
         </div>

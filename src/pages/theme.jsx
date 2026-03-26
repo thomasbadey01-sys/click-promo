@@ -295,37 +295,47 @@ export function CPLogo({ size = 24 }) {
 // Navbar main
 export function NavBar({ active = "Feed" }) {
   const navigate = useNavigate();
-  const isDark = typeof localStorage !== 'undefined' && localStorage.getItem("cp_darkmode") === "1";
-  const bg = isDark ? DS.dark2 : DS.white;
-  const color = isDark ? DS.white : DS.ink;
-  const inactiveColor = isDark ? "rgba(255,255,255,.4)" : DS.ink40;
 
   const tabs = [
-    { id: "Feed", label: "Offres", icon: Ic.search },
-    { id: "Carte", label: "Carte", icon: Ic.map },
-    { id: "Favoris", label: "Favoris", icon: Ic.heart },
-    { id: "Profil", label: "Profil", icon: Ic.user },
+    { id: "Feed",   label: "Accueil",   icon: Ic.search },
+    { id: "Carte",  label: "Recherche", icon: Ic.map },
+    { id: "Favoris",label: "Favoris",   icon: Ic.heart },
+    { id: "Profil", label: "Profil",    icon: Ic.user },
   ];
 
   return (
     <div style={{
       position: "fixed", bottom: 0, left: 0, right: 0,
-      background: bg, borderTop: `1px solid ${isDark ? DS.darkBorder : DS.ink10}`,
+      background: "#fff",
+      borderTop: "1px solid #f0f0f0",
       display: "flex", justifyContent: "space-around", alignItems: "center",
-      height: 70, paddingBottom: "max(env(safe-area-inset-bottom, 8px), 8px)", fontFamily: DS.fontBase, zIndex: 100,
+      paddingTop: 8,
+      paddingBottom: "max(env(safe-area-inset-bottom, 8px), 8px)",
+      fontFamily: DS.fontBase, zIndex: 100,
+      boxShadow: "0 -4px 20px rgba(0,0,0,.06)",
     }}>
-      {tabs.map(t => (
-        <button key={t.id} onClick={() => navigate?.(`/${t.id}`)} style={{
-          background: "none", border: "none", cursor: "pointer",
-          display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-          color: active === t.id ? DS.brand : inactiveColor, fontWeight: 600,
-          fontSize: 11, transition: "all 0.2s",
-          minWidth: 44, minHeight: 44, justifyContent: "center",
-        }}>
-          {t.icon(active === t.id ? DS.brand : inactiveColor, 20)}
-          <span>{t.label}</span>
-        </button>
-      ))}
+      {tabs.map(t => {
+        const isActive = active === t.id;
+        return (
+          <button key={t.id} onClick={() => navigate(`/${t.id}`)} style={{
+            background: "none", border: "none", cursor: "pointer",
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+            minWidth: 44, minHeight: 44, justifyContent: "center",
+            padding: "0 8px",
+          }}>
+            <div style={{
+              background: isActive ? DS.brandLight : "transparent",
+              borderRadius: 12,
+              padding: "6px 16px",
+              marginBottom: 2,
+              transition: "background .2s",
+            }}>
+              {t.icon(isActive ? DS.brand : "#bbb", 20)}
+            </div>
+            <span style={{ fontSize: 10, fontWeight: isActive ? 700 : 500, color: isActive ? DS.brand : "#bbb" }}>{t.label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
