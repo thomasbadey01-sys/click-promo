@@ -19,8 +19,13 @@ export default function Favoris() {
       try {
         const user = await base44.auth.me();
         const favs = await FavoriUtilisateur.filter({ user_id: user.id });
-        const offres = await Promise.all(favs.map(f => Offre.get(f.offre_id).catch(() => null)));
-        setItems(offres.filter(Boolean).map((o, i) => ({ ...o, fav_id: favs[i].id })));
+        const offresWithFav = await Promise.all(
+          favs.map(async f => {
+            const o = await Offre.get(f.offre_id).catch(() => null);
+            return o ? { ...o, fav_id: f.id } : null;
+          })
+        );
+        setItems(offresWithFav.filter(Boolean));
       } catch (e) { console.warn(e); }
       setLoading(false);
     })();

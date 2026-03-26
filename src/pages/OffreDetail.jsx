@@ -161,22 +161,12 @@ export default function OffreDetail() {
   const buyOnline = async () => {
     setBuying(true); setBuyErr("");
     try {
-      const user = await base44.auth.me();
-      const res = await fetch("/functions/buyOffer", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          offreId: id,
-          successUrl: window.location.href + "?payment=success",
-          cancelUrl: window.location.href,
-          userEmail: user.email,
-        }),
-      });
-      const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else setBuyErr(data.error || "Erreur de paiement");
-    } catch (e) { setBuyErr(e.message); }
-    finally { setBuying(false); }
+      await base44.auth.me();
+      // Paiement Stripe — activer après configuration
+      setBuyErr("Paiement en ligne bientôt disponible. Utilisez le code promo.");
+    } catch {
+      navigate("/Login");
+    } finally { setBuying(false); }
   };
 
   return (
