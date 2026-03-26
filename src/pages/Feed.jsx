@@ -15,160 +15,113 @@ export function formatDist(km) {
 }
 
 const CATS = [
-  { id: "tout", label: "Tout", emoji: "🏠" },
-  { id: "Restaurant", label: "Restos", emoji: "🍽️" },
-  { id: "Boutique", label: "Mode", emoji: "👗" },
-  { id: "Beauté & Coiffure", label: "Beauté", emoji: "💄" },
-  { id: "Épicerie", label: "Courses", emoji: "🛒" },
-  { id: "Services", label: "Maison", emoji: "🏡" },
+  { id: "tout",             label: "Tout",    emoji: "🏠" },
+  { id: "Restaurant",       label: "Restos",  emoji: "🍽️" },
+  { id: "Boutique",         label: "Mode",    emoji: "👗" },
+  { id: "Beauté & Coiffure",label: "Beauté",  emoji: "💅" },
+  { id: "Fitness & Sport",  label: "Sport",   emoji: "🏋️" },
+  { id: "Épicerie",         label: "Épicerie",emoji: "🥐" },
 ];
 
-function FlashBadge() {
-  return (
-    <div style={{
-      position: "absolute", top: 10, left: 10, zIndex: 2,
-      background: "#EF4444", color: "#fff",
-      borderRadius: 20, padding: "4px 10px",
-      fontSize: 11, fontWeight: 800,
-      display: "flex", alignItems: "center", gap: 4,
-    }}>
-      ⚡ Flash
-    </div>
-  );
-}
+const SECTIONS = [
+  { id: "Restaurant",        label: "Restaurants",      emoji: "🍽️" },
+  { id: "Boutique",          label: "Mode & Boutiques",  emoji: "👗" },
+  { id: "Beauté & Coiffure", label: "Beauté & Coiffure", emoji: "💅" },
+  { id: "Fitness & Sport",   label: "Sport & Fitness",   emoji: "🏋️" },
+  { id: "Épicerie",          label: "Épicerie",           emoji: "🥐" },
+  { id: "Services",          label: "Services",           emoji: "🏠" },
+];
 
-function DiscountCircle({ valeur, type }) {
-  if (!valeur) return null;
-  return (
-    <div style={{
-      position: "absolute", bottom: 10, right: 10, zIndex: 2,
-      background: DS.brand, color: "#fff",
-      borderRadius: "50%", width: 48, height: 48,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: 13, fontWeight: 900,
-      boxShadow: `0 2px 8px ${DS.brand}80`,
-    }}>
-      -{valeur}{type === "pourcentage" ? "%" : "€"}
-    </div>
-  );
-}
-
-function SavingsPill({ original, promo }) {
-  if (!original || !promo || original <= promo) return null;
-  const saved = (original - promo).toFixed(0);
-  return (
-    <div style={{
-      display: "inline-flex", alignItems: "center",
-      background: "#D1FAE5", color: "#059669",
-      borderRadius: 20, padding: "3px 8px",
-      fontSize: 11, fontWeight: 700,
-    }}>
-      -{saved}€ économisés
-    </div>
-  );
-}
-
-// Hero card (première offre, pleine largeur)
-function HeroCard({ o, isFav, onFav, onPress, userPos }) {
+// Petite card scroll horizontal (Flash Deals / Près de vous)
+function HScrollCard({ o, isFav, onFav, onPress, userPos }) {
   const dist = userPos && o.latitude && o.longitude
     ? haversine(userPos.lat, userPos.lon, o.latitude, o.longitude) : null;
   return (
     <div onClick={onPress} style={{
-      background: "#fff", borderRadius: 20, overflow: "hidden",
-      marginBottom: 14, cursor: "pointer",
-      boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+      width: 160, flexShrink: 0, background: "#fff",
+      borderRadius: 16, overflow: "hidden", cursor: "pointer",
+      boxShadow: "0 2px 12px rgba(0,0,0,.08)",
     }}>
-      <div style={{ position: "relative", height: 220 }}>
+      <div style={{ position: "relative", height: 110 }}>
         <img src={o.image_url} alt={o.titre}
           style={{ width: "100%", height: "100%", objectFit: "cover" }}
-          onError={e => e.target.src = "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800"} />
-        {o.est_urgente && <FlashBadge />}
-        <DiscountCircle valeur={o.valeur_reduction} type={o.type_reduction} />
-        <button onClick={e => { e.stopPropagation(); onFav(); }} style={{
-          position: "absolute", top: 10, right: 10, background: "rgba(255,255,255,.9)",
-          border: "none", borderRadius: "50%", width: 36, height: 36,
-          display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-        }}>
-          {Ic.heart(isFav ? "#EF4444" : "#ccc", 16, isFav)}
-        </button>
+          onError={e => e.target.src = "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400"} />
+        {(o.valeur_reduction > 0) && (
+          <div style={{
+            position: "absolute", bottom: 8, right: 8,
+            background: DS.brand, color: "#fff",
+            borderRadius: 20, padding: "3px 8px",
+            fontSize: 11, fontWeight: 800,
+          }}>-{o.valeur_reduction}{o.type_reduction === "pourcentage" ? "%" : "€"}</div>
+        )}
       </div>
-      <div style={{ padding: "12px 14px 14px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
-          <div>
-            {o.prix_promo > 0 && (
-              <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 2 }}>
-                <span style={{ fontSize: 24, fontWeight: 900, color: "#1A1A2E" }}>{o.prix_promo}€</span>
-                {o.prix_original > 0 && (
-                  <span style={{ fontSize: 14, color: "#aaa", textDecoration: "line-through" }}>{o.prix_original}€ ttc</span>
-                )}
-              </div>
-            )}
-            {!o.prix_promo && (
-              <div style={{ fontSize: 16, fontWeight: 800, color: "#1A1A2E", marginBottom: 4 }}>{o.titre}</div>
-            )}
+      <div style={{ padding: "8px 10px 10px" }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#1A1A2E", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {o.commercant_nom || o.titre}
+        </div>
+        {o.prix_promo > 0 && (
+          <div style={{ fontSize: 13, fontWeight: 800, color: "#1A1A2E" }}>{o.prix_promo} €</div>
+        )}
+        {dist !== null && (
+          <div style={{ display: "flex", alignItems: "center", gap: 3, color: "#888", fontSize: 11, marginTop: 2 }}>
+            <span>✈</span> {formatDist(dist)}
           </div>
-          {dist !== null && (
-            <div style={{ display: "flex", alignItems: "center", gap: 3, color: DS.brand, fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
-              📍 {formatDist(dist)}
-            </div>
-          )}
-        </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          {dist !== null && (
-            <div style={{ background: "#F3F0FF", color: DS.brand, borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>
-              📍 {formatDist(dist)}
-            </div>
-          )}
-          <SavingsPill original={o.prix_original} promo={o.prix_promo} />
-        </div>
+        )}
       </div>
     </div>
   );
 }
 
-// Mini card (grille 2 colonnes)
-function MiniCard({ o, isFav, onFav, onPress, userPos }) {
+// Card grille 2 colonnes
+function GridCard({ o, onPress, userPos }) {
   const dist = userPos && o.latitude && o.longitude
     ? haversine(userPos.lat, userPos.lon, o.latitude, o.longitude) : null;
   return (
     <div onClick={onPress} style={{
       background: "#fff", borderRadius: 16, overflow: "hidden",
-      cursor: "pointer", boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
+      cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,.07)",
     }}>
-      <div style={{ position: "relative", height: 140 }}>
+      <div style={{ position: "relative", height: 120 }}>
         <img src={o.image_url} alt={o.titre}
           style={{ width: "100%", height: "100%", objectFit: "cover" }}
-          onError={e => e.target.src = "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800"} />
-        {o.est_urgente && (
+          onError={e => e.target.src = "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400"} />
+        {(o.valeur_reduction > 0) && (
           <div style={{
-            position: "absolute", top: 8, left: 8,
-            background: "#EF4444", color: "#fff",
+            position: "absolute", bottom: 8, right: 8,
+            background: DS.brand, color: "#fff",
             borderRadius: 20, padding: "3px 8px",
-            fontSize: 10, fontWeight: 800,
-          }}>⚡ Flash</div>
+            fontSize: 11, fontWeight: 800,
+          }}>-{o.valeur_reduction}{o.type_reduction === "pourcentage" ? "%" : "€"}</div>
         )}
-        <DiscountCircle valeur={o.valeur_reduction} type={o.type_reduction} />
       </div>
-      <div style={{ padding: "10px 10px 12px" }}>
-        {o.prix_promo > 0 ? (
-          <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 4 }}>
-            <span style={{ fontSize: 18, fontWeight: 900, color: "#1A1A2E" }}>{o.prix_promo}€</span>
-            {o.prix_original > 0 && (
-              <span style={{ fontSize: 11, color: "#aaa", textDecoration: "line-through" }}>{o.prix_original}€</span>
-            )}
-          </div>
-        ) : (
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#1A1A2E", marginBottom: 4 }}>{o.titre}</div>
-        )}
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <SavingsPill original={o.prix_original} promo={o.prix_promo} />
-          {dist !== null && (
-            <div style={{ display: "flex", alignItems: "center", gap: 3, color: DS.brand, fontSize: 10, fontWeight: 700 }}>
-              📍 {formatDist(dist)}
-            </div>
-          )}
+      <div style={{ padding: "8px 10px 10px" }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: "#1A1A2E", marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {o.commercant_nom || o.titre}
         </div>
+        {o.prix_promo > 0 && (
+          <div style={{ fontSize: 14, fontWeight: 800, color: "#1A1A2E" }}>{o.prix_promo} €</div>
+        )}
+        {dist !== null && (
+          <div style={{ display: "flex", alignItems: "center", gap: 3, color: "#888", fontSize: 11, marginTop: 2 }}>
+            <span>✈</span> {formatDist(dist)}
+          </div>
+        )}
       </div>
+    </div>
+  );
+}
+
+// Section titre avec "Voir tout"
+function SectionHeader({ emoji, label, onSeeAll }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+      <div style={{ fontSize: 18, fontWeight: 800, color: "#1A1A2E" }}>
+        {emoji} {label}
+      </div>
+      <button onClick={onSeeAll} style={{
+        background: "none", border: "none", color: DS.brand,
+        fontSize: 13, fontWeight: 700, cursor: "pointer", padding: 0,
+      }}>Voir tout →</button>
     </div>
   );
 }
@@ -176,7 +129,6 @@ function MiniCard({ o, isFav, onFav, onPress, userPos }) {
 export default function Feed() {
   const navigate = useNavigate();
   const [offres, setOffres] = useState([]);
-  const [filtered, setFiltered] = useState([]);
   const [cat, setCat] = useState("tout");
   const [search, setSearch] = useState("");
   const [userPos, setUserPos] = useState(null);
@@ -210,26 +162,6 @@ export default function Feed() {
     );
   }, []);
 
-  useEffect(() => {
-    let list = [...offres];
-    if (cat !== "tout") list = list.filter(o => o.categorie === cat);
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter(o =>
-        o.titre?.toLowerCase().includes(q) ||
-        o.commercant_nom?.toLowerCase().includes(q) ||
-        o.ville?.toLowerCase().includes(q)
-      );
-    }
-    if (userPos) {
-      list = list.map(o => ({
-        ...o,
-        _dist: o.latitude && o.longitude ? haversine(userPos.lat, userPos.lon, o.latitude, o.longitude) : null,
-      })).sort((a, b) => (a._dist ?? 999) - (b._dist ?? 999));
-    }
-    setFiltered(list);
-  }, [offres, cat, search, userPos]);
-
   // Pull-to-refresh
   const [startY, setStartY] = useState(null);
   const onTouchStart = e => setStartY(e.touches[0].clientY);
@@ -240,67 +172,67 @@ export default function Feed() {
     setStartY(null);
   };
 
+  // Filtrage
+  const filtered = offres.filter(o => {
+    if (cat !== "tout" && o.categorie !== cat) return false;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      return (o.titre?.toLowerCase().includes(q) || o.commercant_nom?.toLowerCase().includes(q) || o.ville?.toLowerCase().includes(q));
+    }
+    return true;
+  }).map(o => ({
+    ...o,
+    _dist: userPos && o.latitude && o.longitude ? haversine(userPos.lat, userPos.lon, o.latitude, o.longitude) : null,
+  })).sort((a, b) => (a._dist ?? 999) - (b._dist ?? 999));
+
+  // Flash deals = offres urgentes
+  const flashDeals = filtered.filter(o => o.est_urgente);
+  // Près de vous = < 2km
+  const nearby = userPos ? filtered.filter(o => o._dist !== null && o._dist < 2) : [];
+
   if (loading) return (
     <div style={{ background: "#F5F5F7", minHeight: "100vh", fontFamily: DS.fontBase }}>
-      <div style={{ background: "#fff", padding: `calc(${DS.safeTop} + 8px) 16px 12px`, marginBottom: 8 }}>
+      <div style={{ background: "#fff", padding: `calc(${DS.safeTop} + 8px) 16px 12px` }}>
         <div className="shimmer-card" style={{ height: 40, borderRadius: 100, marginBottom: 10 }} />
         <div style={{ display: "flex", gap: 8 }}>
-          {[60, 80, 70, 90, 75].map((w, i) => <div key={i} className="shimmer-card" style={{ height: 32, width: w, borderRadius: 100 }} />)}
+          {[60, 80, 70, 90, 75, 85].map((w, i) => <div key={i} className="shimmer-card" style={{ height: 32, width: w, borderRadius: 100 }} />)}
         </div>
       </div>
       <div style={{ padding: "0 16px" }}>
-        <SkeletonCard />
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          {[1,2,3,4].map(i => (
-            <div key={i} style={{ background: "#fff", borderRadius: 16, overflow: "hidden" }}>
-              <div className="shimmer-card" style={{ height: 130 }} />
-              <div style={{ padding: 10 }}><div className="shimmer-card" style={{ height: 16, width: "60%", marginBottom: 6 }} /><div className="shimmer-card" style={{ height: 12, width: "40%" }} /></div>
-            </div>
-          ))}
-        </div>
+        {[1, 2].map(i => <SkeletonCard key={i} />)}
       </div>
     </div>
   );
 
-  const hero = filtered[0];
-  const rest = filtered.slice(1);
-
   return (
-    <div style={{ background: "#F5F5F7", minHeight: "100vh", fontFamily: DS.fontBase }}
-      onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-
-      {/* Header */}
+    <div
+      style={{ background: "#F5F5F7", minHeight: "100vh", fontFamily: DS.fontBase }}
+      onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
+    >
+      {/* Header sticky */}
       <div style={{
         background: "#fff",
         padding: `calc(${DS.safeTop} + 8px) 16px 10px`,
         position: "sticky", top: 0, zIndex: 50,
         borderBottom: "1px solid #f0f0f0",
+        boxShadow: "0 1px 8px rgba(0,0,0,.04)",
       }}>
-        {/* Top row */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-          <CPLogo size={28} />
-          <span style={{ flex: 1, fontSize: 17, fontWeight: 800, color: "#1A1A2E" }}>Click & Promo</span>
-          <button style={{ background: DS.brandLight, border: "none", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-            🔔
-          </button>
-        </div>
-
-        {/* Search */}
+        {/* Barre de recherche */}
         <div style={{ position: "relative", marginBottom: 10 }}>
           <div style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }}>
             {Ic.search("#aaa", 15)}
           </div>
           <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Rechercher une offre, un commerce..."
+            placeholder="Search"
             style={{
               width: "100%", boxSizing: "border-box",
               background: "#F5F5F7", border: "none", borderRadius: 100,
-              padding: "10px 14px 10px 36px", fontSize: 14, color: "#1A1A2E",
+              padding: "10px 14px 10px 36px", fontSize: 15, color: "#1A1A2E",
               fontFamily: DS.fontBase, outline: "none",
             }} />
         </div>
 
-        {/* Catégories */}
+        {/* Chips catégories */}
         <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none" }}>
           {CATS.map(c => (
             <button key={c.id} onClick={() => setCat(c.id)} style={{
@@ -310,8 +242,7 @@ export default function Feed() {
               color: cat === c.id ? "#fff" : "#1A1A2E",
               border: `1.5px solid ${cat === c.id ? DS.brand : "#e8e8e8"}`,
               cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
-              whiteSpace: "nowrap", fontFamily: DS.fontBase,
-              minHeight: 34,
+              whiteSpace: "nowrap", fontFamily: DS.fontBase, minHeight: 34,
             }}>
               {c.emoji} {c.label}
             </button>
@@ -319,10 +250,11 @@ export default function Feed() {
         </div>
       </div>
 
-      {/* Contenu */}
-      <div style={{ padding: "14px 16px 100px" }}>
+      {/* Contenu scrollable */}
+      <div style={{ padding: "16px 0 100px" }}>
+
         {refreshing && (
-          <div style={{ textAlign: "center", padding: "12px 0", color: DS.ink40, fontSize: 13 }}>Actualisation…</div>
+          <div style={{ textAlign: "center", padding: "8px 0", color: DS.ink40, fontSize: 13 }}>Actualisation…</div>
         )}
 
         {filtered.length === 0 ? (
@@ -333,24 +265,72 @@ export default function Feed() {
           </div>
         ) : (
           <>
-            {/* Hero card */}
-            {hero && (
-              <HeroCard o={hero} isFav={favs.includes(hero.id)}
-                onFav={() => toggleFav(hero.id)}
-                onPress={() => navigate(`/OffreDetail?id=${hero.id}`)}
-                userPos={userPos} />
+            {/* ⚡ Flash Deals */}
+            {flashDeals.length > 0 && cat === "tout" && (
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ padding: "0 16px", marginBottom: 12 }}>
+                  <SectionHeader emoji="🔥" label="Flash Deals" onSeeAll={() => {}} />
+                </div>
+                <div style={{ display: "flex", gap: 12, overflowX: "auto", padding: "0 16px", scrollbarWidth: "none" }}>
+                  {flashDeals.map(o => (
+                    <HScrollCard key={o.id} o={o}
+                      isFav={favs.includes(o.id)}
+                      onFav={() => toggleFav(o.id)}
+                      onPress={() => navigate(`/OffreDetail?id=${o.id}`)}
+                      userPos={userPos} />
+                  ))}
+                </div>
+              </div>
             )}
 
-            {/* Grille 2 colonnes */}
-            {rest.length > 0 && (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                {rest.map(o => (
-                  <MiniCard key={o.id} o={o}
-                    isFav={favs.includes(o.id)}
-                    onFav={() => toggleFav(o.id)}
-                    onPress={() => navigate(`/OffreDetail?id=${o.id}`)}
-                    userPos={userPos} />
-                ))}
+            {/* 📍 Près de vous */}
+            {nearby.length > 0 && cat === "tout" && (
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ padding: "0 16px", marginBottom: 12 }}>
+                  <SectionHeader emoji="📍" label="Près de vous" onSeeAll={() => {}} />
+                </div>
+                <div style={{ display: "flex", gap: 12, overflowX: "auto", padding: "0 16px", scrollbarWidth: "none" }}>
+                  {nearby.slice(0, 10).map(o => (
+                    <HScrollCard key={o.id} o={o}
+                      isFav={favs.includes(o.id)}
+                      onFav={() => toggleFav(o.id)}
+                      onPress={() => navigate(`/OffreDetail?id=${o.id}`)}
+                      userPos={userPos} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Sections par catégorie */}
+            {cat === "tout" ? (
+              SECTIONS.map(sec => {
+                const items = filtered.filter(o => o.categorie === sec.id);
+                if (items.length === 0) return null;
+                return (
+                  <div key={sec.id} style={{ marginBottom: 28 }}>
+                    <div style={{ padding: "0 16px", marginBottom: 12 }}>
+                      <SectionHeader emoji={sec.emoji} label={sec.label} onSeeAll={() => setCat(sec.id)} />
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, padding: "0 16px" }}>
+                      {items.slice(0, 4).map(o => (
+                        <GridCard key={o.id} o={o}
+                          onPress={() => navigate(`/OffreDetail?id=${o.id}`)}
+                          userPos={userPos} />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              // Vue filtrée par catégorie
+              <div style={{ padding: "0 16px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  {filtered.map(o => (
+                    <GridCard key={o.id} o={o}
+                      onPress={() => navigate(`/OffreDetail?id=${o.id}`)}
+                      userPos={userPos} />
+                  ))}
+                </div>
               </div>
             )}
           </>
