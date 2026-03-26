@@ -168,6 +168,16 @@ export const Ic = {
       <line x1="3" y1="10" x2="21" y2="10" />
     </svg>
   ),
+  back: (color, size) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="15 18 9 12 15 6" />
+    </svg>
+  ),
+  check: (color, size) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  ),
 };
 
 // Logo Click & Promo

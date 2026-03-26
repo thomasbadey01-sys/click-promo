@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Offre, Commercant, DemandeCommercant, Abonnement, AvisCommercant } from "@/api/entities";
-import { UserAuth } from "@/api/auth";
+import { base44 } from "@/api/base44Client";
 import { DS, Ic, CPLogo } from "./theme";
 
 export default function Admin() {
@@ -14,7 +14,7 @@ export default function Admin() {
   useEffect(() => {
     (async () => {
       try {
-        const u = await UserAuth.me();
+        const u = await base44.auth.me();
         setUser(u);
         const [o, c, d, a] = await Promise.all([
           Offre.list(), Commercant.list(), DemandeCommercant.list(), Abonnement.list()

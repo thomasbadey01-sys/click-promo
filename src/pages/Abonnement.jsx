@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { UserAuth } from "@/api/auth";
-import { DS, Ic, CPLogo } from "./theme";
+import { base44 } from "@/api/base44Client";
+import { DS, Ic } from "./theme";
 
 const PLANS = [
   {
@@ -59,7 +59,7 @@ export default function Abonnement() {
   const handleSubscribe = async () => {
     setLoading(true);
     try {
-      const user = await UserAuth.me();
+      const user = await base44.auth.me();
       const plan = PLANS.find(p => p.id === selected);
       const res = await fetch("/functions/createCheckout", {
         method: "POST",
