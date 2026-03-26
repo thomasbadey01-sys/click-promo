@@ -6,10 +6,10 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
-import Abonnement from './pages/Abonnement';
+import Abonnement from './pages/Abonnement.jsx';
 import Admin from './pages/Admin';
 import Carte from './pages/Carte.jsx';
-import Dashboard from './pages/Dashboard';
+import Dashboard from './pages/Dashboard.jsx';
 import Favoris from './pages/Favoris.jsx';
 import Feed from './pages/Feed.jsx';
 import Home from './pages/Home.jsx';

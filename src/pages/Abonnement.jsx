@@ -1,238 +1,219 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { DS, Ic, CPLogo, getTheme } from "./theme";
 import { base44 } from "@/api/base44Client";
-import { DS, Ic } from "./theme";
 
-const PLANS = [
+const PLANS_USER = [
   {
-    id: "premium_user",
-    label: "Premium",
-    price: "9,99",
-    period: "mois",
-    emoji: "⭐",
-    color: DS.brand,
-    features: [
-      "Offres exclusives Premium",
-      "Alertes avant tout le monde",
-      "Filtres avancés",
-      "Sans publicité",
-      "Support prioritaire",
+    id: "gratuit",
+    nom: "Gratuit",
+    prix: 0,
+    tag: null,
+    col: "#888",
+    avantages: [
+      "✅ Accès aux offres",
+      "✅ Favoris illimités",
+      "✅ Carte interactive",
+      "❌ Flash deals exclusifs",
+      "❌ Alertes personnalisées",
+      "❌ Gains de points x2",
     ],
-    popular: true,
   },
   {
-    id: "starter",
-    label: "Commerçant Starter",
-    price: "29",
-    period: "mois",
-    emoji: "🏪",
-    color: "#10B981",
-    features: [
-      "5 offres simultanées",
-      "Dashboard basique",
-      "Stats en temps réel",
-      "Badge vérifié",
+    id: "premium_user",
+    nom: "Premium",
+    prix: 9.99,
+    tag: "⭐ POPULAIRE",
+    col: DS.brand,
+    avantages: [
+      "✅ Accès à toutes les offres",
+      "✅ Flash deals exclusifs",
+      "✅ Alertes de proximité",
+      "✅ Points x2",
+      "✅ Badge Premium",
+      "✅ Sans publicité",
     ],
+  },
+];
+
+const PLANS_MARCHANDS = [
+  {
+    id: "starter",
+    nom: "Starter",
+    prix: 29,
+    tag: null,
+    col: "#10B981",
+    avantages: ["1 offre active", "Stats de base", "Badge vérifié", "Support email"],
   },
   {
     id: "pro",
-    label: "Commerçant Pro",
-    price: "79",
-    period: "mois",
-    emoji: "🚀",
-    color: "#F59E0B",
-    features: [
-      "Offres illimitées",
-      "Analyses avancées",
-      "Offres sponsorisées",
-      "Export CSV",
-      "Support dédié",
-    ],
+    nom: "Pro",
+    prix: 59,
+    tag: "⭐ RECOMMANDÉ",
+    col: DS.brand,
+    avantages: ["5 offres actives", "Flash deals", "Stats avancées", "Push notifications", "Support prioritaire"],
+  },
+  {
+    id: "business",
+    nom: "Business",
+    prix: 99,
+    tag: "💎 PREMIUM",
+    col: "#F59E0B",
+    avantages: ["Offres illimitées", "QR codes dynamiques", "Export CSV", "API access", "Account manager dédié"],
   },
 ];
 
 export default function Abonnement() {
   const navigate = useNavigate();
-  const [selected, setSelected] = useState("premium_user");
+  const [mode, setMode] = useState("user");
+  const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(false);
+  const t = getTheme();
 
-  const handleSubscribe = async () => {
+  const subscribe = async (plan) => {
+    if (plan.prix === 0) { navigate("/Feed"); return; }
     setLoading(true);
     try {
       const user = await base44.auth.me();
-      const plan = PLANS.find(p => p.id === selected);
-      const res = await fetch("/functions/createCheckout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          plan: selected,
-          email: user.email,
-          successUrl: window.location.origin + "/Profil",
-          cancelUrl: window.location.origin + "/Abonnement",
-        }),
+      const res = await base44.integrations.Core.InvokeLLM({
+        prompt: `Generate a Stripe checkout URL for plan ${plan.nom} at ${plan.prix}€/month for user ${user.email}`,
       });
-      const data = await res.json();
-      if (data.url) window.location.href = data.url;
-    } catch (e) {
-      console.error(e);
+      alert("Redirection vers le paiement Stripe…\n(Configurez votre clé Stripe dans les fonctions backend)");
+    } catch {
+      alert("Connexion requise pour souscrire à un plan.");
+      navigate("/Login");
     } finally { setLoading(false); }
   };
 
-  return (
-    <div style={{ minHeight: "100vh", background: DS.bg, fontFamily: DS.fontBase }}>
+  const plans = mode === "user" ? PLANS_USER : PLANS_MARCHANDS;
 
-      {/* Header gradient */}
+  return (
+    <div style={{ background: t.bg, minHeight: "100vh", fontFamily: DS.fontBase }}>
+
+      {/* Header */}
       <div style={{
-        background: `linear-gradient(160deg, ${DS.brand} 0%, ${DS.brand2} 60%, #A855F7 100%)`,
-        padding: "52px 20px 36px",
+        background: `linear-gradient(160deg, ${DS.brandDark} 0%, ${DS.brand} 60%, ${DS.brand2} 100%)`,
+        padding: `calc(${DS.safeTop} + 8px) 16px 28px`,
         textAlign: "center",
       }}>
-        <button onClick={() => navigate(-1)} style={{
-          position: "absolute", top: 52, left: 16,
-          background: "rgba(255,255,255,.2)", border: "none",
-          borderRadius: DS.pill, width: 38, height: 38,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          cursor: "pointer",
-        }}>
-          {Ic.back(DS.white, 20)}
-        </button>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <button onClick={() => navigate(-1)} style={{ background: "rgba(255,255,255,.2)", border: "none", borderRadius: "50%", width: 36, height: 36, cursor: "pointer", color: "#fff", fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center" }}>‹</button>
+          <CPLogo size={32} />
+          <div style={{ width: 36 }} />
+        </div>
+        <div style={{ fontSize: 28, fontWeight: 900, color: "#fff", letterSpacing: -0.5, marginBottom: 8 }}>
+          Choisissez votre plan
+        </div>
+        <div style={{ fontSize: 14, color: "rgba(255,255,255,.7)", marginBottom: 20 }}>
+          Débloquez toutes les fonctionnalités
+        </div>
 
-        <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,.7)", textTransform: "uppercase", letterSpacing: 2, marginBottom: 10 }}>
-          Click & Promo
-        </div>
-        <div style={{ fontSize: 30, fontWeight: 900, color: DS.white, lineHeight: 1.1, marginBottom: 10, letterSpacing: -0.8 }}>
-          Passez au niveau<br />supérieur ✨
-        </div>
-        <div style={{ fontSize: 15, color: "rgba(255,255,255,.75)" }}>
-          Économisez plus, profitez plus
+        {/* Toggle user / marchand */}
+        <div style={{ display: "inline-flex", background: "rgba(255,255,255,.15)", borderRadius: 100, padding: 3 }}>
+          {[{id:"user",label:"👤 Utilisateur"},{id:"marchand",label:"🏪 Commerçant"}].map(m => (
+            <button key={m.id} onClick={() => { setMode(m.id); setSelected(null); }} style={{
+              padding: "9px 18px", borderRadius: 100, border: "none", cursor: "pointer",
+              background: mode === m.id ? "#fff" : "transparent",
+              color: mode === m.id ? DS.brand : "rgba(255,255,255,.8)",
+              fontWeight: 700, fontSize: 13, fontFamily: DS.fontBase, transition: "all .2s",
+            }}>{m.label}</button>
+          ))}
         </div>
       </div>
 
       {/* Plans */}
-      <div style={{ padding: "20px 16px 120px" }}>
+      <div style={{ padding: "20px 16px 100px" }}>
 
-        {PLANS.map(plan => {
+        {/* Garantie */}
+        <div style={{ background: t.isDark ? DS.darkCard : "#fff", borderRadius: 14, padding: "12px 16px", marginBottom: 18, display: "flex", alignItems: "center", gap: 10, boxShadow: DS.e1, border: `1px solid ${t.border}` }}>
+          <span style={{ fontSize: 24 }}>🛡️</span>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: t.text }}>Garantie 30 jours</div>
+            <div style={{ fontSize: 12, color: t.text2 }}>Remboursement intégral si vous n'êtes pas satisfait</div>
+          </div>
+        </div>
+
+        {plans.map(plan => {
           const isSelected = selected === plan.id;
+          const isFree = plan.prix === 0;
           return (
             <div
               key={plan.id}
               onClick={() => setSelected(plan.id)}
               style={{
-                background: DS.white,
-                borderRadius: DS.xl,
-                padding: "20px",
-                marginBottom: 14,
-                border: `2px solid ${isSelected ? plan.color : DS.ink10}`,
-                boxShadow: isSelected ? `0 4px 20px ${plan.color}30` : DS.e1,
-                cursor: "pointer",
-                position: "relative",
-                transition: "all .2s",
+                background: t.isDark ? DS.darkCard : "#fff",
+                borderRadius: 20, padding: 20, marginBottom: 14,
+                border: `2px solid ${isSelected ? plan.col : t.border}`,
+                cursor: "pointer", position: "relative", overflow: "hidden",
+                boxShadow: isSelected ? `0 4px 20px ${plan.col}30` : DS.e1,
+                transition: "border-color .2s, box-shadow .2s",
               }}
             >
-              {/* Badge "Populaire" */}
-              {plan.popular && (
+              {plan.tag && (
                 <div style={{
-                  position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)",
-                  background: DS.brand, color: DS.white,
-                  borderRadius: DS.pill, padding: "4px 16px",
-                  fontSize: 11, fontWeight: 800, letterSpacing: 0.5, whiteSpace: "nowrap",
-                }}>
-                  ⭐ Le plus populaire
-                </div>
+                  position: "absolute", top: 14, right: 14,
+                  background: plan.col, color: "#fff", borderRadius: 20,
+                  padding: "4px 12px", fontSize: 11, fontWeight: 800,
+                }}>{plan.tag}</div>
               )}
 
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  {/* Sélecteur radio */}
-                  <div style={{
-                    width: 22, height: 22, borderRadius: DS.pill,
-                    border: `2px solid ${isSelected ? plan.color : DS.ink20}`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    background: isSelected ? plan.color : DS.white,
-                    flexShrink: 0, transition: "all .2s",
-                  }}>
-                    {isSelected && <div style={{ width: 8, height: 8, borderRadius: DS.pill, background: DS.white }} />}
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 13, color: DS.ink40, marginBottom: 2 }}>{plan.emoji}</div>
-                    <div style={{ fontSize: 17, fontWeight: 800, color: DS.ink }}>{plan.label}</div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+                <div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: t.text, marginBottom: 2 }}>{plan.nom}</div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+                    {plan.prix === 0 ? (
+                      <span style={{ fontSize: 28, fontWeight: 900, color: t.text }}>Gratuit</span>
+                    ) : (
+                      <>
+                        <span style={{ fontSize: 32, fontWeight: 900, color: plan.col, letterSpacing: -1 }}>{plan.prix}€</span>
+                        <span style={{ fontSize: 13, color: t.text2 }}>/mois</span>
+                      </>
+                    )}
                   </div>
                 </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 28, fontWeight: 900, color: plan.color, letterSpacing: -1, lineHeight: 1 }}>
-                    {plan.price}€
-                  </div>
-                  <div style={{ fontSize: 12, color: DS.ink40 }}>/{plan.period}</div>
+                <div style={{
+                  width: 28, height: 28, borderRadius: "50%",
+                  border: `2.5px solid ${isSelected ? plan.col : t.border}`,
+                  background: isSelected ? plan.col : "transparent",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  transition: "all .2s", flexShrink: 0,
+                }}>
+                  {isSelected && Ic.check("#fff", 14)}
                 </div>
               </div>
 
-              {/* Features */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {plan.features.map((f, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{
-                      width: 20, height: 20, borderRadius: DS.pill,
-                      background: `${plan.color}15`,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      flexShrink: 0,
-                    }}>
-                      {Ic.check(plan.color, 12)}
-                    </div>
-                    <span style={{ fontSize: 14, color: DS.ink80, fontWeight: 500 }}>{f}</span>
-                  </div>
+              {/* Avantages */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {plan.avantages.map((a, i) => (
+                  <div key={i} style={{ fontSize: 13, color: a.startsWith("❌") ? t.text2 : t.text, fontWeight: a.startsWith("✅") ? 600 : 400 }}>{a}</div>
                 ))}
               </div>
             </div>
           );
         })}
 
-        {/* Garantie */}
-        <div style={{
-          background: DS.white, borderRadius: DS.xl, padding: "16px 20px",
-          marginBottom: 16, border: `1px solid ${DS.ink10}`,
-          display: "flex", alignItems: "center", gap: 14,
-        }}>
-          <span style={{ fontSize: 28, flexShrink: 0 }}>🛡️</span>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: DS.ink, marginBottom: 2 }}>Satisfait ou remboursé</div>
-            <div style={{ fontSize: 12, color: DS.ink40 }}>14 jours d'essai gratuit · Sans engagement · Résiliable à tout moment</div>
-          </div>
-        </div>
-
-        {/* Logos paiement */}
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 12, marginBottom: 20 }}>
-          <div style={{ fontSize: 12, color: DS.ink40 }}>🔒 Paiement sécurisé</div>
-          <div style={{ fontSize: 12, color: DS.ink40, fontWeight: 700 }}>STRIPE</div>
-          <div style={{ fontSize: 12, color: DS.ink40 }}>VISA · MASTERCARD</div>
-        </div>
-      </div>
-
-      {/* CTA fixe en bas */}
-      <div style={{
-        position: "fixed", bottom: 0, left: 0, right: 0,
-        background: DS.white, borderTop: `1px solid ${DS.ink10}`,
-        padding: "16px 20px calc(env(safe-area-inset-bottom, 12px) + 16px)",
-        boxShadow: "0 -4px 20px rgba(0,0,0,.06)",
-      }}>
+        {/* CTA */}
         <button
-          onClick={handleSubscribe}
-          disabled={loading}
+          onClick={() => {
+            const plan = plans.find(p => p.id === selected);
+            if (plan) subscribe(plan);
+          }}
+          disabled={!selected || loading}
           style={{
-            width: "100%",
-            background: loading ? DS.ink10 : DS.brand,
-            color: loading ? DS.ink40 : DS.white,
-            border: "none", borderRadius: DS.pill,
-            padding: "18px", fontSize: 17, fontWeight: 900,
-            cursor: loading ? "not-allowed" : "pointer",
-            boxShadow: loading ? "none" : DS.eBrand,
-            letterSpacing: -0.3,
+            width: "100%", background: selected ? DS.brand : "#ccc",
+            color: "#fff", border: "none", borderRadius: DS.pill,
+            padding: "18px", fontSize: 16, fontWeight: 800,
+            cursor: selected ? "pointer" : "not-allowed",
+            boxShadow: selected ? DS.eBrand : "none",
+            transition: "all .2s",
           }}
         >
-          {loading ? "Redirection…" : `S'abonner — ${PLANS.find(p=>p.id===selected)?.price}€/mois`}
+          {loading ? "Redirection…" : selected ? `Choisir ${plans.find(p=>p.id===selected)?.nom} ${plans.find(p=>p.id===selected)?.prix === 0 ? "— Gratuit" : `— ${plans.find(p=>p.id===selected)?.prix}€/mois`}` : "Sélectionnez un plan"}
         </button>
-        <div style={{ textAlign: "center", marginTop: 8, fontSize: 11, color: DS.ink40 }}>
-          Sans engagement · Annulable à tout moment
-        </div>
+
+        <p style={{ textAlign: "center", fontSize: 12, color: t.text2, marginTop: 14 }}>
+          Paiement sécurisé par Stripe · Annulation à tout moment
+        </p>
       </div>
     </div>
   );
