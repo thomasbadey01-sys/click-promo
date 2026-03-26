@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { FavoriUtilisateur, Offre } from "@/api/entities";
 import { useNavigate } from "react-router-dom";
-import { UserAuth } from "@/api/auth";
+import { base44 } from "@/api/base44Client";
 import { DS, Ic, CPLogo, NavBar, BadgeReduction } from "./theme";
 
 const CATS = ["Tout","Restaurant","Boutique","Beauté & Coiffure","Fitness & Sport","Épicerie","Services"];
@@ -17,7 +17,7 @@ export default function Favoris() {
   useEffect(() => {
     (async () => {
       try {
-        const user = await UserAuth.me();
+        const user = await base44.auth.me();
         const favs = await FavoriUtilisateur.filter({ user_id: user.id });
         const offres = await Promise.all(favs.map(f => Offre.get(f.offre_id).catch(() => null)));
         setItems(offres.filter(Boolean).map((o, i) => ({ ...o, fav_id: favs[i].id })));
