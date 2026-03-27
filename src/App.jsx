@@ -7,16 +7,16 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
 import Abonnement from './pages/Abonnement.jsx';
-import Admin from './pages/Admin';
+import Admin from './pages/Admin.jsx';
 import Carte from './pages/Carte.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Favoris from './pages/Favoris.jsx';
 import Feed from './pages/Feed.jsx';
 import Home from './pages/Home.jsx';
-import InscriptionCommercant from './pages/InscriptionCommercant';
-import Login from './pages/Login';
+import InscriptionCommercant from './pages/InscriptionCommercant.jsx';
+import Login from './pages/Login.jsx';
 import OffreDetail from './pages/OffreDetail.jsx';
-import PrivacyPolicy from './pages/PrivacyPolicy';
+import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
 import Profil from './pages/Profil.jsx';
 
 const AuthenticatedApp = () => {
