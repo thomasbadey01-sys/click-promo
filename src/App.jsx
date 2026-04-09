@@ -18,6 +18,7 @@ import InscriptionCommercant from './pages/InscriptionCommercant.jsx';
 import Login from './pages/Login.jsx';
 import OffreDetail from './pages/OffreDetail.jsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
+import CommercantProfil from './pages/CommercantProfil.jsx';
 import Profil from './pages/Profil.jsx';
 
 const AuthenticatedApp = () => {
@@ -52,6 +53,7 @@ const AuthenticatedApp = () => {
       <Route path="/Login" element={<Login />} />
       <Route path="/OffreDetail" element={<OffreDetail />} />
       <Route path="/PrivacyPolicy" element={<PrivacyPolicy />} />
+      <Route path="/CommercantProfil" element={<CommercantProfil />} />
       <Route path="/Profil" element={<Profil />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>

@@ -201,7 +201,11 @@ export default function OffreDetail() {
           <div style={{ fontSize: 12, fontWeight: 700, color: DS.brand, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>{offre.categorie}</div>
           <div style={{ fontSize: 22, fontWeight: 900, color: t.text, lineHeight: 1.2, letterSpacing: -0.5, marginBottom: 6 }}>{offre.titre}</div>
           <div style={{ display: "flex", alignItems: "center", gap: 6, color: t.text2, fontSize: 14, marginBottom: 16 }}>
-            <span style={{ fontSize: 16 }}>🏪</span> {offre.commercant_nom}
+            <span style={{ fontSize: 16 }}>🏪</span>
+            {offre.commercant_id
+              ? <button onClick={() => navigate(`/CommercantProfil?id=${offre.commercant_id}`)} style={{ background: "none", border: "none", cursor: "pointer", color: DS.brand, fontSize: 14, fontWeight: 700, padding: 0, fontFamily: DS.fontBase }}>{offre.commercant_nom}</button>
+              : <span>{offre.commercant_nom}</span>
+            }
           </div>
 
           {/* Prix */}
