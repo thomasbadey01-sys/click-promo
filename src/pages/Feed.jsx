@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Offre } from "@/api/entities";
+import { Offre, ProfilUtilisateur } from "@/api/entities";
 import { useNavigate } from "react-router-dom";
+import { base44 } from "@/api/base44Client";
 import { DS, Ic, CPLogo, NavBar, SkeletonCard, NotificationBadge, getTheme } from "./theme";
 
 export function haversine(lat1, lon1, lat2, lon2) {
@@ -171,6 +172,7 @@ export default function Feed() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
+  const [rayonKm, setRayonKm] = useState(5);
   const t = getTheme();
 
   const [favs, setFavs] = useState(() => {
@@ -184,6 +186,15 @@ export default function Feed() {
       return next;
     });
   };
+
+  useEffect(() => {
+    base44.auth.me().then(async u => {
+      const profils = await ProfilUtilisateur.filter({ user_id: u.id });
+      if (profils.length > 0 && profils[0].rayon_recherche_km) {
+        setRayonKm(profils[0].rayon_recherche_km);
+      }
+    }).catch(() => {});
+  }, []);
 
   const load = useCallback(async () => {
     const data = await Offre.filter({ est_active: true });
@@ -224,7 +235,7 @@ export default function Feed() {
   })).sort((a, b) => (a._dist ?? 999) - (b._dist ?? 999));
 
   const flashDeals = filtered.filter(o => o.est_urgente);
-  const nearby = userPos ? filtered.filter(o => o._dist !== null && o._dist < 2) : [];
+  const nearby = userPos ? filtered.filter(o => o._dist !== null && o._dist < rayonKm) : [];
 
   // Notifications intelligentes
   const notifs = [

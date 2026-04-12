@@ -38,6 +38,7 @@ export default function Profil() {
   const [loading, setLoading] = useState(true);
   const [darkMode] = useState(getDarkMode());
   const [codeCopied, setCodeCopied] = useState(false);
+  const [notifActive, setNotifActive] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -47,6 +48,7 @@ export default function Profil() {
         const profils = await ProfilUtilisateur.filter({ user_id: u.id });
         if (profils.length > 0) {
           setProfil(profils[0]);
+          setNotifActive(profils[0].notifications_actives !== false);
         } else {
           const code = genCode(u.email);
           const p = await ProfilUtilisateur.create({
@@ -111,6 +113,23 @@ export default function Profil() {
     setTimeout(() => setCodeCopied(false), 2000);
   };
 
+  const shareParrainage = () => {
+    const msg = `🎁 Rejoins Click & Promo avec mon code *${codeParrainage}* et profite d'offres exclusives près de chez toi ! 🛍️`;
+    if (navigator.share) {
+      navigator.share({ title: "Click & Promo", text: msg });
+    } else {
+      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+    }
+  };
+
+  const toggleNotif = async () => {
+    const newVal = !notifActive;
+    setNotifActive(newVal);
+    if (profil?.id) {
+      await ProfilUtilisateur.update(profil.id, { notifications_actives: newVal });
+    }
+  };
+
   return (
     <div style={{ background: "#F5F5F7", minHeight: "100vh", fontFamily: DS.fontBase }}>
 
@@ -173,10 +192,10 @@ export default function Profil() {
         {/* Tabs */}
         <div style={{ display: "flex" }}>
           {[
-            { id: "profil",    label: "Profil" },
-            { id: "historique",label: "Historique" },
-            { id: "parrainage",label: "Parrainage" },
-            { id: "compte",    label: "Compte" },
+            { id: "profil",     label: "Profil" },
+            { id: "historique", label: "Historique" },
+            { id: "parrainage", label: "Parrainage" },
+            { id: "compte",     label: "Compte" },
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)} style={{
               flex: 1, padding: "12px 0", background: "none", border: "none", cursor: "pointer",
@@ -265,7 +284,10 @@ export default function Profil() {
                 boxShadow: "0 2px 8px rgba(0,0,0,.05)", cursor: "pointer",
               }}>
                 <div style={{ width: 46, height: 46, borderRadius: 12, flexShrink: 0, overflow: "hidden", background: DS.brandLight }}>
-                  {h.image_url ? <img src={h.image_url} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>🏷️</span>}
+                  {h.image_url
+                    ? <img src={h.image_url} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    : <span style={{ fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>🏷️</span>
+                  }
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 14, color: DS.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{h.offre_titre}</div>
@@ -314,15 +336,13 @@ export default function Profil() {
                   {codeCopied ? "Copié !" : "Copier"}
                 </button>
               </div>
-              <button onClick={() => {
-                if (navigator.share) navigator.share({ title: "Click & Promo", text: `Utilise mon code ${codeParrainage} sur Click & Promo !` });
-              }} style={{
+              <button onClick={shareParrainage} style={{
                 width: "100%", background: DS.ink, color: "#fff",
                 border: "none", borderRadius: 14, padding: "14px",
                 fontSize: 14, fontWeight: 700, cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
               }}>
-                {Ic.share("#fff", 16)} Partager le code
+                {Ic.share("#fff", 16)} Partager sur WhatsApp
               </button>
             </div>
 
@@ -347,16 +367,12 @@ export default function Profil() {
           <>
             <div style={{ background: "#fff", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,.06)", marginBottom: 14 }}>
               {[
-                { icon: "🔔", label: "Notifications", action: () => {} },
+                { icon: notifActive ? "🔔" : "🔕", label: notifActive ? "Notifications activées" : "Notifications désactivées", action: toggleNotif, toggle: notifActive },
                 { icon: "📍", label: "Ma localisation", action: () => {} },
                 { icon: "⭐", label: "Passer Premium", action: () => navigate("/Abonnement"), highlight: true },
                 { icon: "🏪", label: "Espace commerçant", action: () => navigate("/Dashboard") },
                 { icon: "🔒", label: "Confidentialité", action: () => navigate("/PrivacyPolicy") },
-                {
-                  icon: darkMode ? "☀️" : "🌙",
-                  label: darkMode ? "Mode clair" : "Mode sombre",
-                  action: toggleDarkMode
-                },
+                { icon: darkMode ? "☀️" : "🌙", label: darkMode ? "Mode clair" : "Mode sombre", action: toggleDarkMode },
               ].map((item, i, arr) => (
                 <div key={i} onClick={item.action} style={{
                   display: "flex", alignItems: "center", gap: 14, padding: "16px",
@@ -366,7 +382,12 @@ export default function Profil() {
                 }}>
                   <span style={{ fontSize: 20 }}>{item.icon}</span>
                   <span style={{ flex: 1, fontSize: 15, fontWeight: 600, color: item.highlight ? DS.brand : DS.ink }}>{item.label}</span>
-                  {Ic.arrow(item.highlight ? DS.brand : "#ccc", 16)}
+                  {item.toggle !== undefined
+                    ? <div style={{ width: 40, height: 22, borderRadius: 100, background: item.toggle ? DS.brand : "#ddd", position: "relative", transition: "background .2s" }}>
+                        <div style={{ position: "absolute", top: 3, left: item.toggle ? 21 : 3, width: 16, height: 16, borderRadius: "50%", background: "#fff", transition: "left .2s" }} />
+                      </div>
+                    : Ic.arrow(item.highlight ? DS.brand : "#ccc", 16)
+                  }
                 </div>
               ))}
             </div>
