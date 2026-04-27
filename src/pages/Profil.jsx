@@ -370,6 +370,7 @@ export default function Profil() {
                 { icon: notifActive ? "🔔" : "🔕", label: notifActive ? "Notifications activées" : "Notifications désactivées", action: toggleNotif, toggle: notifActive },
                 { icon: "📍", label: "Ma localisation", action: () => {} },
                 { icon: "⭐", label: "Passer Premium", action: () => navigate("/Abonnement"), highlight: true },
+                { icon: "🎨", label: "Générateur de diapo IA", action: () => navigate("/GenerateurDiapo"), highlight: true },
                 { icon: "🏪", label: "Espace commerçant", action: () => navigate("/Dashboard") },
                 { icon: "🔒", label: "Confidentialité", action: () => navigate("/PrivacyPolicy") },
                 { icon: darkMode ? "☀️" : "🌙", label: darkMode ? "Mode clair" : "Mode sombre", action: toggleDarkMode },

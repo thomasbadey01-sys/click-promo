@@ -20,6 +20,7 @@ import OffreDetail from './pages/OffreDetail.jsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
 import CommercantProfil from './pages/CommercantProfil.jsx';
 import Profil from './pages/Profil.jsx';
+import GenerateurDiapo from './pages/GenerateurDiapo.jsx';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -55,6 +56,7 @@ const AuthenticatedApp = () => {
       <Route path="/PrivacyPolicy" element={<PrivacyPolicy />} />
       <Route path="/CommercantProfil" element={<CommercantProfil />} />
       <Route path="/Profil" element={<Profil />} />
+      <Route path="/GenerateurDiapo" element={<GenerateurDiapo />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
