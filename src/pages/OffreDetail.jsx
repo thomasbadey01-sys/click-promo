@@ -3,6 +3,7 @@ import { Offre, FavoriUtilisateur, HistoriqueOffresVues, UtilisationOffre } from
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { DS, Ic, BadgeReduction, getTheme } from "./theme";
 import { base44 } from "@/api/base44Client";
+import { gagnerPoints } from "@/functions/gagnerPoints";
 import { haversine, formatDist } from "./Feed";
 
 function Countdown({ dateFin }) {
@@ -65,6 +66,7 @@ export default function OffreDetail() {
   const [userPos, setUserPos] = useState(null);
   const [codeVis, setCodeVis] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [pointsGagnes, setPointsGagnes] = useState(null);
   const t = getTheme();
 
   useEffect(() => {
@@ -144,6 +146,16 @@ export default function OffreDetail() {
         nb_conversions: (offre.nb_conversions || 0) + 1,
         stock_restant: Math.max(0, (offre.stock_restant || 1) - 1),
       });
+      // Gamification : gagner des points
+      const economie = (offre.prix_original || 0) - (offre.prix_promo || 0);
+      const res = await gagnerPoints({
+        action: "utilisation_offre",
+        data: { est_urgente: offre.est_urgente, economie: Math.max(0, economie) }
+      });
+      if (res?.data?.points_gagnes > 0) {
+        setPointsGagnes(res.data.points_gagnes);
+        setTimeout(() => setPointsGagnes(null), 4000);
+      }
     } catch {}
   };
 
@@ -162,6 +174,19 @@ export default function OffreDetail() {
 
   return (
     <div style={{ background: t.bg, minHeight: "100vh", fontFamily: DS.fontBase }}>
+
+      {/* Toast points gagnés */}
+      {pointsGagnes && (
+        <div style={{
+          position: "fixed", top: 60, left: "50%", transform: "translateX(-50%)",
+          background: DS.brand, color: "#fff", borderRadius: 100,
+          padding: "10px 22px", fontSize: 14, fontWeight: 800, zIndex: 999,
+          boxShadow: DS.eBrand, animation: "popIn .3s ease",
+          display: "flex", alignItems: "center", gap: 8,
+        }}>
+          ⭐ +{pointsGagnes} points gagnés !
+        </div>
+      )}
 
       {/* Image hero */}
       <div style={{ position: "relative", height: 300 }}>

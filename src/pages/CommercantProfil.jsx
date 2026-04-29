@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Commercant, Offre, AvisCommercant } from "@/api/entities";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { gagnerPoints } from "@/functions/gagnerPoints";
 import { DS, Ic, BadgeReduction, getTheme, CPLogo } from "./theme";
 
 const JOURS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
@@ -71,6 +72,8 @@ export default function CommercantProfil() {
       setCommercant(p => ({ ...p, note_moyenne: Math.round(moyenne * 10) / 10, nb_avis: allAvis.length }));
       setMyNote(0); setMyComment(""); setAvisEnvoye(true);
       setTimeout(() => setAvisEnvoye(false), 3000);
+      // Gamification : points pour l'avis
+      gagnerPoints({ action: "avis_laisse", data: {} }).catch(() => {});
     } finally { setSubmittingAvis(false); }
   };
 
