@@ -362,7 +362,7 @@ export default function Feed() {
             <div style={{ fontSize: 16, fontWeight: 800, color: t.text, marginBottom: 8 }}>Aucune offre trouvée</div>
             <div style={{ fontSize: 13, color: t.text2 }}>Essayez d'ajuster vos filtres</div>
           </div>
-        ) : cat === "tout" && !search.trim() ? (
+        ) : cat === "tout" && !search.trim() && !refreshing ? (
           <>
             {/* ⚡ Flash Deals */}
             {flashDeals.length > 0 && (
@@ -426,11 +426,20 @@ export default function Feed() {
           // Vue filtrée
           <div style={{ padding: "0 16px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-              <div style={{ fontSize: 14, color: t.text2, fontWeight: 600 }}>
-                {filtered.length} offre{filtered.length > 1 ? "s" : ""} trouvée{filtered.length > 1 ? "s" : ""}
-                {userPos && cat !== "tout_flash" ? " · triées par distance" : ""}
+              <div>
+                {(cat !== "tout_flash" && cat !== "tout_nearby" && cat !== "tout") && (
+                  <div style={{ fontSize: 17, fontWeight: 800, color: t.text, marginBottom: 2 }}>
+                    {CATS.find(c => c.id === cat)?.emoji} {CATS.find(c => c.id === cat)?.label}
+                  </div>
+                )}
+                {cat === "tout_flash" && <div style={{ fontSize: 17, fontWeight: 800, color: t.text, marginBottom: 2 }}>⚡ Flash Deals</div>}
+                {cat === "tout_nearby" && <div style={{ fontSize: 17, fontWeight: 800, color: t.text, marginBottom: 2 }}>📍 Près de vous</div>}
+                <div style={{ fontSize: 13, color: t.text2, fontWeight: 600 }}>
+                  {filtered.length} offre{filtered.length > 1 ? "s" : ""}
+                  {userPos && cat !== "tout_flash" ? " · triées par distance" : ""}
+                </div>
               </div>
-              <button onClick={() => setCat("tout")} style={{ background: "none", border: "none", color: DS.brand, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+              <button onClick={() => { setCat("tout"); setSearch(""); }} style={{ background: "none", border: "none", color: DS.brand, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
                 ← Retour
               </button>
             </div>

@@ -187,6 +187,7 @@ export default function Dashboard() {
         </div>
       </div>
 
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       {/* Toast */}
       {saved && (
         <div style={{ position:"fixed", top:70, left:"50%", transform:"translateX(-50%)", background:DS.success, color:"#fff", borderRadius:100, padding:"10px 20px", fontSize:13, fontWeight:700, zIndex:999, boxShadow:DS.e3, animation:"popIn .25s ease" }}>
