@@ -598,12 +598,15 @@ export default function Carte() {
 
       {/* ── LISTE DES OFFRES ── */}
       {showList && !selected && (
-        <OffreListPanel
-          offres={filtered}
-          userPos={userPos}
-          navigate={navigate}
-          onSelect={o => { setSelected(o); setShowList(false); }}
-        />
+        <>
+          <div onClick={() => setShowList(false)} style={{ position: "fixed", inset: 0, zIndex: 480 }} />
+          <OffreListPanel
+            offres={filtered}
+            userPos={userPos}
+            navigate={navigate}
+            onSelect={o => { setSelected(o); setShowList(false); }}
+          />
+        </>
       )}
 
       {/* NavBar */}
