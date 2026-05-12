@@ -159,9 +159,12 @@ export default function Carte() {
     markersRef.current.forEach(m => m.remove());
     markersRef.current = [];
 
+    const center = userPos || { lat: 45.764, lon: 4.8357 };
     const filtered = offres.filter(o => {
       if (!o.latitude || !o.longitude) return false;
       if (cat !== "Tout" && o.categorie !== cat) return false;
+      const dist = haversine(center.lat, center.lon, o.latitude, o.longitude);
+      if (dist > rayon) return false;
       return true;
     });
 
@@ -210,9 +213,12 @@ export default function Carte() {
     }
   };
 
+  const center = userPos || { lat: 45.764, lon: 4.8357 };
   const filteredCount = offres.filter(o => {
     if (!o.latitude || !o.longitude) return false;
     if (cat !== "Tout" && o.categorie !== cat) return false;
+    const dist = haversine(center.lat, center.lon, o.latitude, o.longitude);
+    if (dist > rayon) return false;
     return true;
   }).length;
 
