@@ -134,7 +134,17 @@ export default function CommercantProfil() {
 
         {/* Infos de contact */}
         <div style={{ background: t.card, borderRadius: DS.xl, padding: 18, boxShadow: DS.e1, border: `1px solid ${t.border}` }}>
-          <div style={{ fontSize: 13, fontWeight: 800, color: t.text, marginBottom: 12 }}>Informations</div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: t.text }}>Informations</div>
+            {(commercant.latitude || commercant.adresse) && (
+              <button onClick={() => {
+                const q = commercant.latitude ? `${commercant.latitude},${commercant.longitude}` : encodeURIComponent(`${commercant.adresse}, ${commercant.ville}`);
+                window.open(`https://maps.google.com/?q=${q}`, "_blank");
+              }} style={{ background: DS.ink, color: "#fff", border: "none", borderRadius: DS.md, padding: "8px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                {Ic.nav("#fff", 13)} Y aller
+              </button>
+            )}
+          </div>
           {[
             commercant.adresse && { icon: "📍", text: `${commercant.adresse}, ${commercant.ville}` },
             commercant.telephone && { icon: "📞", text: commercant.telephone, href: `tel:${commercant.telephone}` },

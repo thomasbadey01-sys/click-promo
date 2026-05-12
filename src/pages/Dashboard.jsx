@@ -81,8 +81,12 @@ export default function Dashboard() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    Offre.list().then(d => { setOffres(d); setLoading(false); });
-    base44.auth.me().then(setUser).catch(() => {});
+    base44.auth.me().then(async u => {
+      setUser(u);
+      const all = await Offre.filter({ created_by: u.email });
+      setOffres(all);
+      setLoading(false);
+    }).catch(() => setLoading(false));
   }, []);
 
   const totalV  = offres.reduce((s,o) => s+(o.nb_vues||0), 0);
@@ -328,7 +332,9 @@ export default function Dashboard() {
               <div><DLabel>Stock</DLabel><DInput type="number" value={form.stock_initial} onChange={v=>setForm({...form,stock_initial:v})} placeholder="100" /></div>
             </div>
 
-            <DLabel>Adresse</DLabel><DInput value={form.adresse} onChange={v=>setForm({...form,adresse:v})} placeholder="12 rue de la Paix" />
+            <DLabel>Adresse</DLabel>
+            <DInputGeo value={form.adresse} onChange={v=>setForm({...form,adresse:v})} placeholder="12 rue de la Paix"
+              onGeocode={(lat,lon,ville) => setForm(f => ({...f, latitude:lat, longitude:lon, ville: ville||f.ville}))} />
             <DLabel>Ville</DLabel><DInput value={form.ville} onChange={v=>setForm({...form,ville:v})} placeholder="Paris" />
             <DLabel>Code promo</DLabel><DInput value={form.code_promo||""} onChange={v=>setForm({...form,code_promo:v})} placeholder="PROMO2024" />
             <DLabel>Conditions</DLabel><DTextarea value={form.conditions} onChange={v=>setForm({...form,conditions:v})} placeholder="Non cumulable, valable sur place..." />
@@ -458,6 +464,35 @@ function EmptyState({ emoji, text, sub }) {
       <div style={{ fontSize:40, marginBottom:12 }}>{emoji}</div>
       <div style={{ color:"rgba(255,255,255,.5)", fontSize:15, fontWeight:700 }}>{text}</div>
       {sub && <div style={{ color:"rgba(255,255,255,.3)", fontSize:13, marginTop:6 }}>{sub}</div>}
+    </div>
+  );
+}
+
+function DInputGeo({ value, onChange, placeholder, onGeocode }) {
+  const [geocoding, setGeocoding] = useState(false);
+  const geocode = async (addr) => {
+    if (!addr || addr.length < 5) return;
+    setGeocoding(true);
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}&limit=1&countrycodes=fr`);
+      const data = await res.json();
+      if (data.length > 0) {
+        const { lat, lon, display_name } = data[0];
+        const ville = display_name.split(",").slice(-3, -2)[0]?.trim() || "";
+        onGeocode(parseFloat(lat), parseFloat(lon), ville);
+      }
+    } catch {}
+    setGeocoding(false);
+  };
+  return (
+    <div style={{ position: "relative", marginBottom: 14 }}>
+      <input value={value||""} onChange={e=>onChange(e.target.value)} placeholder={placeholder}
+        onBlur={e => geocode(e.target.value)}
+        style={{ width:"100%", boxSizing:"border-box", background:DS.dark3, border:`1px solid ${DS.darkBorder}`, borderRadius:DS.md, padding:"11px 40px 11px 14px", fontSize:14, color:DS.white, fontFamily:DS.fontBase, outline:"none" }} />
+      {geocoding
+        ? <div style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", width:14, height:14, border:`2px solid ${DS.brand}`, borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.7s linear infinite" }} />
+        : value?.length >= 5 && <span style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", fontSize:14, cursor:"pointer" }} onClick={() => geocode(value)}>📍</span>
+      }
     </div>
   );
 }

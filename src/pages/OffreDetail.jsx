@@ -319,7 +319,7 @@ export default function OffreDetail() {
         )}
 
         {/* Localisation */}
-        {offre.adresse && (
+        {(offre.adresse || offre.latitude) && (
           <div style={{ background: t.card, borderRadius: DS.lg, padding: 18, boxShadow: DS.e1, border: `1px solid ${t.border}` }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: t.text2, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>📍 Adresse</div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
