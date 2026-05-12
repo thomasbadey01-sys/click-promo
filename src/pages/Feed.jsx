@@ -3,6 +3,7 @@ import { Offre, ProfilUtilisateur, FavoriUtilisateur } from "@/api/entities";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { DS, Ic, CPLogo, NavBar, SkeletonCard, NotificationBadge, getTheme } from "./theme";
+import SmartSearch from "@/components/SmartSearch";
 
 export function haversine(lat1, lon1, lat2, lon2) {
   const R = 6371;
@@ -172,6 +173,7 @@ export default function Feed() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
+  const [showSmartSearch, setShowSmartSearch] = useState(false);
   const [rayonKm, setRayonKm] = useState(5);
   const [user, setUser] = useState(null);
   // favs: map offre_id -> fav_id (entité DB)
@@ -295,6 +297,7 @@ export default function Feed() {
       style={{ background: t.bg, minHeight: "100vh", fontFamily: DS.fontBase }}
       onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
     >
+      {showSmartSearch && <SmartSearch onClose={() => setShowSmartSearch(false)} />}
       {/* Header */}
       <div style={{
         background: t.card, padding: `calc(${DS.safeTop} + 8px) 16px 10px`,
@@ -318,6 +321,15 @@ export default function Feed() {
                 fontFamily: DS.fontBase, outline: "none",
               }} />
           </div>
+          {/* Bouton IA */}
+          <button onClick={() => setShowSmartSearch(true)} style={{
+            flexShrink: 0, width: 42, height: 42, borderRadius: "50%",
+            background: `linear-gradient(135deg, ${DS.brand}, ${DS.brand2})`,
+            border: "none", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: DS.eBrand,
+            fontSize: 18,
+          }} title="Recherche intelligente IA">✨</button>
           {/* Cloche */}
           <button onClick={() => setShowNotifs(v => !v)} style={{
             position: "relative", background: "none", border: "none", cursor: "pointer",
