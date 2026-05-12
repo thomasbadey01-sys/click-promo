@@ -305,11 +305,11 @@ export default function Carte() {
               {rayon} km
             </div>
           </div>
-          <input type="range" min={1} max={20} value={rayon} onChange={e => setRayon(Number(e.target.value))}
+          <input type="range" min={1} max={200} value={rayon} onChange={e => setRayon(Number(e.target.value))}
             style={{ width: "100%", accentColor: DS.brand, height: 4 }} />
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
             <span style={{ fontSize: 11, color: "rgba(255,255,255,.4)" }}>1 km</span>
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,.4)" }}>20 km</span>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,.4)" }}>200 km</span>
           </div>
         </div>
       )}
