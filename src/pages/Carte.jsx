@@ -111,7 +111,7 @@ export default function Carte() {
   const markersRef = useRef([]);
   const [offres, setOffres] = useState([]);
   const [cat, setCat] = useState("Tout");
-  const [rayon, setRayon] = useState(10);
+  const [rayon, setRayon] = useState(20);
   const [selected, setSelected] = useState(null);
   const [userPos, setUserPos] = useState(null);
   const [mapReady, setMapReady] = useState(false);
@@ -124,7 +124,7 @@ export default function Carte() {
     });
     navigator.geolocation?.getCurrentPosition(
       p => setUserPos({ lat: p.coords.latitude, lon: p.coords.longitude }),
-      () => setUserPos({ lat: 48.8566, lon: 2.3522 })
+      () => setUserPos({ lat: 45.764, lon: 4.8357 })
     );
   }, []);
 
@@ -140,7 +140,7 @@ export default function Carte() {
     script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
     script.onload = () => {
       const L = window.L;
-      const center = userPos ? [userPos.lat, userPos.lon] : [48.8566, 2.3522];
+      const center = userPos ? [userPos.lat, userPos.lon] : [45.764, 4.8357];
       const map = L.map(mapRef.current, { zoomControl: false }).setView(center, 13);
       L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
         attribution: "©CartoDB", maxZoom: 19,
