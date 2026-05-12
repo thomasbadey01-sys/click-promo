@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Offre, ProfilUtilisateur } from "@/api/entities";
+import { Offre, ProfilUtilisateur, FavoriUtilisateur } from "@/api/entities";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { DS, Ic, CPLogo, NavBar, SkeletonCard, NotificationBadge, getTheme } from "./theme";
@@ -37,34 +37,32 @@ const SECTIONS = [
   { id: "Autre",             label: "Autres bons plans", emoji: "🎁" },
 ];
 
-function HScrollCard({ o, onPress, userPos }) {
+function HScrollCard({ o, onPress, userPos, isFav, onFav }) {
   const dist = userPos && o.latitude && o.longitude
     ? haversine(userPos.lat, userPos.lon, o.latitude, o.longitude) : null;
   return (
-    <div onClick={onPress} style={{
-      width: 155, flexShrink: 0, background: "#fff", borderRadius: 16, overflow: "hidden",
-      cursor: "pointer", boxShadow: "0 2px 12px rgba(0,0,0,.08)",
-    }}>
-      <div style={{ position: "relative", height: 105 }}>
+    <div style={{ width: 155, flexShrink: 0, background: "#fff", borderRadius: 16, overflow: "hidden", cursor: "pointer", boxShadow: "0 2px 12px rgba(0,0,0,.08)", position: "relative" }}>
+      <div onClick={onPress} style={{ position: "relative", height: 105 }}>
         <img src={o.image_url} alt={o.titre}
           style={{ width: "100%", height: "100%", objectFit: "cover" }}
           onError={e => e.target.src = "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400"} />
         {o.valeur_reduction > 0 && (
-          <div style={{
-            position: "absolute", bottom: 7, right: 7,
-            background: DS.brand, color: "#fff", borderRadius: 20,
-            padding: "3px 8px", fontSize: 11, fontWeight: 800,
-          }}>-{o.valeur_reduction}{o.type_reduction === "pourcentage" ? "%" : "€"}</div>
+          <div style={{ position: "absolute", bottom: 7, right: 7, background: DS.brand, color: "#fff", borderRadius: 20, padding: "3px 8px", fontSize: 11, fontWeight: 800 }}>
+            -{o.valeur_reduction}{o.type_reduction === "pourcentage" ? "%" : "€"}
+          </div>
         )}
         {o.est_urgente && (
-          <div style={{
-            position: "absolute", top: 7, left: 7,
-            background: DS.danger, color: "#fff", borderRadius: 20,
-            padding: "2px 7px", fontSize: 10, fontWeight: 800,
-          }}>⚡ FLASH</div>
+          <div style={{ position: "absolute", top: 7, left: 7, background: DS.danger, color: "#fff", borderRadius: 20, padding: "2px 7px", fontSize: 10, fontWeight: 800 }}>⚡ FLASH</div>
         )}
       </div>
-      <div style={{ padding: "8px 10px 10px" }}>
+      <button onClick={e => { e.stopPropagation(); onFav && onFav(); }} style={{
+        position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: "50%",
+        background: "rgba(255,255,255,.9)", border: "none", cursor: "pointer",
+        display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2,
+      }}>
+        <span style={{ fontSize: 14 }}>{isFav ? "❤️" : "🤍"}</span>
+      </button>
+      <div onClick={onPress} style={{ padding: "8px 10px 10px" }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: DS.ink, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {o.commercant_nom || o.titre}
         </div>
@@ -86,27 +84,29 @@ function HScrollCard({ o, onPress, userPos }) {
   );
 }
 
-function GridCard({ o, onPress, userPos }) {
+function GridCard({ o, onPress, userPos, isFav, onFav }) {
   const dist = userPos && o.latitude && o.longitude
     ? haversine(userPos.lat, userPos.lon, o.latitude, o.longitude) : null;
   return (
-    <div onClick={onPress} style={{
-      background: "#fff", borderRadius: 16, overflow: "hidden",
-      cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,.07)",
-    }}>
-      <div style={{ position: "relative", height: 115 }}>
+    <div style={{ background: "#fff", borderRadius: 16, overflow: "hidden", cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,.07)", position: "relative" }}>
+      <div onClick={onPress} style={{ position: "relative", height: 115 }}>
         <img src={o.image_url} alt={o.titre}
           style={{ width: "100%", height: "100%", objectFit: "cover" }}
           onError={e => e.target.src = "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400"} />
         {o.valeur_reduction > 0 && (
-          <div style={{
-            position: "absolute", bottom: 7, right: 7,
-            background: DS.brand, color: "#fff", borderRadius: 20,
-            padding: "3px 8px", fontSize: 11, fontWeight: 800,
-          }}>-{o.valeur_reduction}{o.type_reduction === "pourcentage" ? "%" : "€"}</div>
+          <div style={{ position: "absolute", bottom: 7, right: 7, background: DS.brand, color: "#fff", borderRadius: 20, padding: "3px 8px", fontSize: 11, fontWeight: 800 }}>
+            -{o.valeur_reduction}{o.type_reduction === "pourcentage" ? "%" : "€"}
+          </div>
         )}
       </div>
-      <div style={{ padding: "8px 10px 10px" }}>
+      <button onClick={e => { e.stopPropagation(); onFav && onFav(); }} style={{
+        position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: "50%",
+        background: "rgba(255,255,255,.9)", border: "none", cursor: "pointer",
+        display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2,
+      }}>
+        <span style={{ fontSize: 14 }}>{isFav ? "❤️" : "🤍"}</span>
+      </button>
+      <div onClick={onPress} style={{ padding: "8px 10px 10px" }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: DS.ink, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {o.commercant_nom || o.titre}
         </div>
@@ -173,18 +173,30 @@ export default function Feed() {
   const [refreshing, setRefreshing] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
   const [rayonKm, setRayonKm] = useState(5);
+  const [user, setUser] = useState(null);
+  // favs: map offre_id -> fav_id (entité DB)
+  const [favs, setFavs] = useState({});
   const t = getTheme();
 
-  const [favs, setFavs] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("cp_favs") || "[]"); } catch { return []; }
-  });
+  useEffect(() => {
+    base44.auth.me().then(async u => {
+      setUser(u);
+      const list = await FavoriUtilisateur.filter({ user_id: u.id });
+      const map = {};
+      list.forEach(f => { map[f.offre_id] = f.id; });
+      setFavs(map);
+    }).catch(() => {});
+  }, []);
 
-  const toggleFav = (id) => {
-    setFavs(prev => {
-      const next = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id];
-      localStorage.setItem("cp_favs", JSON.stringify(next));
-      return next;
-    });
+  const toggleFav = async (offreId) => {
+    if (!user) { navigate("/Login"); return; }
+    if (favs[offreId]) {
+      await FavoriUtilisateur.delete(favs[offreId]);
+      setFavs(prev => { const n = { ...prev }; delete n[offreId]; return n; });
+    } else {
+      const f = await FavoriUtilisateur.create({ offre_id: offreId, user_id: user.id });
+      setFavs(prev => ({ ...prev, [offreId]: f.id }));
+    }
   };
 
   useEffect(() => {
@@ -222,20 +234,24 @@ export default function Feed() {
     setStartY(null);
   };
 
-  const filtered = offres.filter(o => {
+  const allWithDist = offres.map(o => ({
+    ...o,
+    _dist: userPos && o.latitude && o.longitude ? haversine(userPos.lat, userPos.lon, o.latitude, o.longitude) : null,
+  })).sort((a, b) => (a._dist ?? 999) - (b._dist ?? 999));
+
+  const filtered = allWithDist.filter(o => {
+    if (cat === "tout_flash") return o.est_urgente;
+    if (cat === "tout_nearby") return o._dist !== null && o._dist < rayonKm;
     if (cat !== "tout" && o.categorie !== cat) return false;
     if (search.trim()) {
       const q = search.toLowerCase();
       return (o.titre?.toLowerCase().includes(q) || o.commercant_nom?.toLowerCase().includes(q) || o.ville?.toLowerCase().includes(q));
     }
     return true;
-  }).map(o => ({
-    ...o,
-    _dist: userPos && o.latitude && o.longitude ? haversine(userPos.lat, userPos.lon, o.latitude, o.longitude) : null,
-  })).sort((a, b) => (a._dist ?? 999) - (b._dist ?? 999));
+  });
 
-  const flashDeals = filtered.filter(o => o.est_urgente);
-  const nearby = userPos ? filtered.filter(o => o._dist !== null && o._dist < rayonKm) : [];
+  const flashDeals = allWithDist.filter(o => o.est_urgente);
+  const nearby = userPos ? allWithDist.filter(o => o._dist !== null && o._dist < rayonKm) : [];
 
   // Notifications intelligentes
   const notifs = [
@@ -346,19 +362,21 @@ export default function Feed() {
             <div style={{ fontSize: 16, fontWeight: 800, color: t.text, marginBottom: 8 }}>Aucune offre trouvée</div>
             <div style={{ fontSize: 13, color: t.text2 }}>Essayez d'ajuster vos filtres</div>
           </div>
-        ) : cat === "tout" ? (
+        ) : cat === "tout" && !search.trim() ? (
           <>
             {/* ⚡ Flash Deals */}
             {flashDeals.length > 0 && (
               <div style={{ marginBottom: 24 }}>
                 <div style={{ padding: "0 16px", marginBottom: 12 }}>
-                  <SectionHeader emoji="⚡" label="Flash Deals" onSeeAll={() => {}} />
+                  <SectionHeader emoji="⚡" label="Flash Deals" onSeeAll={() => setCat("tout_flash")} />
                 </div>
                 <div style={{ display: "flex", gap: 12, overflowX: "auto", padding: "0 16px", scrollbarWidth: "none" }}>
                   {flashDeals.map(o => (
                     <HScrollCard key={o.id} o={o}
                       onPress={() => navigate(`/OffreDetail?id=${o.id}`)}
-                      userPos={userPos} />
+                      userPos={userPos}
+                      isFav={!!favs[o.id]}
+                      onFav={() => toggleFav(o.id)} />
                   ))}
                 </div>
               </div>
@@ -368,13 +386,15 @@ export default function Feed() {
             {nearby.length > 0 && (
               <div style={{ marginBottom: 24 }}>
                 <div style={{ padding: "0 16px", marginBottom: 12 }}>
-                  <SectionHeader emoji="📍" label="Près de vous" onSeeAll={() => {}} />
+                  <SectionHeader emoji="📍" label="Près de vous" onSeeAll={() => setCat("tout_nearby")} />
                 </div>
                 <div style={{ display: "flex", gap: 12, overflowX: "auto", padding: "0 16px", scrollbarWidth: "none" }}>
                   {nearby.slice(0, 10).map(o => (
                     <HScrollCard key={o.id} o={o}
                       onPress={() => navigate(`/OffreDetail?id=${o.id}`)}
-                      userPos={userPos} />
+                      userPos={userPos}
+                      isFav={!!favs[o.id]}
+                      onFav={() => toggleFav(o.id)} />
                   ))}
                 </div>
               </div>
@@ -393,7 +413,9 @@ export default function Feed() {
                     {items.slice(0, 6).map(o => (
                       <GridCard key={o.id} o={o}
                         onPress={() => navigate(`/OffreDetail?id=${o.id}`)}
-                        userPos={userPos} />
+                        userPos={userPos}
+                        isFav={!!favs[o.id]}
+                        onFav={() => toggleFav(o.id)} />
                     ))}
                   </div>
                 </div>
@@ -403,15 +425,22 @@ export default function Feed() {
         ) : (
           // Vue filtrée
           <div style={{ padding: "0 16px" }}>
-            <div style={{ fontSize: 14, color: t.text2, marginBottom: 12, fontWeight: 600 }}>
-              {filtered.length} offre{filtered.length > 1 ? "s" : ""} trouvée{filtered.length > 1 ? "s" : ""}
-              {userPos ? " · triées par distance" : ""}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <div style={{ fontSize: 14, color: t.text2, fontWeight: 600 }}>
+                {filtered.length} offre{filtered.length > 1 ? "s" : ""} trouvée{filtered.length > 1 ? "s" : ""}
+                {userPos && cat !== "tout_flash" ? " · triées par distance" : ""}
+              </div>
+              <button onClick={() => setCat("tout")} style={{ background: "none", border: "none", color: DS.brand, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                ← Retour
+              </button>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               {filtered.map(o => (
                 <GridCard key={o.id} o={o}
                   onPress={() => navigate(`/OffreDetail?id=${o.id}`)}
-                  userPos={userPos} />
+                  userPos={userPos}
+                  isFav={!!favs[o.id]}
+                  onFav={() => toggleFav(o.id)} />
               ))}
             </div>
           </div>
