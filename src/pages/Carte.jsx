@@ -162,10 +162,6 @@ export default function Carte() {
     const filtered = offres.filter(o => {
       if (!o.latitude || !o.longitude) return false;
       if (cat !== "Tout" && o.categorie !== cat) return false;
-      if (userPos) {
-        const d = haversine(userPos.lat, userPos.lon, o.latitude, o.longitude);
-        if (d > rayon) return false;
-      }
       return true;
     });
 
@@ -217,7 +213,6 @@ export default function Carte() {
   const filteredCount = offres.filter(o => {
     if (!o.latitude || !o.longitude) return false;
     if (cat !== "Tout" && o.categorie !== cat) return false;
-    if (userPos) return haversine(userPos.lat, userPos.lon, o.latitude, o.longitude) <= rayon;
     return true;
   }).length;
 
