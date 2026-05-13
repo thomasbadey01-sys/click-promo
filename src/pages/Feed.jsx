@@ -27,6 +27,24 @@ const CATS = [
   { id: "Pharmacie",         label: "Santé",    emoji: "💊" },
 ];
 
+// Enseignes avec logo/couleur
+const ENSEIGNES = [
+  { id: "Carrefour",    label: "Carrefour",    emoji: "🛒", color: "#004F9F" },
+  { id: "IKEA",         label: "IKEA",         emoji: "🪑", color: "#0058A3" },
+  { id: "Lidl",         label: "Lidl",         emoji: "🏪", color: "#FFD700" },
+  { id: "Decathlon",    label: "Decathlon",    emoji: "⚽", color: "#007DC5" },
+  { id: "Leroy Merlin", label: "Leroy Merlin", emoji: "🔨", color: "#78BE20" },
+  { id: "Zara",         label: "Zara",         emoji: "👗", color: "#1A1A1A" },
+  { id: "H&M",          label: "H&M",          emoji: "👕", color: "#E50010" },
+  { id: "Sephora",      label: "Sephora",      emoji: "💄", color: "#000000" },
+  { id: "Fnac",         label: "Fnac",         emoji: "📺", color: "#F0A500" },
+  { id: "McDonald's",   label: "McDonald's",   emoji: "🍔", color: "#FFC72C" },
+  { id: "Monoprix",     label: "Monoprix",     emoji: "🛍️", color: "#E4002B" },
+  { id: "Picard",       label: "Picard",       emoji: "❄️", color: "#6A1F7A" },
+  { id: "Go Sport",     label: "Go Sport",     emoji: "🏃", color: "#E30613" },
+  { id: "Intermarché",  label: "Intermarché",  emoji: "🥩", color: "#E30613" },
+];
+
 const SECTIONS = [
   { id: "Restaurant",        label: "Restaurants",       emoji: "🍽️" },
   { id: "Boutique",          label: "Mode & Boutiques",  emoji: "👗" },
@@ -168,6 +186,7 @@ export default function Feed() {
   const navigate = useNavigate();
   const [offres, setOffres] = useState([]);
   const [cat, setCat] = useState("tout");
+  const [enseigne, setEnseigne] = useState(null); // filtre par enseigne
   const [search, setSearch] = useState("");
   const [userPos, setUserPos] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -245,6 +264,7 @@ export default function Feed() {
     if (cat === "tout_flash") return o.est_urgente;
     if (cat === "tout_nearby") return o._dist !== null && o._dist < rayonKm;
     if (cat !== "tout" && o.categorie !== cat) return false;
+    if (enseigne && o.enseigne !== enseigne) return false;
     if (search.trim()) {
       const q = search.toLowerCase();
       return (o.titre?.toLowerCase().includes(q) || o.commercant_nom?.toLowerCase().includes(q) || o.ville?.toLowerCase().includes(q));
@@ -342,14 +362,14 @@ export default function Feed() {
         </div>
 
         {/* Chips catégories */}
-        <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none" }}>
+        <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", marginBottom: enseigne ? 8 : 0 }}>
           {CATS.map(c => (
-            <button key={c.id} onClick={() => setCat(c.id)} style={{
+            <button key={c.id} onClick={() => { setCat(c.id); setEnseigne(null); }} style={{
               flexShrink: 0, borderRadius: 100, padding: "6px 14px",
               fontSize: 13, fontWeight: 600, cursor: "pointer",
-              background: cat === c.id ? DS.brand : (t.isDark ? DS.dark3 : "#fff"),
-              color: cat === c.id ? "#fff" : t.text,
-              border: `1.5px solid ${cat === c.id ? DS.brand : t.border}`,
+              background: cat === c.id && !enseigne ? DS.brand : (t.isDark ? DS.dark3 : "#fff"),
+              color: cat === c.id && !enseigne ? "#fff" : t.text,
+              border: `1.5px solid ${cat === c.id && !enseigne ? DS.brand : t.border}`,
               whiteSpace: "nowrap", fontFamily: DS.fontBase, minHeight: 34,
               display: "flex", alignItems: "center", gap: 5,
             }}>
@@ -357,6 +377,16 @@ export default function Feed() {
             </button>
           ))}
         </div>
+        {/* Badge enseigne active */}
+        {enseigne && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+            <div style={{ background: DS.brand, color: "#fff", borderRadius: 100, padding: "4px 12px", fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", gap: 6 }}>
+              {ENSEIGNES.find(e => e.id === enseigne)?.emoji} {enseigne}
+              <button onClick={() => setEnseigne(null)} style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", padding: 0, fontSize: 14, lineHeight: 1, marginLeft: 2 }}>✕</button>
+            </div>
+            <span style={{ fontSize: 12, color: t.text2 }}>{filtered.length} offre{filtered.length > 1 ? "s" : ""}</span>
+          </div>
+        )}
       </div>
 
       {/* Panneau notifications */}
@@ -412,6 +442,39 @@ export default function Feed() {
               </div>
             )}
 
+            {/* 🏪 Par Enseigne */}
+            {(() => {
+              const enseignesPresentes = ENSEIGNES.filter(e => allWithDist.some(o => o.enseigne === e.id));
+              if (enseignesPresentes.length === 0) return null;
+              return (
+                <div style={{ marginBottom: 28 }}>
+                  <div style={{ padding: "0 16px", marginBottom: 12 }}>
+                    <SectionHeader emoji="🏪" label="Par enseigne" onSeeAll={() => {}} />
+                  </div>
+                  <div style={{ display: "flex", gap: 10, overflowX: "auto", padding: "0 16px", scrollbarWidth: "none" }}>
+                    {enseignesPresentes.map(e => {
+                      const count = allWithDist.filter(o => o.enseigne === e.id).length;
+                      const isActive = enseigne === e.id;
+                      return (
+                        <button key={e.id} onClick={() => setEnseigne(isActive ? null : e.id)} style={{
+                          flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+                          background: isActive ? DS.brand : (t.isDark ? DS.dark3 : "#fff"),
+                          border: `2px solid ${isActive ? DS.brand : t.border}`,
+                          borderRadius: 16, padding: "12px 14px", cursor: "pointer",
+                          minWidth: 80, boxShadow: isActive ? DS.eBrand : "0 2px 8px rgba(0,0,0,.06)",
+                          transition: "all .15s",
+                        }}>
+                          <span style={{ fontSize: 22 }}>{e.emoji}</span>
+                          <span style={{ fontSize: 11, fontWeight: 800, color: isActive ? "#fff" : t.text, textAlign: "center", lineHeight: 1.2 }}>{e.label}</span>
+                          <span style={{ fontSize: 10, color: isActive ? "rgba(255,255,255,.8)" : t.text2, fontWeight: 600 }}>{count} offre{count > 1 ? "s" : ""}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Sections par catégorie */}
             {SECTIONS.map(sec => {
               const items = filtered.filter(o => o.categorie === sec.id);
@@ -439,7 +502,12 @@ export default function Feed() {
           <div style={{ padding: "0 16px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
               <div>
-                {(cat !== "tout_flash" && cat !== "tout_nearby" && cat !== "tout") && (
+                {enseigne && (
+                  <div style={{ fontSize: 17, fontWeight: 800, color: t.text, marginBottom: 2 }}>
+                    {ENSEIGNES.find(e => e.id === enseigne)?.emoji} {enseigne}
+                  </div>
+                )}
+                {!enseigne && cat !== "tout_flash" && cat !== "tout_nearby" && cat !== "tout" && (
                   <div style={{ fontSize: 17, fontWeight: 800, color: t.text, marginBottom: 2 }}>
                     {CATS.find(c => c.id === cat)?.emoji} {CATS.find(c => c.id === cat)?.label}
                   </div>
@@ -451,7 +519,7 @@ export default function Feed() {
                   {userPos && cat !== "tout_flash" ? " · triées par distance" : ""}
                 </div>
               </div>
-              <button onClick={() => { setCat("tout"); setSearch(""); }} style={{ background: "none", border: "none", color: DS.brand, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+              <button onClick={() => { setCat("tout"); setSearch(""); setEnseigne(null); }} style={{ background: "none", border: "none", color: DS.brand, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
                 ← Retour
               </button>
             </div>

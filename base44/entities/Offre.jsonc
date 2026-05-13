@@ -1,0 +1,167 @@
+{
+  "name": "Offre",
+  "type": "object",
+  "properties": {
+    "titre": {
+      "type": "string",
+      "title": "Titre de l'offre"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description"
+    },
+    "commercant_nom": {
+      "type": "string",
+      "title": "Nom du commerce"
+    },
+    "enseigne": {
+      "type": "string",
+      "title": "Enseigne (marque nationale)",
+      "enum": [
+        "Carrefour",
+        "Auchan",
+        "Leclerc",
+        "Lidl",
+        "Intermarch\u00e9",
+        "Monoprix",
+        "Casino",
+        "Picard",
+        "IKEA",
+        "Leroy Merlin",
+        "Decathlon",
+        "Zara",
+        "H&M",
+        "Uniqlo",
+        "Fnac",
+        "Darty",
+        "Sephora",
+        "Nocib\u00e9",
+        "Go Sport",
+        "McDonald's",
+        "Autre"
+      ]
+    },
+    "commercant_id": {
+      "type": "string",
+      "title": "ID Commer\u00e7ant"
+    },
+    "categorie": {
+      "type": "string",
+      "title": "Cat\u00e9gorie",
+      "enum": [
+        "Restaurant",
+        "Boutique",
+        "Beaut\u00e9 & Coiffure",
+        "Fitness & Sport",
+        "\u00c9picerie",
+        "Services",
+        "Pharmacie",
+        "Autre"
+      ]
+    },
+    "type_reduction": {
+      "type": "string",
+      "enum": [
+        "pourcentage",
+        "montant"
+      ],
+      "title": "Type de r\u00e9duction"
+    },
+    "valeur_reduction": {
+      "type": "number",
+      "title": "Valeur r\u00e9duction"
+    },
+    "prix_original": {
+      "type": "number",
+      "title": "Prix original (\u20ac)"
+    },
+    "prix_promo": {
+      "type": "number",
+      "title": "Prix promo (\u20ac)"
+    },
+    "image_url": {
+      "type": "string",
+      "title": "Image URL"
+    },
+    "date_debut": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Date d\u00e9but"
+    },
+    "date_fin": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Date fin"
+    },
+    "stock_initial": {
+      "type": "number",
+      "title": "Stock initial"
+    },
+    "stock_restant": {
+      "type": "number",
+      "title": "Stock restant"
+    },
+    "est_active": {
+      "type": "boolean",
+      "title": "Active",
+      "default": true
+    },
+    "est_urgente": {
+      "type": "boolean",
+      "title": "Offre flash",
+      "default": false
+    },
+    "latitude": {
+      "type": "number"
+    },
+    "longitude": {
+      "type": "number"
+    },
+    "ville": {
+      "type": "string",
+      "title": "Ville"
+    },
+    "adresse": {
+      "type": "string",
+      "title": "Adresse"
+    },
+    "rayon_km": {
+      "type": "number",
+      "title": "Rayon de diffusion (km)",
+      "default": 10
+    },
+    "nb_vues": {
+      "type": "number",
+      "title": "Vues",
+      "default": 0
+    },
+    "nb_clics": {
+      "type": "number",
+      "title": "Clics",
+      "default": 0
+    },
+    "nb_conversions": {
+      "type": "number",
+      "title": "Conversions",
+      "default": 0
+    },
+    "code_promo": {
+      "type": "string",
+      "title": "Code promo"
+    },
+    "conditions": {
+      "type": "string",
+      "title": "Conditions d'utilisation"
+    },
+    "achat_en_ligne": {
+      "type": "boolean",
+      "title": "Achat en ligne",
+      "default": false
+    }
+  },
+  "required": [
+    "titre",
+    "categorie",
+    "est_active"
+  ]
+}
