@@ -221,9 +221,9 @@ export default function Carte() {
 
   // Chargement des offres
   useEffect(() => {
-    Offre.filter({ est_active: true }).then(data => {
+    Offre.list('-created_date', 200).then(data => {
       const now = new Date();
-      setOffres(data.filter(o => !o.date_fin || new Date(o.date_fin) > now));
+      setOffres(data.filter(o => o.est_active && (!o.date_fin || new Date(o.date_fin) > now)));
       setLoading(false);
     });
     navigator.geolocation?.getCurrentPosition(
@@ -280,11 +280,10 @@ export default function Carte() {
 
     const filtered = getFiltered();
 
-    filtered.forEach(o => {
-      // Si pas de coordonnées, placer sur Lyon centre avec léger offset aléatoire
-      if (!o.latitude || !o.longitude) {
-        o = { ...o, latitude: LYON.lat + (Math.random() - 0.5) * 0.02, longitude: LYON.lon + (Math.random() - 0.5) * 0.02 };
-      }
+    filtered.forEach(rawO => {
+      const o = (rawO.latitude && rawO.longitude)
+        ? rawO
+        : { ...rawO, latitude: LYON.lat + (Math.random() - 0.5) * 0.02, longitude: LYON.lon + (Math.random() - 0.5) * 0.02 };
       const emoji = CAT_EMOJI[o.categorie] || "🏷️";
       const badge = o.valeur_reduction > 0
         ? `-${o.valeur_reduction}${o.type_reduction === "pourcentage" ? "%" : "€"}`
