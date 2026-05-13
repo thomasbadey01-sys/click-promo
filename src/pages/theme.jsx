@@ -100,6 +100,11 @@ export function CPLogo({ size = 24 }) {
 export function NavBar({ active = "Feed" }) {
   const navigate = useNavigate();
   const t = getTheme();
+  const footerLinks = [
+    { label: "À propos", path: "/About" },
+    { label: "Contact", path: "/Contact" },
+    { label: "Confidentialité", path: "/PrivacyPolicy" },
+  ];
   const tabs = [
     { id: "Feed",    label: "Offres",   icon: Ic.search },
     { id: "Carte",   label: "Carte",    icon: Ic.map },
@@ -111,11 +116,20 @@ export function NavBar({ active = "Feed" }) {
     <div style={{
       position: "fixed", bottom: 0, left: 0, right: 0,
       background: t.header, borderTop: `1px solid ${t.border}`,
-      display: "flex", justifyContent: "space-around", alignItems: "center",
-      paddingTop: 8, paddingBottom: "max(env(safe-area-inset-bottom,8px),8px)",
+      display: "flex", flexDirection: "column",
       fontFamily: DS.fontBase, zIndex: 100,
       boxShadow: "0 -4px 20px rgba(0,0,0,.06)",
     }}>
+      <div style={{ display: "flex", justifyContent: "center", gap: 16, paddingTop: 6, paddingBottom: 2 }}>
+        {footerLinks.map(l => (
+          <button key={l.path} onClick={() => navigate(l.path)} style={{
+            background: "none", border: "none", fontSize: 10, fontWeight: 500,
+            color: t.isDark ? "rgba(255,255,255,.3)" : "#bbb",
+            cursor: "pointer", fontFamily: DS.fontBase, padding: 0,
+          }}>{l.label}</button>
+        ))}
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-around", alignItems: "center", paddingTop: 4, paddingBottom: "max(env(safe-area-inset-bottom,8px),8px)" }}>
       {tabs.map(tab => {
         const isA = active === tab.id;
         return (
@@ -134,6 +148,7 @@ export function NavBar({ active = "Feed" }) {
           </button>
         );
       })}
+      </div>
     </div>
   );
 }

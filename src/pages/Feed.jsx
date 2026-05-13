@@ -537,7 +537,6 @@ export default function Feed() {
         )}
       </div>
 
-      <AppFooterLinks />
       <NavBar active="Feed" />
     </div>
   );
