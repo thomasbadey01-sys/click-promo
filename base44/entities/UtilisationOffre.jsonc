@@ -1,0 +1,82 @@
+{
+  "name": "UtilisationOffre",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string"
+    },
+    "offre_id": {
+      "type": "string"
+    },
+    "commercant_id": {
+      "type": "string"
+    },
+    "date_utilisation": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "prix_paye": {
+      "type": "number"
+    },
+    "economie_realisee": {
+      "type": "number"
+    },
+    "code_utilise": {
+      "type": "string"
+    },
+    "statut": {
+      "type": "string",
+      "enum": [
+        "utilise",
+        "expire",
+        "annule"
+      ],
+      "default": "utilise"
+    }
+  },
+  "required": [
+    "user_id",
+    "offre_id"
+  ],
+  "rls": {
+    "create": {
+      "data.user_id": "{{user.id}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
