@@ -66,40 +66,19 @@
     "update": {
       "$or": [
         {
+          "data.user_id": "{{user.id}}"
+        },
+        {
           "user_condition": {
             "role": "admin"
           }
-        },
-        {
-          "$and": [
-            {
-              "data.user_id": "{{user.id}}"
-            },
-            {
-              "data.statut": "en_attente"
-            }
-          ]
         }
       ]
     },
     "delete": {
-      "$or": [
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        },
-        {
-          "$and": [
-            {
-              "data.user_id": "{{user.id}}"
-            },
-            {
-              "data.statut": "en_attente"
-            }
-          ]
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     }
   }
 }
