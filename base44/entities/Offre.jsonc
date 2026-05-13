@@ -165,7 +165,9 @@
     "est_active"
   ],
   "rls": {
-    "create": {},
+    "create": {
+      "created_by": "{{user.email}}"
+    },
     "read": {},
     "update": {
       "$or": [
