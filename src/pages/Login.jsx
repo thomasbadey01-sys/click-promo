@@ -125,7 +125,8 @@ export default function Login() {
           <div style={{ flex: 1, height: 1, background: DS.ink10 }} />
         </div>
 
-        <button onClick={() => UserAuth.loginWithGoogle?.().then(() => navigate("/Feed")).catch(e => setError(e.message))} style={{
+        <button onClick={() => UserAuth.loginWithProvider('google')
+?.().then(() => navigate("/Feed")).catch(e => setError(e.message))} style={{
           width: "100%", background: DS.white, color: DS.ink,
           border: `1.5px solid ${DS.ink10}`, borderRadius: DS.pill,
           padding: "16px", fontSize: 15, fontWeight: 700, cursor: "pointer",
