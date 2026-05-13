@@ -1,0 +1,112 @@
+{
+  "name": "ProfilUtilisateur",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string"
+    },
+    "prenom": {
+      "type": "string"
+    },
+    "nom": {
+      "type": "string"
+    },
+    "avatar_url": {
+      "type": "string"
+    },
+    "ville": {
+      "type": "string"
+    },
+    "latitude": {
+      "type": "number"
+    },
+    "longitude": {
+      "type": "number"
+    },
+    "categories_favorites": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "rayon_recherche_km": {
+      "type": "number",
+      "default": 5
+    },
+    "points": {
+      "type": "number",
+      "default": 0
+    },
+    "niveau": {
+      "type": "number",
+      "default": 1
+    },
+    "badges": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "total_economies": {
+      "type": "number",
+      "default": 0
+    },
+    "nb_offres_utilisees": {
+      "type": "number",
+      "default": 0
+    },
+    "est_premium": {
+      "type": "boolean",
+      "default": false
+    },
+    "notifications_actives": {
+      "type": "boolean",
+      "default": true
+    },
+    "code_parrainage": {
+      "type": "string"
+    },
+    "parraine_par": {
+      "type": "string"
+    },
+    "nb_filleuls": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "user_id"
+  ],
+  "rls": {
+    "create": {
+      "data.user_id": "{{user.id}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "data.user_id": "{{user.id}}"
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
