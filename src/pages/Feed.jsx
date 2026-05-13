@@ -230,16 +230,9 @@ export default function Feed() {
   }, []);
 
   const load = useCallback(async () => {
-    try {
-      const data = await Offre.list('-created_date', 200);
-      const now = new Date();
-      setOffres(data.filter(o => o.est_active && (!o.date_fin || new Date(o.date_fin) > now)));
-    } catch (err) {
-      if (err?.status === 401) {
-        base44.auth.redirectToLogin();
-        return;
-      }
-    }
+    const data = await base44.entities.Offre.list('-created_date', 200);
+    const now = new Date();
+    setOffres(data.filter(o => o.est_active && (!o.date_fin || new Date(o.date_fin) > now)));
     setLoading(false);
     setRefreshing(false);
   }, []);
