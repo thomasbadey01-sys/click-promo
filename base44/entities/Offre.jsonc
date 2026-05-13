@@ -165,24 +165,8 @@
     "est_active"
   ],
   "rls": {
-    "create": {
-      "created_by": "{{user.email}}"
-    },
-    "read": {
-      "$or": [
-        {
-          "data.est_active": true
-        },
-        {
-          "created_by": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
+    "create": {},
+    "read": {},
     "update": {
       "$or": [
         {
