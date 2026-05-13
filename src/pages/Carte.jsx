@@ -17,9 +17,9 @@ const LYON = { lat: 45.764, lon: 4.8357 };
 // ── Bottom sheet ───────────────────────────────────────────────────────────────
 function BottomSheet({ offre, userPos, onClose, navigate }) {
   if (!offre) return null;
-  const dist = userPos && offre.latitude
-    ? haversine(userPos.lat, userPos.lon, offre.latitude, offre.longitude)
-    : null;
+  const lat = offre.latitude || LYON.lat;
+  const lon = offre.longitude || LYON.lon;
+  const dist = userPos ? haversine(userPos.lat, userPos.lon, lat, lon) : null;
 
   return (
     <div style={{
@@ -126,8 +126,8 @@ function BottomSheet({ offre, userPos, onClose, navigate }) {
               borderRadius: 14, padding: "13px", fontSize: 14, fontWeight: 800, cursor: "pointer",
               boxShadow: DS.eBrand,
             }}>🎫 Voir l'offre</button>
-            {offre.latitude && offre.longitude && (
-              <button onClick={() => window.open(`https://maps.google.com/?q=${offre.latitude},${offre.longitude}`, "_blank")} style={{
+            {(offre.latitude || offre.adresse) && (
+              <button onClick={() => window.open(`https://maps.google.com/?q=${offre.latitude || LYON.lat},${offre.longitude || LYON.lon}`, "_blank")} style={{
                 background: DS.ink, color: "#fff", border: "none",
                 borderRadius: 14, padding: "13px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer",
                 display: "flex", alignItems: "center", gap: 6,
@@ -165,7 +165,9 @@ function OffreListPanel({ offres, userPos, navigate, onSelect }) {
             <div>Aucune offre dans cette zone</div>
           </div>
         ) : offres.map(o => {
-          const dist = userPos && o.latitude ? haversine(userPos.lat, userPos.lon, o.latitude, o.longitude) : null;
+          const oLat = o.latitude || LYON.lat;
+          const oLon = o.longitude || LYON.lon;
+          const dist = userPos ? haversine(userPos.lat, userPos.lon, oLat, oLon) : null;
           return (
             <div key={o.id} onClick={() => onSelect(o)} style={{
               display: "flex", alignItems: "center", gap: 12,
@@ -279,6 +281,10 @@ export default function Carte() {
     const filtered = getFiltered();
 
     filtered.forEach(o => {
+      // Si pas de coordonnées, placer sur Lyon centre avec léger offset aléatoire
+      if (!o.latitude || !o.longitude) {
+        o = { ...o, latitude: LYON.lat + (Math.random() - 0.5) * 0.02, longitude: LYON.lon + (Math.random() - 0.5) * 0.02 };
+      }
       const emoji = CAT_EMOJI[o.categorie] || "🏷️";
       const badge = o.valeur_reduction > 0
         ? `-${o.valeur_reduction}${o.type_reduction === "pourcentage" ? "%" : "€"}`
@@ -325,15 +331,18 @@ export default function Carte() {
   const getFiltered = () => {
     const center = userPos || LYON;
     return offres.filter(o => {
-      if (!o.latitude || !o.longitude) return false;
+      // Accepter les offres sans coordonnées (on les place sur Lyon centre)
       if (cat !== "Tout" && o.categorie !== cat) return false;
       if (flashOnly && !o.est_urgente) return false;
       if (search.trim()) {
         const q = search.toLowerCase();
         if (!o.titre?.toLowerCase().includes(q) && !o.commercant_nom?.toLowerCase().includes(q)) return false;
       }
-      const dist = haversine(center.lat, center.lon, o.latitude, o.longitude);
-      if (dist > rayon) return false;
+      // Calcul de distance uniquement si coordonnées valides
+      if (o.latitude && o.longitude) {
+        const dist = haversine(center.lat, center.lon, o.latitude, o.longitude);
+        if (dist > rayon) return false;
+      }
       return true;
     });
   };
