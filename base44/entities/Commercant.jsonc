@@ -1,0 +1,168 @@
+{
+  "name": "Commercant",
+  "type": "object",
+  "properties": {
+    "nom": {
+      "type": "string",
+      "title": "Nom du commerce"
+    },
+    "siret": {
+      "type": "string",
+      "title": "SIRET"
+    },
+    "categorie": {
+      "type": "string",
+      "title": "Cat\u00e9gorie"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description"
+    },
+    "adresse": {
+      "type": "string",
+      "title": "Adresse"
+    },
+    "ville": {
+      "type": "string",
+      "title": "Ville"
+    },
+    "code_postal": {
+      "type": "string",
+      "title": "Code postal"
+    },
+    "latitude": {
+      "type": "number"
+    },
+    "longitude": {
+      "type": "number"
+    },
+    "telephone": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "site_web": {
+      "type": "string"
+    },
+    "logo_url": {
+      "type": "string"
+    },
+    "image_url": {
+      "type": "string",
+      "title": "Photo principale"
+    },
+    "est_verifie": {
+      "type": "boolean",
+      "default": false,
+      "title": "V\u00e9rifi\u00e9"
+    },
+    "est_actif": {
+      "type": "boolean",
+      "default": true,
+      "title": "Actif"
+    },
+    "est_valide": {
+      "type": "boolean",
+      "default": false
+    },
+    "note_moyenne": {
+      "type": "number",
+      "title": "Note moyenne"
+    },
+    "nb_avis": {
+      "type": "number",
+      "default": 0,
+      "title": "Nombre d'avis"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "plan_abonnement": {
+      "type": "string",
+      "enum": [
+        "gratuit",
+        "starter",
+        "pro",
+        "business"
+      ],
+      "default": "gratuit"
+    },
+    "horaires_lun": {
+      "type": "string",
+      "title": "Lundi"
+    },
+    "horaires_mar": {
+      "type": "string",
+      "title": "Mardi"
+    },
+    "horaires_mer": {
+      "type": "string",
+      "title": "Mercredi"
+    },
+    "horaires_jeu": {
+      "type": "string",
+      "title": "Jeudi"
+    },
+    "horaires_ven": {
+      "type": "string",
+      "title": "Vendredi"
+    },
+    "horaires_sam": {
+      "type": "string",
+      "title": "Samedi"
+    },
+    "horaires_dim": {
+      "type": "string",
+      "title": "Dimanche"
+    }
+  },
+  "required": [
+    "nom",
+    "categorie"
+  ],
+  "rls": {
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "data.est_actif": true
+        },
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
