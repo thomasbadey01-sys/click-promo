@@ -48,9 +48,7 @@
     "categorie"
   ],
   "rls": {
-    "create": {
-      "data.user_id": "{{user.id}}"
-    },
+    "create": {},
     "read": {
       "$or": [
         {
