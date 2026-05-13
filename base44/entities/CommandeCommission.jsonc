@@ -1,0 +1,59 @@
+{
+  "name": "CommandeCommission",
+  "type": "object",
+  "properties": {
+    "commercant_id": {
+      "type": "string"
+    },
+    "offre_id": {
+      "type": "string"
+    },
+    "utilisation_id": {
+      "type": "string"
+    },
+    "montant_vente": {
+      "type": "number"
+    },
+    "taux_commission": {
+      "type": "number"
+    },
+    "montant_commission": {
+      "type": "number"
+    },
+    "statut": {
+      "type": "string",
+      "enum": [
+        "en_attente",
+        "paye",
+        "conteste"
+      ],
+      "default": "en_attente"
+    }
+  },
+  "required": [
+    "commercant_id",
+    "offre_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
