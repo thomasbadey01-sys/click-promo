@@ -1,0 +1,105 @@
+{
+  "name": "DemandeCommercant",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string"
+    },
+    "nom_commerce": {
+      "type": "string"
+    },
+    "siret": {
+      "type": "string"
+    },
+    "categorie": {
+      "type": "string"
+    },
+    "adresse": {
+      "type": "string"
+    },
+    "ville": {
+      "type": "string"
+    },
+    "telephone": {
+      "type": "string"
+    },
+    "email_contact": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "statut": {
+      "type": "string",
+      "enum": [
+        "en_attente",
+        "approuve",
+        "refuse"
+      ],
+      "default": "en_attente"
+    },
+    "note_admin": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "nom_commerce",
+    "siret",
+    "categorie"
+  ],
+  "rls": {
+    "create": {
+      "data.user_id": "{{user.id}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "data.user_id": "{{user.id}}"
+            },
+            {
+              "data.statut": "en_attente"
+            }
+          ]
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "data.user_id": "{{user.id}}"
+            },
+            {
+              "data.statut": "en_attente"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
