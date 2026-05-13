@@ -39,6 +39,11 @@
     },
     "montant_mensuel": {
       "type": "number"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description",
+      "maxLength": 1000
     }
   },
   "required": [

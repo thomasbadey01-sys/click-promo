@@ -16,6 +16,11 @@
     "commentaire": {
       "type": "string"
     },
+    "description": {
+      "type": "string",
+      "title": "Description",
+      "maxLength": 1000
+    },
     "date_avis": {
       "type": "string",
       "format": "date-time"

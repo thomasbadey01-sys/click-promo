@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { DS, Ic, CPLogo, NavBar, SkeletonCard, NotificationBadge, getTheme } from "./theme";
 import SmartSearch from "@/components/SmartSearch";
+import AppFooterLinks from "@/components/AppFooterLinks";
 
 export function haversine(lat1, lon1, lat2, lon2) {
   const R = 6371;
@@ -536,6 +537,7 @@ export default function Feed() {
         )}
       </div>
 
+      <AppFooterLinks />
       <NavBar active="Feed" />
     </div>
   );
