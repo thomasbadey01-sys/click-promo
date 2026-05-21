@@ -122,7 +122,7 @@ export default function OffreDetail() {
         const f = await FavoriUtilisateur.create({ offre_id: id, user_id: user.id });
         setIsFav(true); setFavId(f.id);
       }
-    } catch { navigate("/Login"); }
+    } catch { base44.auth.redirectToLogin(window.location.href); }
   };
 
   const share = async () => {

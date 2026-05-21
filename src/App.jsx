@@ -36,11 +36,10 @@ const AuthenticatedApp = () => {
     );
   }
 
-  if (authError) {
-    if (authError.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
-    }
+  if (authError && authError.type === 'user_not_registered') {
+    return <UserNotRegisteredError />;
   }
+  // Tous les autres cas (auth_required, unknown, etc.) : on laisse passer les routes normalement
 
   return (
     <Routes>

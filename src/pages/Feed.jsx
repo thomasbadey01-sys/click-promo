@@ -211,7 +211,7 @@ export default function Feed() {
   }, []);
 
   const toggleFav = async (offreId) => {
-    if (!user) { navigate("/Login"); return; }
+    if (!user) { base44.auth.redirectToLogin(window.location.href); return; }
     if (favs[offreId]) {
       await FavoriUtilisateur.delete(favs[offreId]);
       setFavs(prev => { const n = { ...prev }; delete n[offreId]; return n; });
