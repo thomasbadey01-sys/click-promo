@@ -37,7 +37,7 @@ export default function GenerateurVideo() {
   useEffect(() => {
     const init = async () => {
       const user = await base44.auth.me().catch(() => null);
-      if (!user) { navigate("/Login"); return; }
+      if (!user) { base44.auth.redirectToLogin(window.location.href); return; }
 
       const commercants = await Commercant.filter({ user_id: user.id });
       if (commercants.length > 0) {

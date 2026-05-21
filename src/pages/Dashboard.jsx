@@ -86,7 +86,10 @@ export default function Dashboard() {
       const all = await Offre.filter({ created_by: u.email });
       setOffres(all);
       setLoading(false);
-    }).catch(() => setLoading(false));
+    }).catch(() => {
+      setUser(null);
+      setLoading(false);
+    });
   }, []);
 
   const totalV  = offres.reduce((s,o) => s+(o.nb_vues||0), 0);
@@ -140,6 +143,19 @@ export default function Dashboard() {
           <span style={{ color:"#fff", fontWeight:900, fontSize:20 }}>C&P</span>
         </div>
         <div style={{ color:"rgba(255,255,255,.4)", fontSize:13 }}>Chargement…</div>
+      </div>
+    </div>
+  );
+
+  if (!user) return (
+    <div style={{ background:DS.dark, minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:DS.fontBase, padding:24 }}>
+      <div style={{ textAlign:"center" }}>
+        <div style={{ fontSize:60, marginBottom:20 }}>🔒</div>
+        <div style={{ fontSize:22, fontWeight:800, color:DS.white, marginBottom:10 }}>Connexion requise</div>
+        <div style={{ color:"rgba(255,255,255,.5)", marginBottom:28, fontSize:14 }}>Accédez à votre espace commerçant</div>
+        <button onClick={() => base44.auth.redirectToLogin(window.location.href)} style={{ background:DS.brand, color:"#fff", border:"none", borderRadius:100, padding:"14px 32px", fontWeight:800, fontSize:15, cursor:"pointer", boxShadow:DS.eBrand }}>
+          Se connecter
+        </button>
       </div>
     </div>
   );

@@ -27,7 +27,7 @@ export default function Admin() {
         setOffres(o);
         setCommercants(c);
         setDemandes(d.sort((a, b) => new Date(b.created_date) - new Date(a.created_date)));
-      } catch { navigate("/Feed"); }
+      } catch { setUser(null); }
       setLoading(false);
     })();
   }, []);
@@ -52,6 +52,19 @@ export default function Admin() {
       <div style={{ textAlign: "center" }}>
         <CPLogo size={44} />
         <div style={{ marginTop: 14, color: "rgba(255,255,255,.4)", fontSize: 13 }}>Chargement admin…</div>
+      </div>
+    </div>
+  );
+
+  if (!user) return (
+    <div style={{ background: DS.dark, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: DS.fontBase, padding: 24 }}>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontSize: 60, marginBottom: 20 }}>🔒</div>
+        <div style={{ fontSize: 22, fontWeight: 800, color: DS.white, marginBottom: 10 }}>Connexion requise</div>
+        <div style={{ color: "rgba(255,255,255,.5)", marginBottom: 28, fontSize: 14 }}>Accès réservé aux administrateurs</div>
+        <button onClick={() => base44.auth.redirectToLogin(window.location.href)} style={{ background: DS.brand, color: "#fff", border: "none", borderRadius: 100, padding: "14px 32px", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
+          Se connecter
+        </button>
       </div>
     </div>
   );

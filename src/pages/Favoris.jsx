@@ -15,11 +15,14 @@ export default function Favoris() {
   const touchStartX = useRef({});
   const t = getTheme();
 
+  const [user, setUser] = useState(null);
+
   useEffect(() => {
     (async () => {
       try {
-        const user = await base44.auth.me();
-        const favs = await FavoriUtilisateur.filter({ user_id: user.id });
+        const u = await base44.auth.me();
+        setUser(u);
+        const favs = await FavoriUtilisateur.filter({ user_id: u.id });
         const offresWithFav = await Promise.all(
           favs.map(async f => {
             const o = await Offre.get(f.offre_id).catch(() => null);
@@ -27,7 +30,7 @@ export default function Favoris() {
           })
         );
         setItems(offresWithFav.filter(Boolean));
-      } catch (e) { console.warn(e); }
+      } catch (e) { setUser(null); }
       setLoading(false);
     })();
   }, []);
@@ -51,6 +54,19 @@ export default function Favoris() {
     setSwipeStates(p => ({ ...p, [offreId]: offset > 60 ? 100 : 0 }));
     touchStartX.current[offreId] = null;
   };
+
+  if (!loading && !user) return (
+    <div style={{ background: t.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: DS.fontBase, padding: 24 }}>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontSize: 60, marginBottom: 20 }}>❤️</div>
+        <div style={{ fontSize: 22, fontWeight: 800, color: t.text, marginBottom: 10 }}>Connectez-vous</div>
+        <div style={{ color: t.text2, marginBottom: 28, fontSize: 14 }}>Pour sauvegarder vos offres favorites</div>
+        <button onClick={() => base44.auth.redirectToLogin(window.location.href)} style={{ background: DS.brand, color: "#fff", border: "none", borderRadius: 100, padding: "14px 32px", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: DS.eBrand }}>
+          Se connecter
+        </button>
+      </div>
+    </div>
+  );
 
   if (loading) return (
     <div style={{ background: t.bg, minHeight: "100vh", fontFamily: DS.fontBase }}>
