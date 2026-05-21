@@ -51,7 +51,7 @@ const PLANS_MARCHANDS = [
     prix: 59,
     tag: "⭐ RECOMMANDÉ",
     col: DS.brand,
-    avantages: ["5 offres actives", "Flash deals", "Stats avancées", "Push notifications", "Support prioritaire"],
+    avantages: ["5 offres actives", "Flash deals", "Stats avancées", "Push notifications", "🎬 Vidéos IA (10/mois)", "Support prioritaire"],
   },
   {
     id: "business",
@@ -59,7 +59,7 @@ const PLANS_MARCHANDS = [
     prix: 99,
     tag: "💎 PREMIUM",
     col: "#F59E0B",
-    avantages: ["Offres illimitées", "QR codes dynamiques", "Export CSV", "API access", "Account manager dédié"],
+    avantages: ["Offres illimitées", "QR codes dynamiques", "Export CSV", "🎬 Vidéos IA illimitées", "API access", "Account manager dédié"],
   },
 ];
 

@@ -381,8 +381,11 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <button onClick={()=>exportCSV(offres)} style={{ width:"100%", background:DS.dark3, border:`1px solid ${DS.darkBorder}`, borderRadius:DS.md, padding:13, fontSize:13, fontWeight:700, color:"rgba(255,255,255,.5)", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+            <button onClick={()=>exportCSV(offres)} style={{ width:"100%", background:DS.dark3, border:`1px solid ${DS.darkBorder}`, borderRadius:DS.md, padding:13, fontSize:13, fontWeight:700, color:"rgba(255,255,255,.5)", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8, marginBottom:10 }}>
               {Ic.download("rgba(255,255,255,.5)",15)} Exporter CSV
+            </button>
+            <button onClick={()=>navigate("/GenerateurVideo")} style={{ width:"100%", background:`linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)`, border:`1px solid #0f3460`, borderRadius:DS.md, padding:13, fontSize:13, fontWeight:700, color:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+              🎬 Générer une vidéo promo IA
             </button>
           </>
         )}

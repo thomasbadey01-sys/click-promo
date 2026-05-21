@@ -22,6 +22,7 @@ import CommercantProfil from './pages/CommercantProfil.jsx';
 import Profil from './pages/Profil.jsx';
 import GenerateurDiapo from './pages/GenerateurDiapo.jsx';
 import About from './pages/About.jsx';
+import GenerateurVideo from './pages/GenerateurVideo.jsx';
 import Contact from './pages/Contact.jsx';
 
 const AuthenticatedApp = () => {
@@ -60,6 +61,7 @@ const AuthenticatedApp = () => {
       <Route path="/Profil" element={<Profil />} />
       <Route path="/GenerateurDiapo" element={<GenerateurDiapo />} />
       <Route path="/About" element={<About />} />
+      <Route path="/GenerateurVideo" element={<GenerateurVideo />} />
       <Route path="/Contact" element={<Contact />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
