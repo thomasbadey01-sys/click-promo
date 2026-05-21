@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { DS, NavBar } from "./theme";
 import { Commercant, Offre } from "@/api/entities";
+import { useAuth } from "@/lib/AuthContext";
 
 const STYLES_VIDEO = [
   { id: "promo_dynamique", label: "🎯 Promo Dynamique", desc: "Vidéo énergique avec textes et effets" },
@@ -21,6 +22,7 @@ const PLANS_AUTORISES = ["pro", "business"];
 
 export default function GenerateurVideo() {
   const navigate = useNavigate();
+  const { user: authUser, isLoadingAuth } = useAuth();
   const [commercant, setCommercant] = useState(null);
   const [offres, setOffres] = useState([]);
   const [planActuel, setPlanActuel] = useState(null);
@@ -35,16 +37,17 @@ export default function GenerateurVideo() {
   const [texteCustom, setTexteCustom] = useState("");
 
   useEffect(() => {
+    if (isLoadingAuth) return;
+    if (!authUser) {
+      base44.auth.redirectToLogin(window.location.href);
+      return;
+    }
     const init = async () => {
-      const user = await base44.auth.me().catch(() => null);
-      if (!user) { base44.auth.redirectToLogin(window.location.href); return; }
-
-      const commercants = await Commercant.filter({ user_id: user.id });
+      const commercants = await Commercant.filter({ user_id: authUser.id });
       if (commercants.length > 0) {
         const c = commercants[0];
         setCommercant(c);
         setPlanActuel(c.plan_abonnement || "gratuit");
-
         const mesOffres = await Offre.filter({ commercant_id: c.id });
         setOffres(mesOffres.filter(o => o.est_active));
       } else {
@@ -53,7 +56,7 @@ export default function GenerateurVideo() {
       setLoading(false);
     };
     init();
-  }, []);
+  }, [isLoadingAuth, authUser]);
 
   const peutGenerer = PLANS_AUTORISES.includes(planActuel);
 
