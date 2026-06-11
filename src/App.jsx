@@ -22,6 +22,7 @@ import CommercantProfil from './pages/CommercantProfil.jsx';
 import Profil from './pages/Profil.jsx';
 import About from './pages/About.jsx';
 import Contact from './pages/Contact.jsx';
+import FetchResults from './pages/FetchResults.jsx';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -58,6 +59,7 @@ const AuthenticatedApp = () => {
       <Route path="/Profil" element={<Profil />} />
       <Route path="/About" element={<About />} />
       <Route path="/Contact" element={<Contact />} />
+      <Route path="/FetchResults" element={<FetchResults />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
