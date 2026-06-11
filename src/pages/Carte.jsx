@@ -219,11 +219,24 @@ export default function Carte() {
   const [flashOnly, setFlashOnly] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const DEFAULT_IMGS = {
+    "Restaurant": "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400",
+    "Boutique": "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400",
+    "Beauté & Coiffure": "https://images.unsplash.com/photo-1560066984-138daaa0e9cd?w=400",
+    "Fitness & Sport": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400",
+    "Épicerie": "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400",
+    "Services": "https://images.unsplash.com/photo-1521791136064-7986c2920216?w=400",
+    "Pharmacie": "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400",
+    "Autre": "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400",
+  };
+
   // Chargement des offres
   useEffect(() => {
     Offre.list('-created_date', 200).then(data => {
-      const now = new Date();
-      setOffres(data.filter(o => o.est_active));
+      setOffres(data.filter(o => o.est_active).map(o => ({
+        ...o,
+        image_url: o.image_url || DEFAULT_IMGS[o.categorie] || DEFAULT_IMGS["Autre"],
+      })));
       setLoading(false);
     });
     navigator.geolocation?.getCurrentPosition(
