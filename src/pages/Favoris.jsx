@@ -3,6 +3,7 @@ import { FavoriUtilisateur, Offre } from "@/api/entities";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { DS, Ic, CPLogo, NavBar, BadgeReduction, getTheme } from "./theme";
+import { useAuth } from "@/lib/AuthContext";
 
 const CATS = ["Tout","Restaurant","Boutique","Beauté & Coiffure","Fitness & Sport","Épicerie","Services","Pharmacie","Autre"];
 
@@ -15,25 +16,23 @@ export default function Favoris() {
   const touchStartX = useRef({});
   const t = getTheme();
 
-  const [user, setUser] = useState(null);
+  const { user, isLoadingAuth } = useAuth();
 
   useEffect(() => {
+    if (isLoadingAuth) return;
+    if (!user) { setLoading(false); return; }
     (async () => {
-      try {
-        const u = await base44.auth.me();
-        setUser(u);
-        const favs = await FavoriUtilisateur.filter({ user_id: u.id });
-        const offresWithFav = await Promise.all(
-          favs.map(async f => {
-            const o = await Offre.get(f.offre_id).catch(() => null);
-            return o ? { ...o, fav_id: f.id } : null;
-          })
-        );
-        setItems(offresWithFav.filter(Boolean));
-      } catch (e) { setUser(null); }
+      const favs = await FavoriUtilisateur.filter({ user_id: user.id });
+      const offresWithFav = await Promise.all(
+        favs.map(async f => {
+          const o = await Offre.get(f.offre_id).catch(() => null);
+          return o ? { ...o, fav_id: f.id } : null;
+        })
+      );
+      setItems(offresWithFav.filter(Boolean));
       setLoading(false);
     })();
-  }, []);
+  }, [user, isLoadingAuth]);
 
   const filtered = cat === "Tout" ? items : items.filter(o => o.categorie === cat);
   const now = new Date();
@@ -55,7 +54,7 @@ export default function Favoris() {
     touchStartX.current[offreId] = null;
   };
 
-  if (!loading && !user) return (
+  if (!isLoadingAuth && !loading && !user) return (
     <div style={{ background: t.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: DS.fontBase, padding: 24 }}>
       <div style={{ textAlign: "center" }}>
         <div style={{ fontSize: 60, marginBottom: 20 }}>❤️</div>
@@ -68,7 +67,7 @@ export default function Favoris() {
     </div>
   );
 
-  if (loading) return (
+  if (isLoadingAuth || loading) return (
     <div style={{ background: t.bg, minHeight: "100vh", fontFamily: DS.fontBase }}>
       <div style={{ background: t.card, padding: `calc(${DS.safeTop} + 8px) 16px 12px`, marginBottom: 8 }}>
         <div className={t.shimmer} style={{ height: 28, width: 160, marginBottom: 14 }} />

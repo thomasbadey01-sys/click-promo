@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Offre } from "@/api/entities";
 import { useNavigate } from "react-router-dom";
 import { DS, Ic, Sparkline } from "./theme";
+import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 
 const CATS = ["Restaurant","Boutique","Beauté & Coiffure","Fitness & Sport","Services","Épicerie","Pharmacie","Autre"];
@@ -70,6 +71,7 @@ function BarChart({ data, labels, color, h = 80 }) {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { user, isLoadingAuth } = useAuth();
   const [offres, setOffres] = useState([]);
   const [tab, setTab] = useState("stats");
   const [loading, setLoading] = useState(true);
@@ -78,19 +80,17 @@ export default function Dashboard() {
   const [delConf, setDelConf] = useState(null);
   const [editO, setEditO] = useState(null);
   const [form, setForm] = useState(emptyForm);
-  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    base44.auth.me().then(async u => {
-      setUser(u);
-      const all = await Offre.filter({ created_by: u.email });
-      setOffres(all);
-      setLoading(false);
-    }).catch(() => {
-      setUser(null);
+    if (isLoadingAuth) return;
+    if (!user) { setLoading(false); return; }
+    Offre.list('-created_date', 500).then(all => {
+      // Admin voit tout, sinon seulement ses offres
+      const filtered = user.role === 'admin' ? all : all.filter(o => o.created_by === user.email);
+      setOffres(filtered);
       setLoading(false);
     });
-  }, []);
+  }, [user, isLoadingAuth]);
 
   const totalV  = offres.reduce((s,o) => s+(o.nb_vues||0), 0);
   const totalCl = offres.reduce((s,o) => s+(o.nb_clics||0), 0);
@@ -136,7 +136,7 @@ export default function Dashboard() {
 
   const delO = async id => { await Offre.delete(id); setOffres(p => p.filter(o => o.id!==id)); setDelConf(null); };
 
-  if (loading) return (
+  if (isLoadingAuth || loading) return (
     <div style={{ background:DS.dark, minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:DS.fontBase }}>
       <div style={{ textAlign:"center" }}>
         <div style={{ width:52, height:52, background:DS.brand, borderRadius:14, margin:"0 auto 16px", display:"flex", alignItems:"center", justifyContent:"center" }}>
@@ -400,8 +400,8 @@ export default function Dashboard() {
             <button onClick={()=>exportCSV(offres)} style={{ width:"100%", background:DS.dark3, border:`1px solid ${DS.darkBorder}`, borderRadius:DS.md, padding:13, fontSize:13, fontWeight:700, color:"rgba(255,255,255,.5)", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8, marginBottom:10 }}>
               {Ic.download("rgba(255,255,255,.5)",15)} Exporter CSV
             </button>
-            <button onClick={()=>navigate("/GenerateurVideo")} style={{ width:"100%", background:`linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)`, border:`1px solid #0f3460`, borderRadius:DS.md, padding:13, fontSize:13, fontWeight:700, color:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
-              🎬 Générer une vidéo promo IA
+            <button onClick={()=>navigate("/FetchResults")} style={{ width:"100%", background:`linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)`, border:`1px solid #0f3460`, borderRadius:DS.md, padding:13, fontSize:13, fontWeight:700, color:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+              📊 Voir les offres générées (IA)
             </button>
           </>
         )}

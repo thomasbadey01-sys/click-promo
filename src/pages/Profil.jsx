@@ -3,6 +3,7 @@ import { ProfilUtilisateur, HistoriqueOffresVues } from "@/api/entities";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { DS, Ic, NavBar, toggleDarkMode, getDarkMode } from "./theme";
+import { useAuth } from "@/lib/AuthContext";
 
 const LEVELS = [
   { min: 0,    max: 99,    nom: "Débutant",      emoji: "🌱", col: "#10B981" },
@@ -31,8 +32,8 @@ function genCode(email) {
 
 export default function Profil() {
   const navigate = useNavigate();
+  const { user, isLoadingAuth } = useAuth();
   const [profil, setProfil] = useState(null);
-  const [user, setUser] = useState(null);
   const [historique, setHistorique] = useState([]);
   const [tab, setTab] = useState("profil");
   const [loading, setLoading] = useState(true);
@@ -41,34 +42,32 @@ export default function Profil() {
   const [notifActive, setNotifActive] = useState(true);
 
   useEffect(() => {
+    if (isLoadingAuth) return;
+    if (!user) { setLoading(false); return; }
     (async () => {
-      try {
-        const u = await base44.auth.me();
-        setUser(u);
-        const profils = await ProfilUtilisateur.filter({ user_id: u.id });
-        if (profils.length > 0) {
-          setProfil(profils[0]);
-          setNotifActive(profils[0].notifications_actives !== false);
-        } else {
-          const code = genCode(u.email);
-          const p = await ProfilUtilisateur.create({
-            user_id: u.id,
-            prenom: u.full_name?.split(" ")[0] || "",
-            nom: u.full_name?.split(" ").slice(1).join(" ") || "",
-            points: 0, niveau: 1, badges: [], total_economies: 0, nb_offres_utilisees: 0,
-            code_parrainage: code, nb_filleuls: 0,
-          });
-          setProfil(p);
-        }
-        const hist = await HistoriqueOffresVues.filter({ user_id: u.id });
-        hist.sort((a, b) => new Date(b.date_vue) - new Date(a.date_vue));
-        setHistorique(hist.slice(0, 30));
-      } catch (e) { console.warn(e); }
+      const profils = await ProfilUtilisateur.filter({ user_id: user.id });
+      if (profils.length > 0) {
+        setProfil(profils[0]);
+        setNotifActive(profils[0].notifications_actives !== false);
+      } else {
+        const code = genCode(user.email);
+        const p = await ProfilUtilisateur.create({
+          user_id: user.id,
+          prenom: user.full_name?.split(" ")[0] || "",
+          nom: user.full_name?.split(" ").slice(1).join(" ") || "",
+          points: 0, niveau: 1, badges: [], total_economies: 0, nb_offres_utilisees: 0,
+          code_parrainage: code, nb_filleuls: 0,
+        });
+        setProfil(p);
+      }
+      const hist = await HistoriqueOffresVues.filter({ user_id: user.id });
+      hist.sort((a, b) => new Date(b.date_vue) - new Date(a.date_vue));
+      setHistorique(hist.slice(0, 30));
       setLoading(false);
     })();
-  }, []);
+  }, [user, isLoadingAuth]);
 
-  if (loading) return (
+  if (isLoadingAuth || loading) return (
     <div style={{
       background: `linear-gradient(160deg, ${DS.brandDark} 0%, ${DS.brand} 50%, ${DS.brand2} 100%)`,
       minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
@@ -89,7 +88,7 @@ export default function Profil() {
         <div style={{ fontSize: 60, marginBottom: 20 }}>👤</div>
         <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 10 }}>Connectez-vous</div>
         <div style={{ color: "rgba(255,255,255,.7)", marginBottom: 24 }}>Pour accéder à votre profil</div>
-        <button onClick={() => navigate("/Login")} style={{ background: "#fff", color: DS.brand, border: "none", borderRadius: 100, padding: "14px 32px", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
+        <button onClick={() => base44.auth.redirectToLogin(window.location.href)} style={{ background: "#fff", color: DS.brand, border: "none", borderRadius: 100, padding: "14px 32px", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
           Se connecter
         </button>
       </div>
@@ -370,7 +369,7 @@ export default function Profil() {
                 { icon: notifActive ? "🔔" : "🔕", label: notifActive ? "Notifications activées" : "Notifications désactivées", action: toggleNotif, toggle: notifActive },
                 { icon: "📍", label: "Ma localisation", action: () => {} },
                 { icon: "⭐", label: "Passer Premium", action: () => navigate("/Abonnement"), highlight: true },
-                { icon: "🎨", label: "Générateur de diapo IA", action: () => navigate("/GenerateurDiapo"), highlight: true },
+                { icon: "📊", label: "Offres générées IA", action: () => navigate("/FetchResults"), highlight: true },
                 { icon: "🏪", label: "Espace commerçant", action: () => navigate("/Dashboard") },
                 { icon: "🔒", label: "Confidentialité", action: () => navigate("/PrivacyPolicy") },
                 { icon: darkMode ? "☀️" : "🌙", label: darkMode ? "Mode clair" : "Mode sombre", action: toggleDarkMode },
