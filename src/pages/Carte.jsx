@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Offre } from "@/api/entities";
+import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { DS, Ic, NavBar } from "./theme";
 import { haversine, formatDist } from "./Feed";
@@ -232,7 +232,7 @@ export default function Carte() {
 
   // Chargement des offres
   useEffect(() => {
-    Offre.list('-created_date', 200).then(data => {
+    base44.entities.Offre.list('-created_date', 500).then(data => {
       setOffres(data.filter(o => o.est_active).map(o => ({
         ...o,
         image_url: o.image_url || DEFAULT_IMGS[o.categorie] || DEFAULT_IMGS["Autre"],
@@ -291,7 +291,20 @@ export default function Carte() {
       dashArray: "6 4",
     }).addTo(map);
 
-    const filtered = getFiltered();
+    // Calculer le filtre directement ici pour éviter les closures stales
+    const filtered = offres.filter(o => {
+      if (cat !== "Tout" && o.categorie !== cat) return false;
+      if (flashOnly && !o.est_urgente) return false;
+      if (search.trim()) {
+        const q = search.toLowerCase();
+        if (!o.titre?.toLowerCase().includes(q) && !o.commercant_nom?.toLowerCase().includes(q)) return false;
+      }
+      if (o.latitude && o.longitude) {
+        const dist = haversine(center.lat, center.lon, o.latitude, o.longitude);
+        if (dist > rayon) return false;
+      }
+      return true;
+    });
 
     filtered.forEach(rawO => {
       const o = (rawO.latitude && rawO.longitude)
@@ -353,22 +366,19 @@ export default function Carte() {
     }
   }, [mapReady, offres, cat, rayon, userPos, flashOnly, search, selected]);
 
-  const getFiltered = () => {
+  const getFiltered = (offresArr = offres) => {
     const center = userPos || LYON;
-    return offres.filter(o => {
-      // Accepter les offres sans coordonnées (on les place sur Lyon centre)
+    return offresArr.filter(o => {
       if (cat !== "Tout" && o.categorie !== cat) return false;
       if (flashOnly && !o.est_urgente) return false;
       if (search.trim()) {
         const q = search.toLowerCase();
         if (!o.titre?.toLowerCase().includes(q) && !o.commercant_nom?.toLowerCase().includes(q)) return false;
       }
-      // Calcul de distance uniquement si coordonnées réelles
       if (o.latitude && o.longitude) {
         const dist = haversine(center.lat, center.lon, o.latitude, o.longitude);
         if (dist > rayon) return false;
       }
-      // Offres sans coordonnées : toujours incluses
       return true;
     });
   };

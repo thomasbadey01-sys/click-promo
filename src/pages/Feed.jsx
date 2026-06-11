@@ -256,7 +256,7 @@ export default function Feed() {
   };
 
   const load = useCallback(async () => {
-    const data = await base44.entities.Offre.list('-created_date', 200);
+    const data = await base44.entities.Offre.list('-created_date', 500);
     const withImages = data.filter(o => o.est_active).map(o => ({
       ...o,
       image_url: o.image_url || DEFAULT_IMGS[o.categorie] || DEFAULT_IMGS["Autre"],
