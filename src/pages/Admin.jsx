@@ -1,36 +1,34 @@
 import { useState, useEffect } from "react";
-import { Offre, Commercant, DemandeCommercant, Abonnement, AvisCommercant } from "@/api/entities";
-import { base44 } from "@/api/base44Client";
+import { Offre, Commercant, DemandeCommercant, Abonnement } from "@/api/entities";
 import { DS, Ic, CPLogo } from "./theme";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function Admin() {
   const navigate = useNavigate();
+  const { user, isLoadingAuth } = useAuth();
   const [tab, setTab] = useState("dashboard");
   const [stats, setStats] = useState({ offres: 0, commercants: 0, demandes: 0, abonnements: 0 });
   const [demandes, setDemandes] = useState([]);
   const [offres, setOffres] = useState([]);
   const [commercants, setCommercants] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
 
   useEffect(() => {
+    if (isLoadingAuth) return;
+    if (!user || user.role !== "admin") { navigate("/Feed"); return; }
+
     (async () => {
-      try {
-        const u = await base44.auth.me();
-        setUser(u);
-        if (u.role !== "admin") { navigate("/Feed"); return; }
-        const [o, c, d, a] = await Promise.all([
-          Offre.list(), Commercant.list(), DemandeCommercant.list(), Abonnement.list()
-        ]);
-        setStats({ offres: o.length, commercants: c.length, demandes: d.length, abonnements: a.length });
-        setOffres(o);
-        setCommercants(c);
-        setDemandes(d.sort((a, b) => new Date(b.created_date) - new Date(a.created_date)));
-      } catch { setUser(null); }
+      const [o, c, d, a] = await Promise.all([
+        Offre.list(), Commercant.list(), DemandeCommercant.list(), Abonnement.list()
+      ]);
+      setStats({ offres: o.length, commercants: c.length, demandes: d.length, abonnements: a.length });
+      setOffres(o);
+      setCommercants(c);
+      setDemandes(d.sort((a, b) => new Date(b.created_date) - new Date(a.created_date)));
       setLoading(false);
     })();
-  }, []);
+  }, [user, isLoadingAuth, navigate]);
 
   const validerDemande = async (id, statut) => {
     await DemandeCommercant.update(id, { statut });
@@ -47,7 +45,7 @@ export default function Admin() {
     setCommercants(p => p.map(x => x.id === c.id ? { ...x, est_actif: !c.est_actif } : x));
   };
 
-  if (loading) return (
+  if (isLoadingAuth || loading) return (
     <div style={{ background: DS.dark, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: DS.fontBase }}>
       <div style={{ textAlign: "center" }}>
         <CPLogo size={44} />
@@ -56,18 +54,7 @@ export default function Admin() {
     </div>
   );
 
-  if (!user) return (
-    <div style={{ background: DS.dark, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: DS.fontBase, padding: 24 }}>
-      <div style={{ textAlign: "center" }}>
-        <div style={{ fontSize: 60, marginBottom: 20 }}>🔒</div>
-        <div style={{ fontSize: 22, fontWeight: 800, color: DS.white, marginBottom: 10 }}>Connexion requise</div>
-        <div style={{ color: "rgba(255,255,255,.5)", marginBottom: 28, fontSize: 14 }}>Accès réservé aux administrateurs</div>
-        <button onClick={() => base44.auth.redirectToLogin(window.location.href)} style={{ background: DS.brand, color: "#fff", border: "none", borderRadius: 100, padding: "14px 32px", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
-          Se connecter
-        </button>
-      </div>
-    </div>
-  );
+  if (!user) return null;
 
   const TABS = [
     { id: "dashboard", label: "Dashboard" },
