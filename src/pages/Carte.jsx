@@ -223,7 +223,7 @@ export default function Carte() {
   useEffect(() => {
     Offre.list('-created_date', 200).then(data => {
       const now = new Date();
-      setOffres(data.filter(o => o.est_active && (!o.date_fin || new Date(o.date_fin) > now)));
+      setOffres(data.filter(o => o.est_active));
       setLoading(false);
     });
     navigator.geolocation?.getCurrentPosition(
