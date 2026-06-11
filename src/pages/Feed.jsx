@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Offre, ProfilUtilisateur, FavoriUtilisateur } from "@/api/entities";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { DS, Ic, CPLogo, NavBar, SkeletonCard, NotificationBadge, getTheme } from "./theme";
 import SmartSearch from "@/components/SmartSearch";
 import AppFooterLinks from "@/components/AppFooterLinks";
+import { useAuth } from "@/lib/AuthContext";
 
 export function haversine(lat1, lon1, lat2, lon2) {
   const R = 6371;
@@ -185,9 +186,10 @@ function NotifPanel({ notifs, onClose }) {
 
 export default function Feed() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [offres, setOffres] = useState([]);
   const [cat, setCat] = useState("tout");
-  const [enseigne, setEnseigne] = useState(null); // filtre par enseigne
+  const [enseigne, setEnseigne] = useState(null);
   const [search, setSearch] = useState("");
   const [userPos, setUserPos] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -195,20 +197,23 @@ export default function Feed() {
   const [showNotifs, setShowNotifs] = useState(false);
   const [showSmartSearch, setShowSmartSearch] = useState(false);
   const [rayonKm, setRayonKm] = useState(5);
-  const [user, setUser] = useState(null);
-  // favs: map offre_id -> fav_id (entité DB)
   const [favs, setFavs] = useState({});
   const t = getTheme();
 
+  // Charger favs + rayon quand l'user est connu
   useEffect(() => {
-    base44.auth.me().then(async u => {
-      setUser(u);
-      const list = await FavoriUtilisateur.filter({ user_id: u.id });
+    if (!user) return;
+    FavoriUtilisateur.filter({ user_id: user.id }).then(list => {
       const map = {};
       list.forEach(f => { map[f.offre_id] = f.id; });
       setFavs(map);
     }).catch(() => {});
-  }, []);
+    ProfilUtilisateur.filter({ user_id: user.id }).then(profils => {
+      if (profils.length > 0 && profils[0].rayon_recherche_km) {
+        setRayonKm(profils[0].rayon_recherche_km);
+      }
+    }).catch(() => {});
+  }, [user?.id]);
 
   const toggleFav = async (offreId) => {
     if (!user) { base44.auth.redirectToLogin(window.location.href); return; }
@@ -220,15 +225,6 @@ export default function Feed() {
       setFavs(prev => ({ ...prev, [offreId]: f.id }));
     }
   };
-
-  useEffect(() => {
-    base44.auth.me().then(async u => {
-      const profils = await ProfilUtilisateur.filter({ user_id: u.id });
-      if (profils.length > 0 && profils[0].rayon_recherche_km) {
-        setRayonKm(profils[0].rayon_recherche_km);
-      }
-    }).catch(() => {});
-  }, []);
 
   const load = useCallback(async () => {
     const data = await base44.entities.Offre.list('-created_date', 200);
