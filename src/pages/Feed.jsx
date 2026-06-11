@@ -61,6 +61,7 @@ const SECTIONS = [
 function HScrollCard({ o, onPress, userPos, isFav, onFav }) {
   const dist = userPos && o.latitude && o.longitude
     ? haversine(userPos.lat, userPos.lon, o.latitude, o.longitude) : null;
+  const hasRealAddress = !!(o.adresse && o.adresse.trim());
   return (
     <div style={{ width: 155, flexShrink: 0, background: "#fff", borderRadius: 16, overflow: "hidden", cursor: "pointer", boxShadow: "0 2px 12px rgba(0,0,0,.08)", position: "relative" }}>
       <div onClick={onPress} style={{ position: "relative", height: 105 }}>
@@ -75,6 +76,9 @@ function HScrollCard({ o, onPress, userPos, isFav, onFav }) {
         {o.est_urgente && (
           <div style={{ position: "absolute", top: 7, left: 7, background: DS.danger, color: "#fff", borderRadius: 20, padding: "2px 7px", fontSize: 10, fontWeight: 800 }}>⚡ FLASH</div>
         )}
+        {hasRealAddress && !o.est_urgente && (
+          <div style={{ position: "absolute", top: 7, left: 7, background: "#10B981", color: "#fff", borderRadius: 20, padding: "2px 7px", fontSize: 9, fontWeight: 800 }}>✓ Adresse</div>
+        )}
       </div>
       <button onClick={e => { e.stopPropagation(); onFav && onFav(); }} style={{
         position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: "50%",
@@ -87,6 +91,11 @@ function HScrollCard({ o, onPress, userPos, isFav, onFav }) {
         <div style={{ fontSize: 12, fontWeight: 700, color: DS.ink, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {o.commercant_nom || o.titre}
         </div>
+        {o.adresse && (
+          <div style={{ fontSize: 9, color: "#10B981", fontWeight: 600, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            📍 {o.adresse}
+          </div>
+        )}
         {o.prix_promo > 0 && (
           <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
             <span style={{ fontSize: 13, fontWeight: 800, color: DS.brand }}>{o.prix_promo}€</span>
@@ -97,7 +106,7 @@ function HScrollCard({ o, onPress, userPos, isFav, onFav }) {
         )}
         {dist !== null && (
           <div style={{ display: "flex", alignItems: "center", gap: 3, color: "#aaa", fontSize: 10, marginTop: 2 }}>
-            📍 {formatDist(dist)}
+            {formatDist(dist)}
           </div>
         )}
       </div>
@@ -108,6 +117,7 @@ function HScrollCard({ o, onPress, userPos, isFav, onFav }) {
 function GridCard({ o, onPress, userPos, isFav, onFav }) {
   const dist = userPos && o.latitude && o.longitude
     ? haversine(userPos.lat, userPos.lon, o.latitude, o.longitude) : null;
+  const hasRealAddress = !!(o.adresse && o.adresse.trim());
   return (
     <div style={{ background: "#fff", borderRadius: 16, overflow: "hidden", cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,.07)", position: "relative" }}>
       <div onClick={onPress} style={{ position: "relative", height: 115 }}>
@@ -118,6 +128,9 @@ function GridCard({ o, onPress, userPos, isFav, onFav }) {
           <div style={{ position: "absolute", bottom: 7, right: 7, background: DS.brand, color: "#fff", borderRadius: 20, padding: "3px 8px", fontSize: 11, fontWeight: 800 }}>
             -{o.valeur_reduction}{o.type_reduction === "pourcentage" ? "%" : "€"}
           </div>
+        )}
+        {hasRealAddress && (
+          <div style={{ position: "absolute", top: 7, left: 7, background: "#10B981", color: "#fff", borderRadius: 20, padding: "2px 6px", fontSize: 9, fontWeight: 800 }}>✓ Adresse vérifiée</div>
         )}
       </div>
       <button onClick={e => { e.stopPropagation(); onFav && onFav(); }} style={{
@@ -131,6 +144,11 @@ function GridCard({ o, onPress, userPos, isFav, onFav }) {
         <div style={{ fontSize: 12, fontWeight: 600, color: DS.ink, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {o.commercant_nom || o.titre}
         </div>
+        {hasRealAddress && (
+          <div style={{ fontSize: 9, color: "#10B981", fontWeight: 600, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {o.adresse}
+          </div>
+        )}
         {o.prix_promo > 0 && (
           <span style={{ fontSize: 13, fontWeight: 800, color: DS.brand }}>{o.prix_promo}€</span>
         )}
@@ -260,6 +278,7 @@ export default function Feed() {
   const filtered = allWithDist.filter(o => {
     if (cat === "tout_flash") return o.est_urgente;
     if (cat === "tout_nearby") return o._dist !== null && o._dist < rayonKm;
+    if (cat === "tout_geo") return !!(o.adresse && o.adresse.trim() && o.latitude && o.longitude);
     if (cat !== "tout" && o.categorie !== cat) return false;
     if (enseigne && o.enseigne !== enseigne) return false;
     if (search.trim()) {
@@ -438,6 +457,29 @@ export default function Feed() {
                 </div>
               </div>
             )}
+
+            {/* 🗺️ Offres géolocalisées (adresse réelle) */}
+            {(() => {
+              const geoOffres = allWithDist.filter(o => o.adresse && o.adresse.trim() && o.latitude && o.longitude);
+              if (geoOffres.length === 0) return null;
+              return (
+                <div style={{ marginBottom: 28 }}>
+                  <div style={{ padding: "0 16px", marginBottom: 12 }}>
+                    <SectionHeader emoji="🗺️" label="Adresses vérifiées" onSeeAll={() => setCat("tout_geo")} />
+                    <div style={{ fontSize: 11, color: t.text2, marginTop: -6 }}>Offres avec adresse réelle géolocalisée</div>
+                  </div>
+                  <div style={{ display: "flex", gap: 12, overflowX: "auto", padding: "0 16px", scrollbarWidth: "none" }}>
+                    {geoOffres.slice(0, 12).map(o => (
+                      <HScrollCard key={o.id} o={o}
+                        onPress={() => navigate(`/OffreDetail?id=${o.id}`)}
+                        userPos={userPos}
+                        isFav={!!favs[o.id]}
+                        onFav={() => toggleFav(o.id)} />
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* 🏪 Par Enseigne */}
             {(() => {

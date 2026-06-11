@@ -290,20 +290,33 @@ export default function Carte() {
         : "";
       const isFlash = o.est_urgente;
       const isSelected = selected?.id === o.id;
+      const hasRealAddress = !!(o.adresse && o.adresse.trim());
+
+      // Couleur : rouge=flash, vert=adresse vérifiée, violet=normal
+      const bgGradient = isFlash
+        ? "linear-gradient(135deg,#EF4444,#F97316)"
+        : hasRealAddress
+          ? "linear-gradient(135deg,#10B981,#059669)"
+          : "linear-gradient(135deg,#6C3BFF,#8B5CF6)";
+      const shadowColor = isFlash
+        ? "rgba(239,68,68,.5)"
+        : hasRealAddress
+          ? "rgba(16,185,129,.5)"
+          : "rgba(108,59,255,.45)";
 
       const icon = L.divIcon({
         html: `<div style="
-          background: ${isFlash ? "linear-gradient(135deg,#EF4444,#F97316)" : "linear-gradient(135deg,#6C3BFF,#8B5CF6)"};
+          background: ${bgGradient};
           color:#fff; border-radius:20px; padding:6px 12px;
           font-size:12px; font-weight:900; white-space:nowrap;
           font-family:-apple-system,sans-serif;
-          box-shadow:0 4px 14px ${isFlash ? "rgba(239,68,68,.5)" : "rgba(108,59,255,.45)"};
+          box-shadow:0 4px 14px ${shadowColor};
           border:2px solid rgba(255,255,255,.9);
           display:inline-flex; align-items:center; gap:4px;
           transform: scale(${isSelected ? 1.2 : 1});
           cursor: pointer;
           transition: transform 0.15s;
-        ">${emoji}${badge ? " " + badge : ""}</div>`,
+        ">${emoji}${badge ? " " + badge : ""}${hasRealAddress && !isFlash ? " ✓" : ""}</div>`,
         className: "",
         iconAnchor: [40, 20],
       });
@@ -615,6 +628,30 @@ export default function Carte() {
             onSelect={o => { setSelected(o); setShowList(false); }}
           />
         </>
+      )}
+
+      {/* Légende */}
+      {!selected && !showList && !showFilters && (
+        <div style={{
+          position: "absolute", bottom: 100, left: 14, zIndex: 400,
+          background: "rgba(255,255,255,.92)", backdropFilter: "blur(10px)",
+          borderRadius: 12, padding: "8px 12px",
+          boxShadow: "0 2px 12px rgba(0,0,0,.15)",
+          display: "flex", flexDirection: "column", gap: 5,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#10B981" }} />
+            <span style={{ fontSize: 10, fontWeight: 700, color: "#333" }}>Adresse vérifiée</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#EF4444" }} />
+            <span style={{ fontSize: 10, fontWeight: 700, color: "#333" }}>Offre flash</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#6C3BFF" }} />
+            <span style={{ fontSize: 10, fontWeight: 700, color: "#333" }}>Offre locale</span>
+          </div>
+        </div>
       )}
 
       {/* NavBar */}
