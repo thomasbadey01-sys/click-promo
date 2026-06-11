@@ -350,11 +350,12 @@ export default function Carte() {
         const q = search.toLowerCase();
         if (!o.titre?.toLowerCase().includes(q) && !o.commercant_nom?.toLowerCase().includes(q)) return false;
       }
-      // Calcul de distance uniquement si coordonnées valides
+      // Calcul de distance uniquement si coordonnées réelles
       if (o.latitude && o.longitude) {
         const dist = haversine(center.lat, center.lon, o.latitude, o.longitude);
         if (dist > rayon) return false;
       }
+      // Offres sans coordonnées : toujours incluses
       return true;
     });
   };
