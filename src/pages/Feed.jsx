@@ -246,8 +246,7 @@ export default function Feed() {
 
   const load = useCallback(async () => {
     const data = await base44.entities.Offre.list('-created_date', 200);
-    const now = new Date();
-    setOffres(data.filter(o => o.est_active && (!o.date_fin || new Date(o.date_fin) > now)));
+    setOffres(data.filter(o => o.est_active));
     setLoading(false);
     setRefreshing(false);
   }, []);
