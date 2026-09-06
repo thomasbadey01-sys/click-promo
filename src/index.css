@@ -8,13 +8,13 @@
   :root {
     --font-heading: 'Manrope', sans-serif;
     --font-body: 'DM Sans', sans-serif;
-    --local-paper: 40 30% 97%;
-    --local-ink: 156 23% 17%;
-    --local-accent: 15 57% 39%;
-    --local-soft: 25 45% 92%;
-    --local-sage: 100 17% 89%;
-    --local-muted: 140 5% 39%;
-    --local-line: 35 16% 85%;
+    --local-paper: 260 33% 98%;
+    --local-ink: 254 42% 18%;
+    --local-accent: 258 100% 62%;
+    --local-soft: 50 100% 92%;
+    --local-sage: 258 38% 93%;
+    --local-muted: 254 9% 42%;
+    --local-line: 258 20% 87%;
     --local-panel: 0 0% 100%;
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
@@ -54,13 +54,13 @@
   .dark {
     --font-heading: 'Manrope', sans-serif;
     --font-body: 'DM Sans', sans-serif;
-    --local-paper: 155 13% 10%;
-    --local-ink: 40 24% 92%;
-    --local-accent: 20 65% 72%;
-    --local-soft: 20 17% 19%;
-    --local-sage: 145 15% 21%;
-    --local-muted: 120 6% 70%;
-    --local-line: 140 8% 28%;
+    --local-paper: 254 32% 10%;
+    --local-ink: 50 100% 94%;
+    --local-accent: 258 100% 72%;
+    --local-soft: 50 45% 20%;
+    --local-sage: 258 24% 19%;
+    --local-muted: 258 10% 72%;
+    --local-line: 258 14% 29%;
     --local-panel: 150 10% 15%;
     --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;

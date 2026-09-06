@@ -1,0 +1,43 @@
+{
+  "name": "ContactMessage",
+  "type": "object",
+  "properties": {
+    "nom": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "maxLength": 200
+    },
+    "sujet": {
+      "type": "string",
+      "enum": [
+        "question",
+        "commercant",
+        "probleme",
+        "partenariat",
+        "autre"
+      ]
+    },
+    "message": {
+      "type": "string",
+      "maxLength": 5000
+    },
+    "statut": {
+      "type": "string",
+      "enum": [
+        "nouveau",
+        "traite"
+      ],
+      "default": "nouveau"
+    }
+  },
+  "required": [
+    "nom",
+    "email",
+    "sujet",
+    "message"
+  ]
+}
