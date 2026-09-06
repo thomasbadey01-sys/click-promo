@@ -4,12 +4,19 @@ module.exports = {
     content: ["./index.html", "./src/**/*.{ts,tsx,js,jsx}"],
   theme: {
   	extend: {
+      fontFamily: { heading: ['var(--font-heading)'], body: ['var(--font-body)'] },
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
   		},
   		colors: {
+        local: {
+          paper: 'hsl(var(--local-paper))', ink: 'hsl(var(--local-ink))',
+          accent: 'hsl(var(--local-accent))', soft: 'hsl(var(--local-soft))',
+          sage: 'hsl(var(--local-sage))', muted: 'hsl(var(--local-muted))',
+          line: 'hsl(var(--local-line))', panel: 'hsl(var(--local-panel))'
+        },
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {

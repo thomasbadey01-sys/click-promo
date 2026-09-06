@@ -2,9 +2,9 @@ import {Link,NavLink} from "react-router-dom";
 import {Compass,Map,Heart,UserRound,Store,ArrowUpRight,ShieldCheck} from "lucide-react";
 import {useAuth} from "@/lib/AuthContext";
 import "./local.css";
-export default function LocalShell({children}) {
+export default function LocalShell({children,className=""}) {
   const {user}=useAuth();
-  return <div className="cp-app">
+  return <div className={`cp-app ${className}`}>
     <a className="cp-skip" href="#main-content">Aller au contenu</a>
     <header className="cp-header"><Link className="cp-brand" to="/" aria-label="Click & Promo, accueil"><span className="cp-logomark">c<span>p</span><i/></span><span>click<span className="cp-brand-amp">&</span>promo<span className="cp-brand-dot">.</span></span></Link>
       <nav className="cp-desktop-nav" aria-label="Navigation principale"><NavLink to="/" end>Découvrir</NavLink><NavLink to="/Feed">Les offres</NavLink><NavLink to="/Carte">La carte</NavLink></nav>

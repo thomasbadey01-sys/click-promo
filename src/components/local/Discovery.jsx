@@ -1,13 +1,16 @@
 import {useState,useMemo,lazy,Suspense} from "react";
 import {useQuery} from "@tanstack/react-query";
 import {Link} from "react-router-dom";
-import {Search,ArrowUpRight,Store,Utensils,Scissors,ShoppingBag,Dumbbell,ShoppingBasket,SlidersHorizontal,Map as MapIcon,LayoutGrid,RefreshCw} from "lucide-react";
+import {Search,Store,Utensils,Scissors,ShoppingBag,Dumbbell,ShoppingBasket,SlidersHorizontal,Map as MapIcon,LayoutGrid,RefreshCw} from "lucide-react";
 import {base44} from "@/api/base44Client";
 import {CATEGORIES,readAll,offerAvailable,filterLocal,validCoordinates} from "@/lib/local-discovery";
 import LocalShell from "./LocalShell";
 import LocationControls from "./LocationControls";
 import {useLocalLocation} from "./LocationContext";
-import {MerchantCard,OfferCard,CATEGORY_IMAGES} from "./CatalogueCards";
+import {MerchantCard,OfferCard} from "./CatalogueCards";
+import HomeIntro from "@/components/local/HomeIntro";
+import HomeMerchantInvite from "@/components/local/HomeMerchantInvite";
+import "@/components/local/home.css";
 const LocalMap=lazy(()=>import("./LocalMap"));
 const ICONS={"Restaurant":Utensils,"Boutique":ShoppingBag,"Beauté & Coiffure":Scissors,"Fitness & Sport":Dumbbell,"Épicerie":ShoppingBasket};
 export default function Discovery({initialMode="merchants",mapMode=false}) {
@@ -22,9 +25,9 @@ export default function Discovery({initialMode="merchants",mapMode=false}) {
   const counts=activeOffers.reduce((a,o)=>{if(o.commercant_id)a[o.commercant_id]=(a[o.commercant_id]||0)+1;return a;},{});
   const changeMode=m=>{setMode(m);setShown(12);};
   const home=initialMode==="merchants"&&!mapMode;
-  return <LocalShell>
-    {home&&<section className="cp-hero cp-container"><div className="cp-hero-copy"><span className="cp-eyebrow"><span className="cp-live-dot"/> Vos commerces. Votre quartier.</span><h1>Le meilleur est<br/>juste <span>à côté.</span></h1><p>Une bonne table, une nouvelle boutique, une belle découverte. Retrouvez les commerces du coin et leurs offres, en un seul endroit.</p><a href="#catalogue" className="cp-button cp-button-primary">Explorer les commerces <ArrowUpRight size={18}/></a><div className="cp-hero-note"><Store size={18}/><span>Faites vivre les adresses près de chez vous.</span></div></div><div className="cp-hero-visual"><img src={CATEGORY_IMAGES.Restaurant} alt="Ambiance d’une table de restaurant" fetchPriority="high"/><div className="cp-hero-shade"/><span className="cp-photo-caption">L’envie de sortir.<br/><strong>Le plaisir de découvrir.</strong></span><span className="cp-hero-caption">Photo d’ambiance</span><div className="cp-floating-card"><span className="cp-floating-icon"><MapIcon size={23}/></span><span><strong>Votre prochaine découverte</strong><small>commence dans votre quartier</small></span><ArrowUpRight size={19}/></div></div></section>}
-    <section className="cp-container cp-discovery" id="catalogue"><div className="cp-section-heading"><div><span className="cp-eyebrow">{mapMode?"EXPLORER LA CARTE":home?"LE CARNET D’ADRESSES":"LES BONS PLANS LOCAUX"}</span><h2>{mapMode?"Trouvez votre prochain arrêt.":home?"Vos prochaines bonnes adresses.":"Une bonne occasion de sortir."}</h2></div><Link className="cp-view-link" to={mapMode?"/":"/Carte"}>{mapMode?<LayoutGrid size={17}/>:<MapIcon size={17}/>} {mapMode?"Voir la liste":"Voir la carte"}</Link></div>
+  return <LocalShell className={home?"cp-home":""}>
+    {home&&<HomeIntro/>}
+    <section className="cp-container cp-discovery" id="catalogue"><div className="cp-section-heading"><div><span className="cp-eyebrow">{mapMode?"EXPLORER LA CARTE":home?"LE CARNET D’ADRESSES":"LES BONS PLANS LOCAUX"}</span><h2>{mapMode?"Trouvez votre prochain arrêt.":home?"Les adresses à découvrir.":"Une bonne occasion de sortir."}</h2></div><Link className="cp-view-link" to={mapMode?"/":"/Carte"}>{mapMode?<LayoutGrid size={17}/>:<MapIcon size={17}/>} {mapMode?"Voir la liste":"Voir la carte"}</Link></div>
       <div className="cp-search-bar"><Search size={21}/><label className="cp-sr" htmlFor="cp-search">Rechercher un commerce ou une offre</label><input id="cp-search" placeholder="Un commerce, une envie, un quartier…" value={search} onChange={e=>{setSearch(e.target.value);setShown(12);}}/><SlidersHorizontal size={19} aria-hidden="true"/></div>
       <LocationControls/>
       <div className="cp-category-list" aria-label="Catégories"><button onClick={()=>{setCategory("");setShown(12);}} aria-pressed={!category} className={!category?"selected":""}><Store size={18}/>Tout découvrir</button>{CATEGORIES.map(c=>{const Icon=ICONS[c]||ShoppingBag;return <button key={c} onClick={()=>{setCategory(c===category?"":c);setShown(12);}} aria-pressed={category===c} className={category===c?"selected":""}><Icon size={18}/>{c}</button>;})}</div>
@@ -35,6 +38,6 @@ export default function Discovery({initialMode="merchants",mapMode=false}) {
         {!filtered.length?<div className="cp-empty"><Store size={34}/><h3>{mode==="offers"?"Pas d’offre disponible pour cette recherche.":"Aucun commerce ne correspond à ces filtres."}</h3><p>Élargissez le rayon ou explorez une autre catégorie.</p><button className="cp-button cp-button-light" onClick={()=>{setCategory("");setSearch("");setFlash(false);choosePoint(null);setRadius(5);setShown(12);}}>Effacer les filtres</button></div>:<><div className="cp-grid">{filtered.slice(0,shown).map(item=>mode==="merchants"?<MerchantCard key={item.id} item={item} offerCount={counts[item.id]||0}/>:<OfferCard key={item.id} item={item}/>)}</div>{shown<filtered.length&&<div className="cp-load-more"><button className="cp-button cp-button-light" onClick={()=>setShown(n=>n+12)}>Voir plus de {mode==="merchants"?"commerces":"bons plans"}</button></div>}</>}
       </>}
     </section>
-    {home&&<section className="cp-container"><div className="cp-merchant-cta"><div><span className="cp-eyebrow">VOUS FAITES VIVRE LE QUARTIER</span><h2>Votre commerce mérite<br/>qu’on le découvre.</h2><p>Présentez votre savoir-faire, partagez vos offres et donnez aux clients une raison de pousser votre porte.</p><Link className="cp-button cp-button-primary" to="/InscriptionCommercant">Référencer mon commerce <ArrowUpRight size={18}/></Link></div><div className="cp-pro-benefits">{[[Store,"Une vitrine à votre image","Votre adresse, vos horaires et vos photos."],[MapIcon,"La proximité avant tout","Aidez les clients à vous trouver dans leur quartier."],[ShoppingBag,"Vos offres, simplement","Publiez et gérez vos bons plans depuis votre espace."]].map(([Icon,title,description])=><div key={title}><span><Icon size={23}/></span><div><h3>{title}</h3><p>{description}</p></div></div>)}</div></div></section>}
+    {home&&<HomeMerchantInvite/>}
   </LocalShell>;
 }

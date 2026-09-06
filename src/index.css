@@ -1,9 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
+    --font-heading: 'Manrope', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --local-paper: 40 30% 97%;
+    --local-ink: 156 23% 17%;
+    --local-accent: 15 57% 39%;
+    --local-soft: 25 45% 92%;
+    --local-sage: 100 17% 89%;
+    --local-muted: 140 5% 39%;
+    --local-line: 35 16% 85%;
+    --local-panel: 0 0% 100%;
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
     --card: 0 0% 100%;
@@ -40,6 +52,16 @@
   }
 
   .dark {
+    --font-heading: 'Manrope', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --local-paper: 155 13% 10%;
+    --local-ink: 40 24% 92%;
+    --local-accent: 20 65% 72%;
+    --local-soft: 20 17% 19%;
+    --local-sage: 145 15% 21%;
+    --local-muted: 120 6% 70%;
+    --local-line: 140 8% 28%;
+    --local-panel: 150 10% 15%;
     --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
     --card: 0 0% 3.9%;
