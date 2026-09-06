@@ -7,12 +7,13 @@ export default function LocationControls() {
   const [query,setQuery]=useState("");const [places,setPlaces]=useState([]);const [error,setError]=useState("");const [busy,setBusy]=useState(false);
   const request=useRef(null);
   useEffect(()=>()=>request.current?.abort(),[]);
+  useEffect(()=>{request.current?.abort();setBusy(false);setPlaces([]);setError("");setQuery(point?.source==="search"?point.label:"");},[point]);
   const search=async e=>{
     e.preventDefault();request.current?.abort();const controller=new AbortController();request.current=controller;
     if(query.trim().length<2) {setError("Saisissez au moins deux caractères.");return;}
     setBusy(true);setError("");setPlaces([]);
     try {const list=await searchPlaces(query.trim(),controller.signal);if(controller.signal.aborted)return;setPlaces(list);if(!list.length)setError("Aucun lieu trouvé. Essayez une ville ou un code postal.");}
-    catch(e){if(e.name!=="AbortError")setError(e.message);}
+    catch(e){if(!controller.signal.aborted)setError(e.message);}
     finally {if(!controller.signal.aborted)setBusy(false);}
   };
   return <div className="cp-location-block"><div className="cp-location-row">

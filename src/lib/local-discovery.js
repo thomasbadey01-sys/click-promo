@@ -29,7 +29,7 @@ export function filterLocal(items, {search="", category="", point=null, radius=5
   const q=normalize(search);
   return items.map(o=>({...o,_distance:point ? haversine(point.lat,point.lon,o.latitude,o.longitude) : null}))
     .filter(o=>(!category || o.categorie===category) && (!flash || o.est_urgente===true) &&
-      (!q || normalize([o.nom,o.titre,o.commercant_nom,o.ville,o.categorie].join(" ")).includes(q)) &&
+      (!q || normalize([o.nom,o.titre,o.commercant_nom,o.adresse,o.code_postal,o.ville,o.categorie].join(" ")).includes(q)) &&
       (!point || (o._distance !== null && o._distance <= radius)))
     .sort((a,b)=>point ? a._distance-b._distance : (a.nom||a.commercant_nom||a.titre||"").localeCompare(b.nom||b.commercant_nom||b.titre||"","fr"));
 }
