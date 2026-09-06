@@ -1,124 +1,142 @@
 {
   "name": "Commercant",
-  "type": "object",
   "properties": {
-    "nom": {
-      "type": "string",
-      "title": "Nom du commerce"
-    },
-    "siret": {
-      "type": "string",
-      "title": "SIRET"
+    "adresse": {
+      "title": "Adresse",
+      "type": "string"
     },
     "categorie": {
-      "type": "string",
-      "title": "Cat\u00e9gorie"
-    },
-    "description": {
-      "type": "string",
-      "title": "Description"
-    },
-    "adresse": {
-      "type": "string",
-      "title": "Adresse"
-    },
-    "ville": {
-      "type": "string",
-      "title": "Ville"
+      "title": "Catégorie",
+      "type": "string"
     },
     "code_postal": {
-      "type": "string",
-      "title": "Code postal"
+      "title": "Code postal",
+      "type": "string"
     },
-    "latitude": {
-      "type": "number"
-    },
-    "longitude": {
-      "type": "number"
-    },
-    "telephone": {
+    "description": {
+      "title": "Description",
       "type": "string"
     },
     "email": {
       "type": "string"
     },
-    "site_web": {
+    "est_actif": {
+      "default": true,
+      "title": "Actif",
+      "type": "boolean"
+    },
+    "est_valide": {
+      "default": false,
+      "type": "boolean"
+    },
+    "est_verifie": {
+      "default": false,
+      "title": "Vérifié",
+      "type": "boolean"
+    },
+    "horaires_dim": {
+      "title": "Dimanche",
       "type": "string"
+    },
+    "horaires_jeu": {
+      "title": "Jeudi",
+      "type": "string"
+    },
+    "horaires_lun": {
+      "title": "Lundi",
+      "type": "string"
+    },
+    "horaires_mar": {
+      "title": "Mardi",
+      "type": "string"
+    },
+    "horaires_mer": {
+      "title": "Mercredi",
+      "type": "string"
+    },
+    "horaires_sam": {
+      "title": "Samedi",
+      "type": "string"
+    },
+    "horaires_ven": {
+      "title": "Vendredi",
+      "type": "string"
+    },
+    "image_url": {
+      "title": "Photo principale",
+      "type": "string"
+    },
+    "latitude": {
+      "type": "number"
     },
     "logo_url": {
       "type": "string"
     },
-    "image_url": {
-      "type": "string",
-      "title": "Photo principale"
-    },
-    "est_verifie": {
-      "type": "boolean",
-      "default": false,
-      "title": "V\u00e9rifi\u00e9"
-    },
-    "est_actif": {
-      "type": "boolean",
-      "default": true,
-      "title": "Actif"
-    },
-    "est_valide": {
-      "type": "boolean",
-      "default": false
-    },
-    "note_moyenne": {
-      "type": "number",
-      "title": "Note moyenne"
+    "longitude": {
+      "type": "number"
     },
     "nb_avis": {
-      "type": "number",
       "default": 0,
-      "title": "Nombre d'avis"
+      "title": "Nombre d'avis",
+      "type": "number"
     },
-    "user_id": {
+    "nom": {
+      "title": "Nom du commerce",
       "type": "string"
     },
+    "note_moyenne": {
+      "title": "Note moyenne",
+      "type": "number"
+    },
     "plan_abonnement": {
-      "type": "string",
+      "default": "gratuit",
       "enum": [
         "gratuit",
         "starter",
         "pro",
         "business"
       ],
-      "default": "gratuit"
+      "type": "string"
     },
-    "horaires_lun": {
-      "type": "string",
-      "title": "Lundi"
+    "siret": {
+      "title": "SIRET",
+      "type": "string"
     },
-    "horaires_mar": {
-      "type": "string",
-      "title": "Mardi"
+    "site_web": {
+      "type": "string"
     },
-    "horaires_mer": {
-      "type": "string",
-      "title": "Mercredi"
+    "telephone": {
+      "type": "string"
     },
-    "horaires_jeu": {
-      "type": "string",
-      "title": "Jeudi"
+    "user_id": {
+      "type": "string"
     },
-    "horaires_ven": {
-      "type": "string",
-      "title": "Vendredi"
-    },
-    "horaires_sam": {
-      "type": "string",
-      "title": "Samedi"
-    },
-    "horaires_dim": {
-      "type": "string",
-      "title": "Dimanche"
+    "ville": {
+      "title": "Ville",
+      "type": "string"
     }
   },
   "required": [
     "nom",
     "categorie"
-  ]
+  ],
+  "type": "object",
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
 }

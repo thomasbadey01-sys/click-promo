@@ -1,45 +1,75 @@
 {
   "name": "DemandeCommercant",
-  "type": "object",
   "properties": {
-    "user_id": {
-      "type": "string"
-    },
-    "nom_commerce": {
-      "type": "string"
-    },
-    "siret": {
+    "adresse": {
       "type": "string"
     },
     "categorie": {
       "type": "string"
     },
-    "adresse": {
-      "type": "string"
-    },
-    "ville": {
-      "type": "string"
-    },
-    "telephone": {
+    "description": {
       "type": "string"
     },
     "email_contact": {
       "type": "string"
     },
-    "description": {
+    "nom_commerce": {
+      "type": "string"
+    },
+    "note_admin": {
+      "type": "string",
+      "rls": {
+        "read": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "siret": {
       "type": "string"
     },
     "statut": {
-      "type": "string",
+      "default": "en_attente",
       "enum": [
         "en_attente",
         "approuve",
         "refuse"
       ],
-      "default": "en_attente"
+      "type": "string",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
-    "note_admin": {
+    "telephone": {
       "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "ville": {
+      "type": "string"
+    },
+    "code_postal": {
+      "type": "string"
+    },
+    "site_web": {
+      "type": "string"
+    },
+    "latitude": {
+      "type": "number"
+    },
+    "longitude": {
+      "type": "number"
     }
   },
   "required": [
@@ -50,6 +80,18 @@
   "rls": {
     "create": {
       "data.user_id": "{{user.id}}"
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     },
     "read": {
       "$or": [
@@ -67,18 +109,7 @@
       "user_condition": {
         "role": "admin"
       }
-    },
-    "delete": {
-      "$or": [
-        {
-          "data.user_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
     }
-  }
+  },
+  "type": "object"
 }
