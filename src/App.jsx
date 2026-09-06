@@ -1,13 +1,14 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
 import Abonnement from './pages/Abonnement.jsx';
-import Accueil from './pages/Accueil.jsx';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import { LocationProvider } from '@/components/local/LocationContext';
 import Admin from './pages/Admin.jsx';
 import Carte from './pages/Carte.jsx';
 import Dashboard from './pages/Dashboard.jsx';
@@ -25,7 +26,7 @@ import Contact from './pages/Contact.jsx';
 import FetchResults from './pages/FetchResults.jsx';
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
 
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
@@ -42,24 +43,24 @@ const AuthenticatedApp = () => {
 
   return (
     <Routes>
-      <Route path="/" element={<Accueil />} />
-      <Route path="/Accueil" element={<Accueil />} />
+      <Route path="/" element={<Home />} />
+      <Route path="/Accueil" element={<Home />} />
       <Route path="/Abonnement" element={<Abonnement />} />
-      <Route path="/Admin" element={<Admin />} />
+      <Route element={<ProtectedRoute role="admin" />}><Route path="/Admin" element={<Admin />} /></Route>
       <Route path="/Carte" element={<Carte />} />
-      <Route path="/Dashboard" element={<Dashboard />} />
-      <Route path="/Favoris" element={<Favoris />} />
+      <Route element={<ProtectedRoute role="merchant" />}><Route path="/Dashboard" element={<Dashboard />} /></Route>
+      <Route element={<ProtectedRoute />}><Route path="/Favoris" element={<Favoris />} /></Route>
       <Route path="/Feed" element={<Feed />} />
       <Route path="/Home" element={<Home />} />
-      <Route path="/InscriptionCommercant" element={<InscriptionCommercant />} />
+      <Route element={<ProtectedRoute />}><Route path="/InscriptionCommercant" element={<InscriptionCommercant />} /></Route>
       <Route path="/Login" element={<Login />} />
       <Route path="/OffreDetail" element={<OffreDetail />} />
       <Route path="/PrivacyPolicy" element={<PrivacyPolicy />} />
       <Route path="/CommercantProfil" element={<CommercantProfil />} />
-      <Route path="/Profil" element={<Profil />} />
+      <Route element={<ProtectedRoute />}><Route path="/Profil" element={<Profil />} /></Route>
       <Route path="/About" element={<About />} />
       <Route path="/Contact" element={<Contact />} />
-      <Route path="/FetchResults" element={<FetchResults />} />
+      <Route element={<ProtectedRoute role="admin" />}><Route path="/FetchResults" element={<FetchResults />} /></Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
@@ -70,7 +71,7 @@ function App() {
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
         <Router>
-          <AuthenticatedApp />
+          <LocationProvider><AuthenticatedApp /></LocationProvider>
         </Router>
         <Toaster />
       </QueryClientProvider>
