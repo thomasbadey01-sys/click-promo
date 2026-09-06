@@ -1,66 +1,69 @@
 {
   "name": "Offre",
+  "type": "object",
   "properties": {
     "achat_en_ligne": {
-      "default": false,
+      "type": "boolean",
       "title": "Achat en ligne",
-      "type": "boolean"
+      "default": false
     },
     "adresse": {
-      "title": "Adresse",
-      "type": "string"
+      "type": "string",
+      "title": "Adresse"
     },
     "categorie": {
+      "type": "string",
+      "title": "Cat\u00e9gorie",
       "enum": [
         "Restaurant",
         "Boutique",
-        "Beauté & Coiffure",
+        "Beaut\u00e9 & Coiffure",
         "Fitness & Sport",
-        "Épicerie",
+        "\u00c9picerie",
         "Services",
         "Pharmacie",
         "Autre"
-      ],
-      "title": "Catégorie",
-      "type": "string"
+      ]
     },
     "code_promo": {
-      "title": "Code promo",
-      "type": "string"
+      "type": "string",
+      "title": "Code promo"
     },
     "commercant_id": {
-      "title": "ID Commerçant",
-      "type": "string"
+      "type": "string",
+      "title": "ID Commer\u00e7ant"
     },
     "commercant_nom": {
-      "title": "Nom du commerce",
-      "type": "string"
+      "type": "string",
+      "title": "Nom du commerce"
     },
     "conditions": {
-      "title": "Conditions d'utilisation",
-      "type": "string"
+      "type": "string",
+      "title": "Conditions d'utilisation"
     },
     "date_debut": {
+      "type": "string",
       "format": "date-time",
-      "title": "Date début",
-      "type": "string"
+      "title": "Date d\u00e9but"
     },
     "date_fin": {
+      "type": "string",
       "format": "date-time",
-      "title": "Date fin",
-      "type": "string"
+      "title": "Date fin"
     },
     "description": {
-      "title": "Description",
-      "type": "string"
+      "type": "string",
+      "title": "Description"
     },
     "enseigne": {
+      "type": "string",
+      "title": "Enseigne (marque nationale)",
       "enum": [
         "Carrefour",
         "Auchan",
         "Leclerc",
         "Lidl",
-        "Intermarché",
+        "Intermarch\u00e9",
         "Monoprix",
         "Casino",
         "Picard",
@@ -73,27 +76,33 @@
         "Fnac",
         "Darty",
         "Sephora",
-        "Nocibé",
+        "Nocib\u00e9",
         "Go Sport",
         "McDonald's",
         "Autre"
-      ],
-      "title": "Enseigne (marque nationale)",
-      "type": "string"
+      ]
     },
     "est_active": {
-      "default": true,
+      "type": "boolean",
       "title": "Active",
-      "type": "boolean"
+      "default": true
     },
     "est_urgente": {
-      "default": false,
+      "type": "boolean",
       "title": "Offre flash",
-      "type": "boolean"
+      "default": false
     },
     "image_url": {
-      "title": "Image URL",
-      "type": "string"
+      "type": "string",
+      "title": "Image URL"
+    },
+    "image_urls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 8,
+      "title": "Photos de l\u2019offre"
     },
     "latitude": {
       "type": "number"
@@ -102,72 +111,77 @@
       "type": "number"
     },
     "nb_clics": {
-      "default": 0,
+      "type": "number",
       "title": "Clics",
-      "type": "number"
+      "default": 0
     },
     "nb_conversions": {
-      "default": 0,
+      "type": "number",
       "title": "Conversions",
-      "type": "number"
+      "default": 0
     },
     "nb_vues": {
-      "default": 0,
+      "type": "number",
       "title": "Vues",
-      "type": "number"
-    },
-    "prix_original": {
-      "title": "Prix original (€)",
-      "type": "number"
-    },
-    "prix_promo": {
-      "title": "Prix promo (€)",
-      "type": "number"
-    },
-    "rayon_km": {
-      "default": 10,
-      "title": "Rayon de diffusion (km)",
-      "type": "number"
-    },
-    "stock_initial": {
-      "title": "Stock initial",
-      "type": "number"
-    },
-    "stock_restant": {
-      "title": "Stock restant",
-      "type": "number"
-    },
-    "titre": {
-      "title": "Titre de l'offre",
-      "type": "string"
-    },
-    "type_reduction": {
-      "enum": [
-        "pourcentage",
-        "montant"
-      ],
-      "title": "Type de réduction",
-      "type": "string"
-    },
-    "valeur_reduction": {
-      "title": "Valeur réduction",
-      "type": "number"
-    },
-    "ville": {
-      "title": "Ville",
-      "type": "string"
-    },
-    "image_urls": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "maxItems": 8,
-      "title": "Photos de l’offre"
+      "default": 0
     },
     "owner_id": {
       "type": "string",
-      "title": "Compte propriétaire"
+      "title": "Compte propri\u00e9taire"
+    },
+    "prix_original": {
+      "type": "number",
+      "title": "Prix original (\u20ac)"
+    },
+    "prix_promo": {
+      "type": "number",
+      "title": "Prix promo (\u20ac)"
+    },
+    "rayon_km": {
+      "type": "number",
+      "title": "Rayon de diffusion (km)",
+      "default": 10
+    },
+    "source_url": {
+      "type": "string",
+      "title": "Source officielle"
+    },
+    "source_nom": {
+      "type": "string",
+      "title": "Nom de la source"
+    },
+    "date_verification": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Derni\u00e8re v\u00e9rification"
+    },
+    "stock_initial": {
+      "type": "number",
+      "title": "Stock initial"
+    },
+    "stock_restant": {
+      "type": "number",
+      "title": "Stock restant"
+    },
+    "titre": {
+      "type": "string",
+      "title": "Titre de l'offre"
+    },
+    "type_reduction": {
+      "type": "string",
+      "title": "Type de r\u00e9duction",
+      "enum": [
+        "pourcentage",
+        "montant"
+      ]
+    },
+    "valeur_reduction": {
+      "type": "number",
+      "title": "Valeur r\u00e9duction"
+    },
+    "ville": {
+      "type": "string",
+      "title": "Ville"
     }
   },
   "required": [
@@ -176,7 +190,13 @@
     "est_active"
   ],
   "rls": {
+    "read": {},
     "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
       "user_condition": {
         "role": "admin"
       }
@@ -185,13 +205,6 @@
       "user_condition": {
         "role": "admin"
       }
-    },
-    "read": {},
-    "update": {
-      "user_condition": {
-        "role": "admin"
-      }
     }
-  },
-  "type": "object"
+  }
 }
