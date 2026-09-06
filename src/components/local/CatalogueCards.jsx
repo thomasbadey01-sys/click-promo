@@ -2,6 +2,7 @@ import {useState} from "react";
 import {Link} from "react-router-dom";
 import {ArrowUpRight,MapPin,Store,Tag} from "lucide-react";
 import {formatDist,safeHref} from "@/lib/local-discovery";
+import TrustBadge from "@/components/local/TrustBadge";
 export const CATEGORY_IMAGES={
   "Restaurant":"https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=80",
   "Boutique":"https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80",
@@ -26,5 +27,5 @@ export function OfferCard({item}) {
   const price=typeof item.prix_promo==="number"&&item.prix_promo>=0?new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR"}).format(item.prix_promo):null;
   return <article className="cp-catalogue-card"><Link to={"/OffreDetail?id="+encodeURIComponent(item.id)}>
     <div className="cp-card-cover"><CatalogueImage item={item} title={item.titre}/>{item.valeur_reduction>0&&<span className="cp-offer-badge"><Tag size={13}/> −{item.valeur_reduction}{item.type_reduction==="pourcentage"?"%":" €"}</span>}{item.est_urgente&&<span className="cp-category-badge">Offre flash</span>}</div>
-    <div className="cp-card-body"><span className="cp-eyebrow">{item.commercant_nom||item.categorie}</span><div className="cp-card-title"><h3>{item.titre}</h3><ArrowUpRight size={20}/></div><p className="cp-card-location"><MapPin size={14}/>{item.ville||"Ville non renseignée"}{item._distance!=null&&<span>· {formatDist(item._distance)}</span>}</p><div className="cp-price">{price&&<strong>{price}</strong>}{price&&item.prix_original>item.prix_promo&&<del>{item.prix_original.toLocaleString("fr-FR")} €</del>}{item.date_fin&&<small>Jusqu’au {new Date(item.date_fin).toLocaleDateString("fr-FR")}</small>}</div>{item.source_url&&<p className="cp-source-label">Source vérifiée · {item.source_nom||"Enseigne"}</p>}</div></Link></article>;
+    <div className="cp-card-body"><span className="cp-eyebrow">{item.commercant_nom||item.categorie}</span><TrustBadge item={item}/><div className="cp-card-title"><h3>{item.titre}</h3><ArrowUpRight size={20}/></div><p className="cp-card-location"><MapPin size={14}/>{item.ville||"Ville non renseignée"}{item._distance!=null&&<span>· {formatDist(item._distance)}</span>}</p><div className="cp-price">{price&&<strong>{price}</strong>}{price&&item.prix_original>item.prix_promo&&<del>{item.prix_original.toLocaleString("fr-FR")} €</del>}{item.date_fin&&<small>Jusqu’au {new Date(item.date_fin).toLocaleDateString("fr-FR")}</small>}</div>{item.source_url&&<p className="cp-source-label">Source vérifiée · {item.source_nom||"Enseigne"}</p>}</div></Link></article>;
 }

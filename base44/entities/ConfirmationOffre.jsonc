@@ -1,0 +1,61 @@
+{
+  "name": "ConfirmationOffre",
+  "type": "object",
+  "properties": {
+    "offre_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "statut": {
+      "type": "string",
+      "enum": [
+        "disponible",
+        "terminee"
+      ]
+    },
+    "date_confirmation": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "offre_id",
+    "user_id",
+    "statut",
+    "date_confirmation"
+  ],
+  "rls": {
+    "create": {
+      "data.user_id": "{{user.id}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "data.user_id": "{{user.id}}"
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

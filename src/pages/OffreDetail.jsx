@@ -8,6 +8,8 @@ import {directionsUrl,formatDist,haversine,offerAvailable,safeHref,validCoordina
 import LocalShell from "@/components/local/LocalShell";
 import {CatalogueImage,OfferCard} from "@/components/local/CatalogueCards";
 import {useLocalLocation} from "@/components/local/LocationContext";
+import TrustBadge from "@/components/local/TrustBadge";
+import OfferConfirmation from "@/components/local/OfferConfirmation";
 const money=n=>typeof n==="number"&&Number.isFinite(n)?new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR"}).format(n):null;
 export default function OffreDetail() {
   const [params]=useSearchParams(),id=params.get("id");
@@ -54,7 +56,7 @@ export default function OffreDetail() {
   const share=async()=>{if(!navigator.share){await copy(window.location.href);return;}try{await navigator.share({title:offer.titre,url:window.location.href});}catch(e){if(e.name!=="AbortError")setMessage("Le partage n’est pas disponible sur cet appareil.");}};
   return <LocalShell><section className="cp-container cp-detail">
     <Link className="cp-view-link" to="/Feed"><ArrowLeft size={17}/>Toutes les offres</Link>
-    <div className="cp-detail-heading"><div><span className="cp-eyebrow">{offer.categorie}</span><h1>{offer.titre}</h1>{merchant?<Link className="cp-text-link" to={"/CommercantProfil?id="+encodeURIComponent(merchant.id)}>{merchant.nom}</Link>:<p>{offer.commercant_nom}</p>}</div>
+    <div className="cp-detail-heading"><div><span className="cp-eyebrow">{offer.categorie}</span><TrustBadge item={offer} large/><h1>{offer.titre}</h1>{merchant?<Link className="cp-text-link" to={"/CommercantProfil?id="+encodeURIComponent(merchant.id)}>{merchant.nom}</Link>:<p>{offer.commercant_nom}</p>}</div>
     <div className="cp-detail-actions"><button className="cp-button cp-button-light" onClick={toggleFavorite} disabled={busy||fav.isFetching} aria-pressed={favourite}><Heart size={18} fill={favourite?"currentColor":"none"}/>{favourite?"En favoris":"Ajouter aux favoris"}</button><button className="cp-button cp-button-light" onClick={share}><Share2 size={18}/>Partager</button></div></div>
     <div className="cp-detail-grid"><div>
       {photos.length?<div className="cp-photo-gallery">{photos.map((src,i)=><img key={src} src={src} alt={offer.titre+" — photo "+(i+1)} loading={i?"lazy":"eager"}/>)}</div>:<CatalogueImage item={offer} title={offer.titre}/>}
@@ -68,6 +70,7 @@ export default function OffreDetail() {
       {offer.date_fin&&<p>Valable jusqu’au {new Date(offer.date_fin).toLocaleString("fr-FR")}</p>}
       {offer.source_url&&<div className="cp-proof"><strong>Source officielle vérifiée</strong>{offer.date_verification&&<small>Contrôlée le {new Date(offer.date_verification).toLocaleDateString("fr-FR")}</small>}<a href={safeHref(offer.source_url)} target="_blank" rel="noopener noreferrer">Consulter la source <ExternalLink size={14}/></a></div>}
       {typeof offer.stock_restant==="number"&&<p>{offer.stock_restant} disponible{offer.stock_restant>1?"s":""}</p>}
+      <OfferConfirmation offerId={offer.id}/>
       {available?offer.code_promo?<div>{!codeVisible?<button className="cp-button cp-button-primary" onClick={()=>setCodeVisible(true)}>Afficher le code promo</button>:<div className="cp-code-box"><span>Votre code à présenter en magasin</span><strong>{offer.code_promo}</strong><button className="cp-button cp-button-light" onClick={()=>copy(offer.code_promo)}><Copy size={16}/>Copier le code</button></div>}<p className="cp-muted">Présentez cette offre au commerçant et consultez ses conditions d’utilisation.</p></div>:<p>Présentez cette fiche au commerçant. Aucun code n’est renseigné pour cette offre.</p>:<p>Cette offre n’est pas utilisable actuellement. Consultez les autres offres du commerce.</p>}
       <hr/><h2><MapPin size={18}/> Rendez-vous sur place</h2><p>{location.adresse}<br/>{location.ville}</p>{distance!==null&&<p className="cp-muted">{formatDist(distance)} à vol d’oiseau depuis {point.source==="gps"?"votre position":point.label}</p>}{direction&&<a className="cp-button cp-button-light" href={direction} target="_blank" rel="noopener noreferrer">Voir l’itinéraire <ExternalLink size={15}/></a>}
     </aside></div>

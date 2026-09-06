@@ -68,6 +68,10 @@
       "type": "boolean",
       "default": true
     },
+    "notifications_mobiles_souhaitees": {
+      "type": "boolean",
+      "default": false
+    },
     "code_parrainage": {
       "type": "string"
     },
